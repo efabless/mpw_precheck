@@ -24,6 +24,9 @@ docExts = ['.rst', '.html','.md','.pdf','.doc','.docx','.odt']
 
 makefileTargets = ['verify', 'clean', 'compress', 'uncompress']
 
+user_power_list = ['vdda1', 'vssa1', 'vccd1', 'vssd1'] # To be changed when we have a final caravel netlist
+reserved_power_list = ['vddio', 'vdda', 'vccd'] # To be changed when we have a final caravel netlist
+
 toplevel = 'striVe2a' #caravel
 user_module = 'striVe2a_core' #user_project_wrapper
 
@@ -70,8 +73,102 @@ def checkDocumentation(target_path):
             return True
     return False
 
+def basic_spice_hierarchy_checks(spice_netlist, toplevel,user_module):
+    check, reason = spice_utils.find_subckt(spice_netlist[0],toplevel)
+    if check == False:
+        print('Spice Check Failed because:', reason)
+        return False
+    else:
+        print(reason)
+        check, reason = spice_utils.find_subckt(spice_netlist[1],user_module)
+        if check == False:
+            print('Spice Check Failed because:', reason)
+            return False
+        else:
+            print(reason)
+            check, reason = spice_utils.confirm_complex_subckt(spice_netlist[0],toplevel,5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
+            if check == False:
+                print('Spice Check Failed because:', reason)
+                return False
+            else:
+                print(reason)
+                check, reason = spice_utils.confirm_complex_subckt(spice_netlist[1],user_module,1)
+                if check == False:
+                    print('Spice Check Failed because:', reason)
+                    return False
+                else:
+                    print(reason)
+                    check, reason = spice_utils.confirm_circuit_hierarchy(spice_netlist[0], toplevel, user_module)
+                    if check == False:
+                        print('Spice Check Failed because:', reason)
+                        return False
+                    else:
+                        print(reason)
+                        print('Spice Consistency Checks Passed.')
+                        return True
+
+
+def basic_verilog_hierarchy_checks(verilog_netlist, toplevel,user_module):
+    check, reason = verilog_utils.find_module(verilog_netlist[0],toplevel)
+    if check == False:
+        print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[0])
+        return False
+    else:
+        print(reason)
+        check, reason = verilog_utils.find_module(verilog_netlist[1],user_module)
+        if check == False:
+            print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[1])
+            return False
+        else:
+            print(reason)
+            check, reason = verilog_utils.confirm_complex_module(verilog_netlist[0],toplevel,5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
+            if check == False:
+                print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[0])
+                return False
+            else:
+                print(reason)
+                check, reason = verilog_utils.confirm_complex_module(verilog_netlist[1],user_module,1)
+                if check == False:
+                    print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[1])
+                    return False
+                else:
+                    print(reason)
+                    check, reason = verilog_utils.confirm_circuit_hierarchy(verilog_netlist[0], toplevel, user_module)
+                    if check == False:
+                        print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[0])
+                        return False
+                    else:
+                        print(reason)
+                        print('verilog Consistency Checks Passed.')
+                        return True
+
+
+def match_pin_names(benchmark_pins, user_pins):
+    return (list(list(set(benchmark_pins)-set(user_pins)) + list(set(benchmark_pins)-set(user_pins))))
+ 
+def check_power_pins(connections_map, forbidden_list, check_list):
+    for key in connections_map:
+        con = connections_map[key]
+        if type(con) == type(str()):
+            if con in check_list:
+                check_list.remove(con)
+            if con in forbidden_list:
+                return False, 'The user is using a management area power/ground net: '+ con
+        else:
+            for c in con:
+                if c in check_list:
+                    check_list.remove(c)
+                if c in forbidden_list:
+                    return False, 'The user is using a management area power/ground net: '+ c
+    if len(check_list):
+        return False, "The user didn't use the following power/ground nets: " + " ".join(check_list)
+    else:
+        return True, 'Power Checks Passed'
+
+
 def check_source_gds_consitency(target_path, design_name):
     pass
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -112,61 +209,24 @@ if __name__ == "__main__":
         print("Makefile checks passed")
     else:
         print("Makefile checks failed because: ", makefileReason)
-
+    basic_hierarchy_checks = False    
     if len(verilog_netlist) != 2 and len(spice_netlist) != 2:
         print ("No toplevel netlist provided, please provide either a spice netlist or a verilog netlist")
     else:
         if len(spice_netlist) == 2:
-            check, reason = spice_utils.find_subckt(spice_netlist[0],toplevel)
-            if check == False:
-                print('Spice Check Failed because:', reason)
-            else:
-                print(reason)
-                check, reason = spice_utils.find_subckt(spice_netlist[1],user_module)
-                if check == False:
-                    print('Spice Check Failed because:', reason)
-                else:
-                    print(reason)
-                    check, reason = spice_utils.confirm_complex_subckt(spice_netlist[0],toplevel,5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
-                    if check == False:
-                        print('Spice Check Failed because:', reason)
-                    else:
-                        print(reason)
-                        check, reason = spice_utils.confirm_complex_subckt(spice_netlist[1],user_module,1)
-                        if check == False:
-                            print('Spice Check Failed because:', reason)
-                        else:
-                            print(reason)
-                            check, reason = spice_utils.confirm_circuit_hierarchy(spice_netlist[0], toplevel, user_module)
-                            if check == False:
-                                print('Spice Check Failed because:', reason)
-                            else:
-                                print(reason)
-                                print('Spice Consistency Checks Passed.')
+            basic_hierarchy_checks = basic_spice_hierarchy_checks(spice_netlist,toplevel,user_module)
         if len(verilog_netlist) == 2:
-                    check, reason = verilog_utils.find_module(verilog_netlist[0],toplevel)
-                    if check == False:
-                        print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[0])
-                    else:
-                        print(reason)
-                        check, reason = verilog_utils.find_module(verilog_netlist[1],user_module)
-                        if check == False:
-                            print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[1])
-                        else:
-                            print(reason)
-                            check, reason = verilog_utils.confirm_complex_module(verilog_netlist[0],toplevel,5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
-                            if check == False:
-                                print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[0])
-                            else:
-                                print(reason)
-                                check, reason = verilog_utils.confirm_complex_module(verilog_netlist[1],user_module,1)
-                                if check == False:
-                                    print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[1])
-                                else:
-                                    print(reason)
-                                    check, reason = verilog_utils.confirm_circuit_hierarchy(verilog_netlist[0], toplevel, user_module)
-                                    if check == False:
-                                        print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[0])
-                                    else:
-                                        print(reason)
-                                        print('verilog Consistency Checks Passed.')
+            basic_hierarchy_checks = basic_verilog_hierarchy_checks(verilog_netlist,toplevel,user_module)
+    if basic_spice_hierarchy_checks:
+        print("Basic Hierarchy Checks Passed.")
+    else:
+        print("Basic Hierarchy Checks Failed.")
+
+    check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist[0],toplevel,user_module)
+    pin_name_diffs= match_pin_names(list(connections_map.keys()), list(connections_map.keys())) # replace with the true benchmark list of pins once acquired
+
+    if len(pin_name_diffs):
+        print ("Pins check failed. The user is using different pins: ", pin_name_diffs)
+    else:
+        print("Pins check passed")
+    print(check_power_pins(connections_map,reserved_power_list,user_power_list))
