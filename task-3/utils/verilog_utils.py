@@ -1,0 +1,64 @@
+import re
+
+
+def find_module(verilog_netlist, module_name):
+    try:
+        verilogOpener = open(verilog_netlist)
+        if verilogOpener.mode == 'r':
+            verilogContent = verilogOpener.read()
+        verilogOpener.close()
+        pattern = re.compile(r'module\s*%s\s*\(' % module_name)
+        if len(re.findall(pattern, verilogContent)):
+            return True, 'instance found'
+        else:
+            return False, 'instance not found'
+    except OSError:
+        return False, 'Verilog file not found'
+
+def confirm_complex_module(verilog_netlist,module_name,minimum_instantiations_number):
+    try:
+        verilogOpener = open(verilog_netlist)
+        if verilogOpener.mode == 'r':
+            verilogContent = verilogOpener.read()
+        verilogOpener.close()
+        pattern = re.compile(r'module\s*%s\s*\(' % module_name)
+        modules = re.findall(pattern, verilogContent)
+        if len(modules):
+            start_idx = verilogContent.find(modules[0])
+            end_idx =verilogContent.find('endmodule',start_idx)
+            module = verilogContent[start_idx:end_idx]
+            pattern2 = re.compile(r'\s*\b\S+\s*\b\S+\s*\(')
+            instances = re.findall(pattern2, module)
+            if len(instances) > minimum_instantiations_number:
+                return True, 'Design is complex and contains: '+str(len(instances))+' modules'
+            else:
+                return False, "The module doesn't contain the minimum number of instantiations required"
+        else:
+            return False, 'instance not found'
+    except OSError:
+        return False, 'Verilog file not found'
+
+
+def confirm_circuit_hierarchy(verilog_netlist, toplevel, user_module):
+    try:
+        verilogOpener = open(verilog_netlist)
+        if verilogOpener.mode == 'r':
+            verilogContent = verilogOpener.read()
+        verilogOpener.close()
+        pattern = re.compile(r'module\s*%s\s*\(' % toplevel)
+        modules = re.findall(pattern, verilogContent)
+        if len(modules):
+            start_idx = verilogContent.find(modules[0])
+            end_idx =verilogContent.find('.ends',start_idx)
+            module = verilogContent[start_idx:end_idx]
+            pattern2 = re.compile(r'\s*\b%s\s*\S+\s*\(' % user_module)
+            instances = re.findall(pattern2, module)
+            print(instances)
+            if len(instances) == 1:   
+                return True, user_module + ' is part of ' + toplevel
+            else:
+                return False, 'Hierarchy Check Failed'
+        else:
+            return False, 'instance not found'
+    except OSError:
+        return False, 'verilog file not found'
