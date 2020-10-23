@@ -14,26 +14,16 @@
 
 gds read $::env(TARGET_DIR)/$::env(DESIGN_NAME).gds
 
-set fout [open $::env(OUT_DIR)/$::env(DESIGN_NAME).magic.celllist w]
 set oscale [cif scale out]
 set cell_name $::env(DESIGN_NAME)
 magic::suspendall
 puts stdout "\[INFO\]: Loading $cell_name\n"
 flush stdout
 load $cell_name
-# top cell: caravel
 select top cell
-drc off
-
-set outlist [cellname list children]
-
-puts $fout $outlist
-close $fout
-puts stdout "\[INFO\]: Saved"
-# Sub design: user_project
 select cell $::env(SUB_DESIGN_NAME)
-
 drc off
+
 set fout [open $::env(OUT_DIR)/$::env(SUB_DESIGN_NAME).magic.celllist w]
 
 set outlist [cellname list children]

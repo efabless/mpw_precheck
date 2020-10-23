@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# To call: ./run_instance_listing.sh <target_path> <design_name> <output_path>
+# To call: ./run_instance_listing.sh <target_path> <design_name> <sub_design_name> <output_path>
 
 export RUN_ROOT=$(pwd)
 export TARGET_DIR=$1
 export DESIGN_NAME=$2
-export OUT_DIR=$3
+export SUB_DESIGN_NAME=$3
+export OUT_DIR=$4
 
 if ! [[ -d "$OUT_DIR" ]]
 then
@@ -30,7 +31,8 @@ export MAGIC_MAGICRC=$PDKPATH/sky130A.magicrc
 
 docker run -it -v $MAGIC_ROOT:/magic_root -v $RUN_ROOT:$RUN_ROOT \
     -v $RUN_ROOT/tech-files:/EF/SW -v $TARGET_DIR:$TARGET_DIR \
-    -e PDKPATH=$PDKPATH -e RUN_ROOT=$RUN_ROOT -e DESIGN_NAME=$DESIGN_NAME \
+    -e PDKPATH=$PDKPATH -e RUN_ROOT=$RUN_ROOT \
+    -e DESIGN_NAME=$DESIGN_NAME -e SUB_DESIGN_NAME=$SUB_DESIGN_NAME\
     -e TARGET_DIR=$TARGET_DIR -e OUT_DIR=$OUT_DIR \
     -u $(id -u $USER):$(id -g $USER) \
     magic:latest sh -c "magic \
