@@ -170,6 +170,12 @@ def extract_instance_name(verilog_netlist, toplevel, instance):
     except OSError:
         return False, 'verilog file not found'
 
+
+def remove_leading_backslash(name):
+    for i in len(name):
+        if name[i] != "\\":
+            return name[i:]
+
 def extract_cell_list(verilog_netlist, toplevel,exclude_prefix=None):
     try:
         verilogOpener = open(verilog_netlist)
@@ -190,11 +196,11 @@ def extract_cell_list(verilog_netlist, toplevel,exclude_prefix=None):
                 for instance in instances[1:]:
                     sinstance = instance.strip()[:-1].split()
                     if exclude_prefix is None:
-                        name_list.append(sinstance[1])
+                        name_list.append(remove_leading_backslash(sinstance[1]))
                         type_list.append(sinstance[0])
                     else:
                         if sinstance[0].startswith(exclude_prefix) == False:
-                            name_list.append(sinstance[1])
+                            name_list.append(remove_leading_backslash(sinstance[1]))
                             type_list.append(sinstance[0])
                 return True, name_list, type_list
             else:

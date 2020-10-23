@@ -244,7 +244,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
         print(user_type_diff)
         print('toplevel cell names differences: ')
         print(top_name_diff)
-        print('toplevel cell names differences: ')
+        print('toplevel cell type differences: ')
         print(top_type_diff)
         if len(user_name_diff)+len(user_type_diff)+len(top_name_diff)+len(top_type_diff):
             return False, 'Hierarchy Matching Failed'
@@ -319,10 +319,6 @@ if __name__ == "__main__":
                             check, top_name_list,top_type_list= verilog_utils.extract_cell_list(verilog_netlist[0],toplevel)
                             check, user_name_list,user_type_list= verilog_utils.extract_cell_list(verilog_netlist[1],user_module)
                             print(instance_name)
-                            print(top_name_list)
-                            print(top_type_list)
-                            print(user_name_list)
-                            print(user_type_list)
                 else:
                     print(reason)
             else:
