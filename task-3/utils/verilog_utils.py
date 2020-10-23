@@ -1,3 +1,17 @@
+# Copyright 2020 Efabless Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import re
 
 
@@ -7,7 +21,7 @@ def find_module(verilog_netlist, module_name):
         if verilogOpener.mode == 'r':
             verilogContent = verilogOpener.read()
         verilogOpener.close()
-        pattern = re.compile(r'module\s*%s\s*\(' % module_name)
+        pattern = re.compile(r'module\s*\b%s\b\s*\(' % module_name)
         if len(re.findall(pattern, verilogContent)):
             return True, 'instance found'
         else:
@@ -21,7 +35,7 @@ def confirm_complex_module(verilog_netlist,module_name,minimum_instantiations_nu
         if verilogOpener.mode == 'r':
             verilogContent = verilogOpener.read()
         verilogOpener.close()
-        pattern = re.compile(r'module\s*%s\s*\(' % module_name)
+        pattern = re.compile(r'module\s*\b%s\b\s*\(' % module_name)
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
@@ -45,7 +59,7 @@ def confirm_circuit_hierarchy(verilog_netlist, toplevel, user_module):
         if verilogOpener.mode == 'r':
             verilogContent = verilogOpener.read()
         verilogOpener.close()
-        pattern = re.compile(r'module\s*%s\s*\(' % toplevel)
+        pattern = re.compile(r'module\s*\b%s\b\s*\(' % toplevel)
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
@@ -70,7 +84,7 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
         if verilogOpener.mode == 'r':
             verilogContent = verilogOpener.read()
         verilogOpener.close()
-        pattern = re.compile(r'module\s*%s\s*\(' % toplevel)
+        pattern = re.compile(r'module\s*\b%s\b\s*\(' % toplevel)
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
