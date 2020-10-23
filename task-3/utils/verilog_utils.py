@@ -129,6 +129,7 @@ control_characters = ['#', '$', '@']
 
 def verify_non_behavioral_netlist(verilog_netlist):
     try:
+        print(verilog_netlist)
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
             verilogContent = verilogOpener.read()
@@ -169,3 +170,36 @@ def extract_instance_name(verilog_netlist, toplevel, instance):
     except OSError:
         return False, 'verilog file not found'
 
+def extract_cell_list(verilog_netlist, toplevel,exclude_prefix=None):
+    try:
+        verilogOpener = open(verilog_netlist)
+        if verilogOpener.mode == 'r':
+            verilogContent = verilogOpener.read()
+        verilogOpener.close()
+        pattern = re.compile(r'module\s*\b%s\b\s*\(' % toplevel)
+        modules = re.findall(pattern, verilogContent)
+        if len(modules):
+            start_idx = verilogContent.find(modules[0])
+            end_idx =verilogContent.find('endmodule',start_idx)
+            module = verilogContent[start_idx:end_idx]
+            pattern = re.compile(r'\s*\b\S+\b\s*\S+\s*\(')
+            instances = re.findall(pattern, module)
+            if len(instances[1:]):
+                name_list = list()
+                type_list = list()
+                for instance in instances[1:]:
+                    sinstance = instance.strip()[:-1].split()
+                    if exclude_prefix is None:
+                        name_list.append(sinstance[1])
+                        type_list.append(sinstance[0])
+                    else:
+                        if sinstance[0].startswith(exclude_prefix) == False:
+                            name_list.append(sinstance[1])
+                            type_list.append(sinstance[0])
+                return True, name_list, type_list
+            else:
+                return False, 'Hierarchy Check Failed'
+        else:
+            return False, 'instance not found'
+    except OSError:
+        return False, 'verilog file not found'

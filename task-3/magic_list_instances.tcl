@@ -14,7 +14,7 @@
 
 gds read $::env(TARGET_DIR)/$::env(DESIGN_NAME).gds
 
-set fout [open $::env(OUT_DIR)/$::env(DESIGN_NAME).magic.celllist w]
+set fout [open $::env(OUT_DIR)/$::env(DESIGN_NAME).magic.typelist w]
 set oscale [cif scale out]
 set cell_name $::env(DESIGN_NAME)
 magic::suspendall
@@ -29,14 +29,32 @@ set outlist [cellname list children]
 
 puts $fout $outlist
 close $fout
+
+set fout [open $::env(OUT_DIR)/$::env(DESIGN_NAME).magic.namelist w]
+
+set outlist [instance list children]
+
+puts $fout $outlist
+close $fout
+puts stdout "\[INFO\]: Saved"
+
+
 puts stdout "\[INFO\]: Saved"
 # Sub design: user_project
 select cell $::env(SUB_DESIGN_NAME)
 
 drc off
-set fout [open $::env(OUT_DIR)/$::env(SUB_DESIGN_NAME).magic.celllist w]
+set fout [open $::env(OUT_DIR)/$::env(SUB_DESIGN_NAME).magic.typelist w]
 
 set outlist [cellname list children]
+
+puts $fout $outlist
+close $fout
+puts stdout "\[INFO\]: Saved"
+
+set fout [open $::env(OUT_DIR)/$::env(SUB_DESIGN_NAME).magic.namelist w]
+
+set outlist [instance list children]
 
 puts $fout $outlist
 close $fout

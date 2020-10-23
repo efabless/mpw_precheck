@@ -28,8 +28,8 @@ makefileTargets = ['verify', 'clean', 'compress', 'uncompress']
 user_power_list = ['vdda1', 'vssa1', 'vccd1', 'vssd1'] # To be changed when we have a final caravel netlist
 reserved_power_list = ['vddio', 'vdda', 'vccd'] # To be changed when we have a final caravel netlist
 
-toplevel = 'caravel' #caravel
-user_module = 'user_project_wrapper' #user_project_wrapper
+toplevel = 'striVe2a_core' #caravel
+user_module = 'digital_pll' #user_project_wrapper
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories
@@ -114,12 +114,12 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel,user_module):
 
 
 def basic_verilog_hierarchy_checks(verilog_netlist, toplevel,user_module):
+    print(verilog_netlist)
     check, reason = verilog_utils.find_module(verilog_netlist[0],toplevel)
     if check == False:
         print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[0])
         return False, reason
     else:
-        print(2)
         print(reason)
         check, reason = verilog_utils.find_module(verilog_netlist[1],user_module)
         if check == False:
@@ -177,9 +177,10 @@ def check_power_pins(connections_map, forbidden_list, check_list):
         return True, 'Power Checks Passed'
 
 
-
-
-def check_source_gds_consitency(target_path, toplevel, user_module,user_module_name,output_directory):
+def diff_lists(li1, li2):
+    return (list(list(set(li1)-set(li2)) + list(set(li2)-set(li1))))
+ 
+def check_source_gds_consitency(target_path, toplevel, user_module,user_module_name,output_directory, top_type_list,top_name_list, user_type_list, user_name_list):
     run_instance_list_cmd = "sh run_instances_listing.sh {target_path} {design_name} {sub_design_name} {output_directory}".format(
         target_path = target_path,
         design_name = toplevel,
@@ -201,21 +202,52 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         print(str(error_msg))
 
-    toplevelFileOpener = open(output_directory+'/'+toplevel+'.magic.celllist')
+    toplevelFileOpener = open(output_directory+'/'+toplevel+'.magic.typelist')
     if toplevelFileOpener.mode == 'r':
         toplevelContent = toplevelFileOpener.read()
     toplevelFileOpener.close()
     
     toplvlCells = toplevelContent.split()
     
+    toplevelFileOpener = open(output_directory+'/'+toplevel+'.magic.namelist')
+    if toplevelFileOpener.mode == 'r':
+        toplevelContent = toplevelFileOpener.read()
+    toplevelFileOpener.close()
+    
+    toplvlInsts = toplevelContent.split()
+    
     if toplvlCells.count(user_module)==1:
-        user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.celllist')
+        user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.typelist')
         if user_moduleFileOpener.mode == 'r':
             user_moduleContent = user_moduleFileOpener.read()
         user_moduleFileOpener.close()
+        
         userCells = user_moduleContent.split()
-        print('user cell list: ')
-        print(userCells)
+        
+        user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.namelist')
+        if user_moduleFileOpener.mode == 'r':
+            user_moduleContent = user_moduleFileOpener.read()
+        user_moduleFileOpener.close()
+
+        userInsts = user_moduleContent.split()
+        
+        user_name_diff= diff_lists(userInsts, user_name_list)
+        user_type_diff= diff_lists(userCells, user_type_list)
+
+        top_name_diff= diff_lists(toplvlInsts, top_name_list)
+        top_type_diff= diff_lists(toplvlCells, top_type_list)
+
+
+        print('user wrapper cell names differences: ')
+        print(user_name_diff)
+        print('user wrapper cell type differences: ')
+        print(user_type_diff)
+        print('toplevel cell names differences: ')
+        print(top_name_diff)
+        print('toplevel cell names differences: ')
+        print(top_type_diff)
+        if len(user_name_diff)+len(user_type_diff)+len(top_name_diff)+len(top_type_diff):
+            return False, 'Hierarchy Matching Failed'
         return True, 'GDS Hierarchy Check Passed'
     else:
         return False, 'GDS Hierarchy Check Failed'
@@ -260,8 +292,12 @@ if __name__ == "__main__":
 
     connections_map = dict()
     instance_name = ''
+    top_name_list = list()
+    top_type_list = list()
+    user_name_list = list()
+    user_type_list = list()
     if len(verilog_netlist) != 2 and len(spice_netlist) != 2:
-        print ("No toplevel netlist provided, please provide either a spice netlist or a verilog netlist")
+        print ("No toplevel netlist provided, please provide either a spice netlist or a verilog netlist: -v | -s toplevel user_project_wrapper")
     else:
         if len(spice_netlist) == 2:
             basic_hierarchy_checks, connections_map = basic_spice_hierarchy_checks(spice_netlist,toplevel,user_module)
@@ -280,7 +316,13 @@ if __name__ == "__main__":
                         basic_hierarchy_checks, tmp = verilog_utils.extract_instance_name(verilog_netlist[0],toplevel,user_module)
                         if basic_hierarchy_checks:
                             instance_name = tmp
+                            check, top_name_list,top_type_list= verilog_utils.extract_cell_list(verilog_netlist[0],toplevel)
+                            check, user_name_list,user_type_list= verilog_utils.extract_cell_list(verilog_netlist[1],user_module)
                             print(instance_name)
+                            print(top_name_list)
+                            print(top_type_list)
+                            print(user_name_list)
+                            print(user_type_list)
                 else:
                     print(reason)
             else:
@@ -297,7 +339,7 @@ if __name__ == "__main__":
     else:
         print("Basic Hierarchy Checks Failed.")
 
-check, reason = check_source_gds_consitency(target_path, toplevel, user_module,instance_name,output_directory)
+check, reason = check_source_gds_consitency(target_path, toplevel, user_module,instance_name,output_directory,top_type_list,top_name_list, user_type_list, user_name_list)
 if check:
     print(reason)
     print('GDS Checks Passed')
