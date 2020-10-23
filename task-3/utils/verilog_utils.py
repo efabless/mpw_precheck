@@ -108,3 +108,25 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
             return False, 'instance not found'
     except OSError:
         return False, 'verilog file not found'
+
+
+behavioral_keywords = ['always', 'initial', 'if', 'while', 'for', 'forever', 'repeat','reg', 'case','force']
+control_characters = ['#', '$', '@']
+
+def verify_non_behavioral_netlist(verilog_netlist):
+    try:
+        verilogOpener = open(verilog_netlist)
+        if verilogOpener.mode == 'r':
+            verilogContent = verilogOpener.read()
+        verilogOpener.close()
+        for keyword in behavioral_keywords:
+            pattern = re.compile(r'\s*\b%s\b\s*' % keyword)
+            occ = re.findall(pattern, verilogContent)
+            if len(occ):
+                return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(occ[0])
+        for char in control_characters:
+            if verilogContent.find(char) != -1:
+                return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(char)
+        return True, 'Netlist is Structural'        
+    except OSError:
+        return False, 'verilog file not found'

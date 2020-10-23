@@ -27,8 +27,8 @@ makefileTargets = ['verify', 'clean', 'compress', 'uncompress']
 user_power_list = ['vdda1', 'vssa1', 'vccd1', 'vssd1'] # To be changed when we have a final caravel netlist
 reserved_power_list = ['vddio', 'vdda', 'vccd'] # To be changed when we have a final caravel netlist
 
-toplevel = 'striVe2a' #caravel
-user_module = 'striVe2a_core' #user_project_wrapper
+toplevel = 'caravel' #caravel
+user_module = 'user_project_wrapper' #user_project_wrapper
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories
@@ -210,6 +210,8 @@ if __name__ == "__main__":
     else:
         print("Makefile checks failed because: ", makefileReason)
     basic_hierarchy_checks = False    
+
+    connections_map = dict()
     if len(verilog_netlist) != 2 and len(spice_netlist) != 2:
         print ("No toplevel netlist provided, please provide either a spice netlist or a verilog netlist")
     else:
@@ -217,8 +219,17 @@ if __name__ == "__main__":
             basic_hierarchy_checks = basic_spice_hierarchy_checks(spice_netlist,toplevel,user_module)
             check, connections_map = spice_utils.extract_connections_from_inst(spice_netlist[0],toplevel,user_module)
         if len(verilog_netlist) == 2:
-            basic_hierarchy_checks = basic_verilog_hierarchy_checks(verilog_netlist,toplevel,user_module)
-            check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist[0],toplevel,user_module)
+            check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[0])
+            if check:
+                check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[1])
+                if check:
+                    basic_hierarchy_checks = basic_verilog_hierarchy_checks(verilog_netlist,toplevel,user_module)
+                    check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist[0],toplevel,user_module)
+                else:
+                    print(reason)
+            else:
+                print(reason)
+
     if basic_spice_hierarchy_checks:
         print("Basic Hierarchy Checks Passed.")
     else:
