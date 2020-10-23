@@ -70,19 +70,20 @@ def confirm_circuit_hierarchy(spice_netlist, toplevel, user_module):
             subckt = spiceContent[start_idx:end_idx]
             pattern = re.compile(r'\nX[\S+]+\s*')
             instances = re.findall(pattern, subckt)
-            ins_start_idx = 0
-            for ins in instances:
-                ins_end_idx = subckt.find(ins,ins_start_idx)
-                instantiation = subckt[ins_start_idx:ins_end_idx]
-                if instantiation.strip().split()[-1] == user_module:
-                    return True, user_module + ' is part of ' + toplevel
-                ins_start_idx = ins_end_idx
+            instances.append('.ends')
+            if len(instances)>1:
+                ins_start_idx = 0
+                for ins in instances[1:]:
+                    ins_end_idx = subckt.find(ins,ins_start_idx)
+                    instantiation = subckt[ins_start_idx:ins_end_idx]
+                    if instantiation.strip().split()[-1] == user_module:
+                        return True, user_module + ' is part of ' + toplevel
+                    ins_start_idx = ins_end_idx
             return False, 'Hierarchy Check Failed'
         else:
             return False, 'instance not found'
     except OSError:
         return False, 'Spice file not found'
-
 
 def extract_connections_from_inst(spice_netlist, toplevel,user_module):
     try:
@@ -101,37 +102,73 @@ def extract_connections_from_inst(spice_netlist, toplevel,user_module):
             pattern = re.compile(r'\nX[\S+]+\s*')
             instances = re.findall(pattern, subckt)
             instances.append('.ends')
-            ins_start_idx = 0
-            for ins in instances:
-                ins_end_idx = subckt.find(ins,ins_start_idx)
-                instantiation = subckt[ins_start_idx:ins_end_idx]
-                if instantiation.strip().split()[-1] == user_module:
-                    connections = instantiation.replace('+',' ').split()[1:-1]
-                    break
-                ins_start_idx = ins_end_idx
-        # Extract the pinlist in the user_module
-        pins_list= list()
-        if len(connections):
-            pattern = re.compile(r'\.subckt\s*\b%s\b\s*' % user_module)
-            subckts = re.findall(pattern, spiceContent)
-            if len(subckts):
-                start_idx = spiceContent.find(subckts[0])
-                end_idx =spiceContent.find('.ends',start_idx)
-                subckt = spiceContent[start_idx:end_idx]
-                pattern = re.compile(r'\nX[\S+]+\s*')
-                instances = re.findall(pattern, subckt)
-                if len(instances):
-                    subckt = subckt[:subckt.find(instances[0])]
-                pins_list =  subckt.replace('+',' ').split()[1:-1]
-            if len(pins_list):
-                if len(pins_list) == len(connections):
-                    connections_map=dict(zip(pins_list,connections))
-                    return True, connections_map
+            if len(instances)>1:
+                ins_start_idx = 0
+                for ins in instances:
+                    ins_end_idx = subckt.find(ins,ins_start_idx)
+                    instantiation = subckt[ins_start_idx:ins_end_idx]
+                    if instantiation.strip().split()[-1] == user_module:
+                        connections = instantiation.replace('+',' ').split()[1:-1]
+                        break
+                    ins_start_idx = ins_end_idx
+            # Extract the pinlist in the user_module
+            pins_list= list()
+            if len(connections):
+                pattern = re.compile(r'\.subckt\s*\b%s\b\s*' % user_module)
+                subckts = re.findall(pattern, spiceContent)
+                if len(subckts):
+                    start_idx = spiceContent.find(subckts[0])
+                    end_idx =spiceContent.find('.ends',start_idx)
+                    subckt = spiceContent[start_idx:end_idx]
+                    pattern = re.compile(r'\nX[\S+]+\s*')
+                    instances = re.findall(pattern, subckt)
+                    if len(instances):
+                        subckt = subckt[:subckt.find(instances[0])]
+                    pins_list =  subckt.replace('+',' ').split()[1:-1]
+                if len(pins_list):
+                    if len(pins_list) == len(connections):
+                        connections_map=dict(zip(pins_list,connections))
+                        return True, connections_map
+                    else:
+                        return False, "Couldn't match the pins and connections of the user module"
                 else:
-                    return False, "Couldn't match the pins and connections of the user module"
-            else:
-                return False, "Couldn't find the user module subcircuit in the toplevel spice"
+                    return False, "Couldn't find the user module subcircuit in the toplevel spice"
+            return False, 'Hierarchy Check Failed'
         else:
             return False, 'Hierarchy Check Failed'
     except OSError:
         return False, 'Spice file not found'
+
+def extract_instance_name(spice_netlist, toplevel,instance):
+    try:
+        spiceOpener = open(spice_netlist)
+        if spiceOpener.mode == 'r':
+            spiceContent = spiceOpener.read()
+        spiceOpener.close()
+        pattern = re.compile(r'\.subckt\s*\b%s\b\s*' % toplevel)
+        subckts = re.findall(pattern, spiceContent)
+        if len(subckts):
+            start_idx = spiceContent.find(subckts[0])
+            end_idx =spiceContent.find('.ends',start_idx)
+            subckt = spiceContent[start_idx:end_idx]
+            pattern = re.compile(r'\nX[\S+]+\s*')
+            instances = re.findall(pattern, subckt)
+            instances.append('.ends')
+            if len(instances)>1:
+                ins_start_idx = 0
+                prev_ins=instances[0]
+                for ins in instances[1:]:
+                    ins_end_idx = subckt.find(ins,ins_start_idx)
+                    instantiation = subckt[ins_start_idx:ins_end_idx]
+                    if instantiation.strip().split()[-1] == instance:
+                        instance_name = prev_ins.strip()[1:]
+                        return True, instance_name    
+                    prev_ins = ins
+                    ins_start_idx = ins_end_idx
+                            
+            return False, 'Hierarchy Check Failed'
+        else:
+            return False, 'Hierarchy Check Failed'
+    except OSError:
+        return False, 'Spice file not found'
+

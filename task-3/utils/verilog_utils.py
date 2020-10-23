@@ -144,3 +144,28 @@ def verify_non_behavioral_netlist(verilog_netlist):
         return True, 'Netlist is Structural'        
     except OSError:
         return False, 'verilog file not found'
+
+def extract_instance_name(verilog_netlist, toplevel, instance):
+    try:
+        verilogOpener = open(verilog_netlist)
+        if verilogOpener.mode == 'r':
+            verilogContent = verilogOpener.read()
+        verilogOpener.close()
+        pattern = re.compile(r'module\s*\b%s\b\s*\(' % toplevel)
+        modules = re.findall(pattern, verilogContent)
+        if len(modules):
+            start_idx = verilogContent.find(modules[0])
+            end_idx =verilogContent.find('endmodule',start_idx)
+            module = verilogContent[start_idx:end_idx]
+            pattern = re.compile(r'\s*\b%s\s*\S+\s*\(' % instance)
+            instances = re.findall(pattern, module)
+            if len(instances) == 1:
+                instance_name = instances[0].replace('(','').strip().split()[1]   
+                return True, instance_name
+            else:
+                return False, 'Hierarchy Check Failed'
+        else:
+            return False, 'instance not found'
+    except OSError:
+        return False, 'verilog file not found'
+

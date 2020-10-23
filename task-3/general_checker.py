@@ -19,6 +19,7 @@ import os
 import utils.spice_utils as spice_utils
 import utils.verilog_utils as verilog_utils
 import re
+import sys
 
 docExts = ['.rst', '.html','.md','.pdf','.doc','.docx','.odt']
 
@@ -27,8 +28,8 @@ makefileTargets = ['verify', 'clean', 'compress', 'uncompress']
 user_power_list = ['vdda1', 'vssa1', 'vccd1', 'vssd1'] # To be changed when we have a final caravel netlist
 reserved_power_list = ['vddio', 'vdda', 'vccd'] # To be changed when we have a final caravel netlist
 
-toplevel = 'caravel' #caravel
-user_module = 'user_project_wrapper' #user_project_wrapper
+toplevel = 'striVe2a' #caravel
+user_module = 'striVe2a_core' #user_project_wrapper
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories
@@ -176,8 +177,48 @@ def check_power_pins(connections_map, forbidden_list, check_list):
         return True, 'Power Checks Passed'
 
 
-def check_source_gds_consitency(target_path, design_name):
-    pass
+
+
+def check_source_gds_consitency(target_path, toplevel, user_module,user_module_name,output_directory):
+    run_instance_list_cmd = "sh ./run_instance_listing.sh {target_path} {design_name} {sub_design_name} {output_directory}".format(
+        target_path = target_path,
+        design_name = toplevel,
+        sub_design_name = user_module_name,
+        output_directory = output_directory
+    )
+
+    print ("Starting Magic Extractions From GDS...")
+
+    process = subprocess.Popen(run_instance_list_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    try:
+        while True:
+            output = process.stdout.readline()
+            if not output:
+                break
+            if output:
+                print ('\r'+str(output.strip())[2:-1])
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr.decode(sys.getfilesystemencoding())
+        print(str(error_msg))
+
+    toplevelFileOpener = open(output_directory+'/'+toplevel+'.magic.celllist')
+    if toplevelFileOpener.mode == 'r':
+        toplevelContent = toplevelFileOpener.read()
+    toplevelFileOpener.close()
+    
+    toplvlCells = toplevelContent.split()
+    
+    if user_module in toplvlCells:
+        user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.celllist')
+        if user_moduleFileOpener.mode == 'r':
+            user_moduleContent = user_moduleFileOpener.read()
+        user_moduleFileOpener.close()
+        userCells = user_moduleContent.split()
+        print('user cell list: ')
+        print(userCells)
+        return True, 'GDS Hierarchy Check Passed'
+    else:
+        return False, 'GDS Hierarchy Check Failed'
 
 
 if __name__ == "__main__":
@@ -193,15 +234,11 @@ if __name__ == "__main__":
     parser.add_argument('--verilog_netlist', '-v', nargs='+', default=[],
                         help='Verilog Netlist')
 
-    parser.add_argument('--design_name', '-d', required=True,
-                        help='Design Name')
-
     parser.add_argument('--output_directory', '-o', required=False,
                         help='Output Directory')
 
     args = parser.parse_args()
     target_path = args.target_path
-    design_name = args.design_name
     verilog_netlist = args.verilog_netlist
     spice_netlist = args.spice_netlist
     if args.output_directory is None:
@@ -222,17 +259,28 @@ if __name__ == "__main__":
     basic_hierarchy_checks = False    
 
     connections_map = dict()
+    instance_name = ''
     if len(verilog_netlist) != 2 and len(spice_netlist) != 2:
         print ("No toplevel netlist provided, please provide either a spice netlist or a verilog netlist")
     else:
         if len(spice_netlist) == 2:
             basic_hierarchy_checks, connections_map = basic_spice_hierarchy_checks(spice_netlist,toplevel,user_module)
+            if basic_hierarchy_checks:
+                basic_hierarchy_checks, tmp = spice_utils.extract_instance_name(spice_netlist[0],toplevel,user_module)
+                if basic_hierarchy_checks:
+                    instance_name = tmp
+                    print(instance_name)
         if len(verilog_netlist) == 2:
             check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[0])
             if check:
                 check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[1])
                 if check:
                     basic_hierarchy_checks, connections_map = basic_verilog_hierarchy_checks(verilog_netlist,toplevel,user_module)
+                    if basic_hierarchy_checks:
+                        basic_hierarchy_checks, tmp = verilog_utils.extract_instance_name(verilog_netlist[0],toplevel,user_module)
+                        if basic_hierarchy_checks:
+                            instance_name = tmp
+                            print(instance_name)
                 else:
                     print(reason)
             else:
@@ -249,3 +297,9 @@ if __name__ == "__main__":
     else:
         print("Basic Hierarchy Checks Failed.")
 
+check, reason = check_source_gds_consitency(target_path, toplevel, user_module,instance_name,output_directory)
+if check:
+    print(reason)
+    print('GDS Checks Passed')
+else:
+    print('GDS Checks Failed: ', reason)
