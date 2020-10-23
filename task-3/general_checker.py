@@ -28,8 +28,8 @@ makefileTargets = ['verify', 'clean', 'compress', 'uncompress']
 user_power_list = ['vdda1', 'vssa1', 'vccd1', 'vssd1'] # To be changed when we have a final caravel netlist
 reserved_power_list = ['vddio', 'vdda', 'vccd'] # To be changed when we have a final caravel netlist
 
-toplevel = 'striVe2a' #caravel
-user_module = 'striVe2a_core' #user_project_wrapper
+toplevel = 'caravel' #caravel
+user_module = 'user_project_wrapper' #user_project_wrapper
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories
@@ -180,7 +180,7 @@ def check_power_pins(connections_map, forbidden_list, check_list):
 
 
 def check_source_gds_consitency(target_path, toplevel, user_module,user_module_name,output_directory):
-    run_instance_list_cmd = "sh ./run_instance_listing.sh {target_path} {design_name} {sub_design_name} {output_directory}".format(
+    run_instance_list_cmd = "sh run_instances_listing.sh {target_path} {design_name} {sub_design_name} {output_directory}".format(
         target_path = target_path,
         design_name = toplevel,
         sub_design_name = user_module_name,
@@ -208,7 +208,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
     
     toplvlCells = toplevelContent.split()
     
-    if user_module in toplvlCells:
+    if toplvlCells.count(user_module)==1:
         user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.celllist')
         if user_moduleFileOpener.mode == 'r':
             user_moduleContent = user_moduleFileOpener.read()
