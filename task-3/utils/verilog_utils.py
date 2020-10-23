@@ -49,7 +49,7 @@ def confirm_circuit_hierarchy(verilog_netlist, toplevel, user_module):
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
-            end_idx =verilogContent.find('.ends',start_idx)
+            end_idx =verilogContent.find('endmodule',start_idx)
             module = verilogContent[start_idx:end_idx]
             pattern2 = re.compile(r'\s*\b%s\s*\S+\s*\(' % user_module)
             instances = re.findall(pattern2, module)
@@ -74,7 +74,7 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
-            end_idx =verilogContent.find('.ends',start_idx)
+            end_idx =verilogContent.find('endmodule',start_idx)
             module = verilogContent[start_idx:end_idx]
             pattern = re.compile(r'\s*\b%s\s*\S+\s*\(' % user_module)
             instances = re.findall(pattern, module)

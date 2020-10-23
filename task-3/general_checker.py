@@ -215,14 +215,15 @@ if __name__ == "__main__":
     else:
         if len(spice_netlist) == 2:
             basic_hierarchy_checks = basic_spice_hierarchy_checks(spice_netlist,toplevel,user_module)
+            check, connections_map = spice_utils.extract_connections_from_inst(spice_netlist[0],toplevel,user_module)
         if len(verilog_netlist) == 2:
             basic_hierarchy_checks = basic_verilog_hierarchy_checks(verilog_netlist,toplevel,user_module)
+            check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist[0],toplevel,user_module)
     if basic_spice_hierarchy_checks:
         print("Basic Hierarchy Checks Passed.")
     else:
         print("Basic Hierarchy Checks Failed.")
 
-    check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist[0],toplevel,user_module)
     pin_name_diffs= match_pin_names(list(connections_map.keys()), list(connections_map.keys())) # replace with the true benchmark list of pins once acquired
 
     if len(pin_name_diffs):
