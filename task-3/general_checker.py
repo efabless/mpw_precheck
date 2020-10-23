@@ -180,6 +180,11 @@ def check_power_pins(connections_map, forbidden_list, check_list):
 def diff_lists(li1, li2):
     return (list(list(set(li1)-set(li2)) + list(set(li2)-set(li1))))
  
+def clean_gds_list(cells):
+    cells = cells.replace('{','')
+    cells = cells.replace('}','')
+    return cells.replace('\\','')
+
 def check_source_gds_consitency(target_path, toplevel, user_module,user_module_name,output_directory, top_type_list,top_name_list, user_type_list, user_name_list):
     run_instance_list_cmd = "sh run_instances_listing.sh {target_path} {design_name} {sub_design_name} {output_directory}".format(
         target_path = target_path,
@@ -207,14 +212,14 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
         toplevelContent = toplevelFileOpener.read()
     toplevelFileOpener.close()
     
-    toplvlCells = toplevelContent.split()
+    toplvlCells = clean_gds_list(toplevelContent).split()
     
     toplevelFileOpener = open(output_directory+'/'+toplevel+'.magic.namelist')
     if toplevelFileOpener.mode == 'r':
         toplevelContent = toplevelFileOpener.read()
     toplevelFileOpener.close()
     
-    toplvlInsts = toplevelContent.split()
+    toplvlInsts = clean_gds_list(toplevelContent).split()
     
     if toplvlCells.count(user_module)==1:
         user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.typelist')
@@ -222,14 +227,14 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
             user_moduleContent = user_moduleFileOpener.read()
         user_moduleFileOpener.close()
         
-        userCells = user_moduleContent.split()
+        userCells = clean_gds_list(user_moduleContent).split()
         
         user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.namelist')
         if user_moduleFileOpener.mode == 'r':
             user_moduleContent = user_moduleFileOpener.read()
         user_moduleFileOpener.close()
 
-        userInsts = user_moduleContent.split()
+        userInsts = clean_gds_list(user_moduleContent).split()
         
         user_name_diff= diff_lists(userInsts, user_name_list)
         user_type_diff= diff_lists(userCells, user_type_list)
