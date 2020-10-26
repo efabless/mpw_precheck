@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
     description='Runs the precheck tool by calling the various checks in order.')
 
 parser.add_argument('--target_path', '-t', required=True,
-                    help='Absolute Path to the Project')
+                    help='Absolute Path to the project.')
 
 parser.add_argument('--spice_netlist', '-s', nargs='+', default=[],
                     help='Spice Netlists: toplvl.spice user_module.spice, both should be in /target_path')
@@ -35,6 +35,12 @@ parser.add_argument('--verilog_netlist', '-v', nargs='+', default=[],
 
 parser.add_argument('--output_directory', '-o', required=False,
                     help='Output Directory, defaults to /target_path/checks')
+
+parser.add_argument('--waive_fuzzy_checks', '-wfs',action='store_true', default=False,
+                help="Specifies whether or not to waive fuzzy consistency checks.")
+
+parser.add_argument('--skip_drc', '-sd',action='store_true', default=False,
+                help="Specifies whether or not to skip DRC checks.")
 
 
 args = parser.parse_args()
@@ -94,7 +100,7 @@ else:
     exit(255)
 
 # Step 3: Check Fuzzy Consistency.
-check, reason = consistency_checker.fuzzyCheck(target_path,spice_netlist,verilog_netlist,output_directory)
+check, reason = consistency_checker.fuzzyCheck(target_path=target_path,spice_netlist=spice_netlist,verilog_netlist=verilog_netlist,output_directory=output_directory,waive_consistency_checks=args.waive_fuzzy_checks)
 if check:
     print("Fuzzy Consistency Checks Passed!")
 else:
@@ -105,13 +111,16 @@ else:
 
 # Step 5: Perform DRC checks on the GDS.
 # assumption that we'll always be using a caravel top module based on what's on step 3
-check, reason = gds_drc_checker.gds_drc_check(target_path, 'caravel', output_directory)
-
-if check:
-    print("DRC Checks on GDS-II Passed!")
+if args.skip_drc:
+    print("Skipping DRC Checks...")
 else:
-    print("DRC Checks on GDS-II Failed, Reason: ", reason)
-    exit(255)
+    check, reason = gds_drc_checker.gds_drc_check(target_path, 'caravel', output_directory)
+
+    if check:
+        print("DRC Checks on GDS-II Passed!")
+    else:
+        print("DRC Checks on GDS-II Failed, Reason: ", reason)
+        exit(255)
 
 # Step 6: Not Yet Implemented.
 # Step 7: Not Yet Implemented.

@@ -46,6 +46,7 @@ python3 overall_script.py --target_path TARGET_PATH
                          [--spice_netlist SPICE_NETLIST [SPICE_NETLIST ...]]
                          [--verilog_netlist VERILOG_NETLIST [VERILOG_NETLIST ...]]
                          [--output_directory OUTPUT_DIRECTORY]
+                         [--waive_fuzzy_checks] [--skip_drc]
 
 Runs the precheck tool by calling the various checks in order.
 
@@ -61,6 +62,9 @@ optional arguments:
                         be in /target_path
   --output_directory OUTPUT_DIRECTORY, -o OUTPUT_DIRECTORY
                         Output Directory, defaults to /target_path/checks
+  --waive_fuzzy_checks, -wfs
+                        Specifies whether or not to waive fuzzy consistency checks.
+  --skip_drc, -sd       Specifies whether or not to skip DRC checks.
 ```
 
 # To-Dos:
