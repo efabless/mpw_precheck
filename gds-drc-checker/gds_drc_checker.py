@@ -15,6 +15,7 @@
 
 import argparse
 import subprocess
+import sys
 
 def gds_drc_check(target_path, design_name, output_directory):
     run_drc_check_cmd = "sh ./run_drc_checks.sh {target_path} {design_name} {output_directory}".format(
@@ -35,7 +36,7 @@ def gds_drc_check(target_path, design_name, output_directory):
                 print ('\r'+str(output.strip())[2:-1])
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
-        print(str(error_msg))
+        return False, str(error_msg)
 
     drcFileOpener = open(output_directory+'/'+design_name+'.magic.drc')
     if drcFileOpener.mode == 'r':
@@ -50,11 +51,11 @@ def gds_drc_check(target_path, design_name, output_directory):
     # list of violations
     # Total Count:
     if drcContent is None:
-        print("No DRC report generated...")
+        return False, "No DRC report generated..."
     else:
         drcSections = drcContent.split(splitLine)
         if (len(drcSections) == 2):
-            print("0 DRC Violations")
+            return True, "0 DRC Violations"
         else:
             vioDict = dict()
             for i in range(1,len(drcSections)-1,2):
@@ -63,10 +64,9 @@ def gds_drc_check(target_path, design_name, output_directory):
             for key in vioDict:
                 val = vioDict[key]
                 cnt+=val
-                print ("Violation Message \""+key.strip(), " \"found ",val, " Times.")
-            print("Total # of DRC violations is "+ str(cnt))
+                print("Violation Message \""+key.strip(), " \"found ",val, " Times.")
+            return False, "Total # of DRC violations is "+ str(cnt)
 
-    print("DONE.")
 
 
 if __name__ == "__main__":
@@ -90,4 +90,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    gds_drc_check(target_path, design_name, output_directory)
+    print(gds_drc_check(target_path, design_name, output_directory))

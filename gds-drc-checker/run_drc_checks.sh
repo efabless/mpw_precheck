@@ -46,7 +46,6 @@ TEST=$OUT_DIR/$DESIGN_NAME.magic.drc
 crashSignal=$(find $TEST)
 if ! [[ $crashSignal ]]; then echo "DRC Check FAILED"; exit -1; fi
 
- 
 
 Test_Magic_violations=$(grep "COUNT: " $TEST -s | tail -1 | sed -r 's/[^0-9]*//g')
 if ! [[ $Test_Magic_violations ]]; then Test_Magic_violations=-1; fi
