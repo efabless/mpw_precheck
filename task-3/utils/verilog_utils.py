@@ -67,7 +67,7 @@ def confirm_circuit_hierarchy(verilog_netlist, toplevel, user_module):
             module = verilogContent[start_idx:end_idx]
             pattern2 = re.compile(r'\s*\b%s\s*\S+\s*\(' % user_module)
             instances = re.findall(pattern2, module)
-            if len(instances) == 1:   
+            if len(instances) == 1:
                 return True, user_module + ' is part of ' + toplevel
             else:
                 return False, 'Hierarchy Check Failed'
@@ -92,7 +92,7 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
             module = verilogContent[start_idx:end_idx]
             pattern = re.compile(r'\s*\b%s\s*\S+\s*\(' % user_module)
             instances = re.findall(pattern, module)
-            if len(instances) == 1:   
+            if len(instances) == 1:
                 start_idx = module.find(instances[0])
                 end_idx = module.find(');',start_idx)
                 inst = module[start_idx+len(instances[0]):end_idx]
@@ -105,7 +105,6 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
                     con = con.strip()[1:-1]
                     sec = con.split('(')
                     connections_map[sec[0].strip()] = sec[1].strip()
-                
                 for con in comp_cons:
                     con_name = con.split('(')[0].strip()
                     start_idx = inst.find(con)
@@ -129,7 +128,6 @@ control_characters = ['#', '$', '@']
 
 def verify_non_behavioral_netlist(verilog_netlist):
     try:
-        print(verilog_netlist)
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
             verilogContent = verilogOpener.read()
@@ -142,7 +140,7 @@ def verify_non_behavioral_netlist(verilog_netlist):
         for char in control_characters:
             if verilogContent.find(char) != -1:
                 return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(char)
-        return True, 'Netlist is Structural'        
+        return True, 'Netlist is Structural'
     except OSError:
         return False, 'verilog file not found'
 
@@ -161,7 +159,7 @@ def extract_instance_name(verilog_netlist, toplevel, instance):
             pattern = re.compile(r'\s*\b%s\s*\S+\s*\(' % instance)
             instances = re.findall(pattern, module)
             if len(instances) == 1:
-                instance_name = instances[0].replace('(','').strip().split()[1]   
+                instance_name = instances[0].replace('(','').strip().split()[1]
                 return True, instance_name
             else:
                 return False, 'Hierarchy Check Failed'

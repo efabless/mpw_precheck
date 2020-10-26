@@ -22,13 +22,10 @@ def find_subckt(spice_netlist, subckt_name):
             spiceContent = spiceOpener.read()
         spiceOpener.close()
         pattern = re.compile(r'\.subckt\s*\b%s\b\s*' % subckt_name)
-        #print(pattern)
         if len(re.findall(pattern, spiceContent)):
             return True, 'instance found'
         else:
             return False, 'instance not found'
-        #for signal in re.findall(pattern, spiceContent):
-        #    return signal
     except OSError:
         return False, 'Spice file not found'
 
@@ -162,13 +159,57 @@ def extract_instance_name(spice_netlist, toplevel,instance):
                     instantiation = subckt[ins_start_idx:ins_end_idx]
                     if instantiation.strip().split()[-1] == instance:
                         instance_name = prev_ins.strip()[1:]
-                        return True, instance_name    
+                        return True, instance_name
                     prev_ins = ins
                     ins_start_idx = ins_end_idx
-                            
             return False, 'Hierarchy Check Failed'
         else:
             return False, 'Hierarchy Check Failed'
     except OSError:
         return False, 'Spice file not found'
 
+
+
+def remove_backslashes(name):
+    return name.replace('\\','')
+
+def extract_cell_list(spice_netlist, toplevel,exclude_prefix=None):
+    try:
+        spiceOpener = open(spice_netlist)
+        if spiceOpener.mode == 'r':
+            spiceContent = spiceOpener.read()
+        spiceOpener.close()
+        pattern = re.compile(r'\.subckt\s*\b%s\b\s*' % toplevel)
+        subckts = re.findall(pattern, spiceContent)
+        if len(subckts):
+            start_idx = spiceContent.find(subckts[0])
+            end_idx =spiceContent.find('.ends',start_idx)
+            subckt = spiceContent[start_idx:end_idx]
+            pattern = re.compile(r'\nX[\S+]+\s*')
+            instances = re.findall(pattern, subckt)
+            instances.append('.ends')
+            if len(instances)>1:
+                name_list = list()
+                type_list = list()
+                ins_start_idx = 0
+                prev_ins=instances[0]
+                for ins in instances[1:]:
+                    ins_end_idx = subckt.find(ins,ins_start_idx)
+                    instantiation = subckt[ins_start_idx:ins_end_idx]
+                    inst_type = instantiation.strip().split()[-1]
+                    inst_name = prev_ins.strip()[1:]
+                    if exclude_prefix is None:
+                        name_list.append(remove_backslashes(inst_name))
+                        type_list.append(inst_type)
+                    else:
+                        if inst_name.startswith(exclude_prefix) == False:
+                            name_list.append(remove_backslashes(inst_name))
+                            type_list.append(inst_type)
+                    prev_ins = ins
+                    ins_start_idx = ins_end_idx
+                return True, name_list, type_list
+            return False, 'Hierarchy Check Failed'
+        else:
+            return False, 'Hierarchy Check Failed'
+    except OSError:
+        return False, 'Spice file not found'
