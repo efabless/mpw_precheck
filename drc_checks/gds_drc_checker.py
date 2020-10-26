@@ -16,9 +16,12 @@
 import argparse
 import subprocess
 import sys
+import os
 
-def gds_drc_check(target_path, design_name, output_directory):
-    run_drc_check_cmd = "sh ./run_drc_checks.sh {target_path} {design_name} {output_directory}".format(
+def gds_drc_check(target_path, design_name, output_directory, call_path='./drc_checks'):
+    call_path = os.path.abspath(call_path)
+    run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {output_directory} {call_path}".format(
+        call_path = call_path,
         target_path = target_path,
         design_name = design_name,
         output_directory = output_directory
@@ -90,4 +93,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    print(gds_drc_check(target_path, design_name, output_directory))
+    print(gds_drc_check(target_path, design_name, output_directory,'.'))

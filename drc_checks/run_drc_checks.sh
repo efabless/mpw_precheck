@@ -15,10 +15,10 @@
 
 # To call: ./run_drc_checks.sh <target_path> <design_name> <output_path>
 
-export RUN_ROOT=$(pwd)
 export TARGET_DIR=$1
 export DESIGN_NAME=$2
 export OUT_DIR=$3
+export SCRIPTS_ROOT=${4:-$(pwd)}
 
 if ! [[ -d "$OUT_DIR" ]]
 then
@@ -28,16 +28,16 @@ echo "Running Magic..."
 export PDKPATH=/EF/SW
 export MAGIC_MAGICRC=$PDKPATH/sky130A.magicrc
 
-docker run -it -v $MAGIC_ROOT:/magic_root -v $RUN_ROOT:$RUN_ROOT \
-    -v $RUN_ROOT/tech-files:/EF/SW -v $TARGET_DIR:$TARGET_DIR \
-    -e PDKPATH=$PDKPATH -e RUN_ROOT=$RUN_ROOT -e DESIGN_NAME=$DESIGN_NAME \
+docker run -it -v $MAGIC_ROOT:/magic_root -v $SCRIPTS_ROOT:$SCRIPTS_ROOT \
+    -v $SCRIPTS_ROOT/tech-files:/EF/SW -v $TARGET_DIR:$TARGET_DIR \
+    -e PDKPATH=$PDKPATH -e SCRIPTS_ROOT=$SCRIPTS_ROOT -e DESIGN_NAME=$DESIGN_NAME \
     -e TARGET_DIR=$TARGET_DIR -e OUT_DIR=$OUT_DIR \
     -u $(id -u $USER):$(id -g $USER) \
     magic:latest sh -c "magic \
         -noconsole \
         -dnull \
         -rcfile $MAGIC_MAGICRC \
-        $RUN_ROOT/magic_drc_check.tcl \
+        $SCRIPTS_ROOT/magic_drc_check.tcl \
         </dev/null \
         |& tee $OUT_DIR/magic_drc.log"
 
