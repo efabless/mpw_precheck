@@ -16,8 +16,12 @@
 import argparse
 import subprocess
 import os
-import utils.spice_utils as spice_utils
-import utils.verilog_utils as verilog_utils
+try:
+    import utils.spice_utils as spice_utils
+    import utils.verilog_utils as verilog_utils
+except ImportError:
+    import consistency_checks.utils.spice_utils as spice_utils
+    import consistency_checks.utils.verilog_utils as verilog_utils
 import re
 import sys
 
@@ -28,8 +32,8 @@ makefileTargets = ['verify', 'clean', 'compress', 'uncompress']
 user_power_list = ['vdda1', 'vssa1', 'vccd1', 'vssd1'] # To be changed when we have a final caravel netlist
 reserved_power_list = ['vddio', 'vdda', 'vccd'] # To be changed when we have a final caravel netlist
 
-toplevel = 'striVe2a_core' #caravel
-user_module = 'digital_pll' #user_project_wrapper
+toplevel = 'caravel' #caravel
+user_module = 'user_project_wrapper' #user_project_wrapper
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories
@@ -74,6 +78,87 @@ def checkDocumentation(target_path):
             return True
     return False
 
+def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory,waive_docs=False, waive_makefile=False, waive_consistency_checks=False):
+    if waive_docs == False:
+        if checkDocumentation(target_path):
+            print("Documentation Exists")
+        else:
+            return False, "Documentation Not Found"
+    else:
+        print("Documentation Check Skipped.")
+
+    if waive_makefile == False:
+        makefileCheck, makefileReason = checkMakefile(target_path)
+        if makefileCheck:
+            print("Makefile Checks Passed")
+        else:
+            return False, "Makefile checks failed because: "+ makefileReason
+    else:
+        print("Makefile Checks Skipped.")
+
+
+    if waive_consistency_checks == True:
+        return True, 'Consistency Checks Skipped.'
+
+    basic_hierarchy_checks = False
+    connections_map = dict()
+    instance_name = ''
+    top_name_list = list()
+    top_type_list = list()
+    user_name_list = list()
+    user_type_list = list()
+    if len(verilog_netlist) != 2 and len(spice_netlist) != 2:
+        return False, "No toplevel netlist provided, please provide either a spice netlist or a verilog netlist: -v | -s toplevel user_project_wrapper"
+    else:
+        if len(spice_netlist) == 2:
+            basic_hierarchy_checks, connections_map = basic_spice_hierarchy_checks(spice_netlist,toplevel,user_module)
+            if basic_hierarchy_checks:
+                basic_hierarchy_checks, tmp = spice_utils.extract_instance_name(spice_netlist[0],toplevel,user_module)
+                if basic_hierarchy_checks:
+                    instance_name = tmp
+                    check, top_name_list,top_type_list= spice_utils.extract_cell_list(spice_netlist[0],toplevel)
+                    check, user_name_list,user_type_list= spice_utils.extract_cell_list(spice_netlist[1],user_module)
+        if len(verilog_netlist) == 2:
+            check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[0])
+            if check:
+                check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[1])
+                if check:
+                    basic_hierarchy_checks, connections_map = basic_verilog_hierarchy_checks(verilog_netlist,toplevel,user_module)
+                    if basic_hierarchy_checks:
+                        basic_hierarchy_checks, tmp = verilog_utils.extract_instance_name(verilog_netlist[0],toplevel,user_module)
+                        if basic_hierarchy_checks:
+                            instance_name = tmp
+                            check, top_name_list,top_type_list= verilog_utils.extract_cell_list(verilog_netlist[0],toplevel)
+                            check, user_name_list,user_type_list= verilog_utils.extract_cell_list(verilog_netlist[1],user_module)
+                else:
+                    return False, reason
+            else:
+                return False, reason
+
+    if basic_hierarchy_checks:
+        print("Basic Hierarchy Checks Passed.")
+        pin_name_diffs= match_pin_names(list(connections_map.keys()), list(connections_map.keys())) # replace with the true benchmark list of pins once acquired
+        if len(pin_name_diffs):
+            return False, "Pins check failed. The user is using different pins: "+ pin_name_diffs
+        else:
+            print("Pins check passed")
+            check, reason = check_power_pins(connections_map,reserved_power_list,user_power_list)
+            if check:
+                print(reason)
+            else:
+                return False, reason
+    else:
+        return False, "Basic Hierarchy Checks Failed."
+
+    check, reason = check_source_gds_consitency(target_path, toplevel, user_module,instance_name,output_directory,top_type_list,top_name_list, user_type_list, user_name_list)
+    if check:
+        print(reason)
+        print('GDS Checks Passed')
+    else:
+        return False, 'GDS Checks Failed: '+ reason
+    return True, 'Fuzzy Checks Passed!'
+
+
 def basic_spice_hierarchy_checks(spice_netlist, toplevel,user_module):
     check, reason = spice_utils.find_subckt(spice_netlist[0],toplevel)
     if check == False:
@@ -114,7 +199,6 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel,user_module):
 
 
 def basic_verilog_hierarchy_checks(verilog_netlist, toplevel,user_module):
-    print(verilog_netlist)
     check, reason = verilog_utils.find_module(verilog_netlist[0],toplevel)
     if check == False:
         print('verilog Check Failed because:', reason, ' in netlist: ', verilog_netlist[0])
@@ -149,14 +233,13 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel,user_module):
                             print('verilog Check Failed because:', connections_map, ' in netlist: ', verilog_netlist[0])
                             return False,connections_map
                         else:
-                        
                             print('verilog Consistency Checks Passed.')
                             return True,connections_map
 
 
 def match_pin_names(benchmark_pins, user_pins):
     return (list(list(set(benchmark_pins)-set(user_pins)) + list(set(benchmark_pins)-set(user_pins))))
- 
+
 def check_power_pins(connections_map, forbidden_list, check_list):
     for key in connections_map:
         con = connections_map[key]
@@ -179,7 +262,7 @@ def check_power_pins(connections_map, forbidden_list, check_list):
 
 def diff_lists(li1, li2):
     return (list(list(set(li1)-set(li2)) + list(set(li2)-set(li1))))
- 
+
 def clean_gds_list(cells):
     cells = cells.replace('{','')
     cells = cells.replace('}','')
@@ -211,31 +294,24 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
     if toplevelFileOpener.mode == 'r':
         toplevelContent = toplevelFileOpener.read()
     toplevelFileOpener.close()
-    
     toplvlCells = clean_gds_list(toplevelContent).split()
-    
     toplevelFileOpener = open(output_directory+'/'+toplevel+'.magic.namelist')
     if toplevelFileOpener.mode == 'r':
         toplevelContent = toplevelFileOpener.read()
     toplevelFileOpener.close()
-    
     toplvlInsts = clean_gds_list(toplevelContent).split()
-    
     if toplvlCells.count(user_module)==1:
         user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.typelist')
         if user_moduleFileOpener.mode == 'r':
             user_moduleContent = user_moduleFileOpener.read()
         user_moduleFileOpener.close()
-        
         userCells = clean_gds_list(user_moduleContent).split()
-        
         user_moduleFileOpener = open(output_directory+'/'+user_module_name+'.magic.namelist')
         if user_moduleFileOpener.mode == 'r':
             user_moduleContent = user_moduleFileOpener.read()
         user_moduleFileOpener.close()
 
         userInsts = clean_gds_list(user_moduleContent).split()
-        
         user_name_diff= diff_lists(userInsts, user_name_list)
         user_type_diff= diff_lists(userCells, user_type_list)
 
@@ -260,16 +336,17 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Runs a couple of checks on a given folder.')
+        description='Runs a couple of consistency fuzzy checks on a given folder.')
 
     parser.add_argument('--target_path', '-t', required=True,
                         help='Design Path')
 
     parser.add_argument('--spice_netlist', '-s', nargs='+', default=[],
-                        help='Spice Netlist')
+                        help='Spice Netlists: toplvl.spice user_module.spice')
 
     parser.add_argument('--verilog_netlist', '-v', nargs='+', default=[],
-                        help='Verilog Netlist')
+                        help='Verilog Netlist: toplvl.v user_module.v')
+
 
     parser.add_argument('--output_directory', '-o', required=False,
                         help='Output Directory')
@@ -283,66 +360,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    if checkDocumentation(target_path):
-        print("Documentation Exists")
-    else:
-        print("Documentation Not Found")
-
-    makefileCheck, makefileReason = checkMakefile(target_path)
-    if makefileCheck:
-        print("Makefile checks passed")
-    else:
-        print("Makefile checks failed because: ", makefileReason)
-    basic_hierarchy_checks = False    
-
-    connections_map = dict()
-    instance_name = ''
-    top_name_list = list()
-    top_type_list = list()
-    user_name_list = list()
-    user_type_list = list()
-    if len(verilog_netlist) != 2 and len(spice_netlist) != 2:
-        print ("No toplevel netlist provided, please provide either a spice netlist or a verilog netlist: -v | -s toplevel user_project_wrapper")
-    else:
-        if len(spice_netlist) == 2:
-            basic_hierarchy_checks, connections_map = basic_spice_hierarchy_checks(spice_netlist,toplevel,user_module)
-            if basic_hierarchy_checks:
-                basic_hierarchy_checks, tmp = spice_utils.extract_instance_name(spice_netlist[0],toplevel,user_module)
-                if basic_hierarchy_checks:
-                    instance_name = tmp
-                    print(instance_name)
-        if len(verilog_netlist) == 2:
-            check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[0])
-            if check:
-                check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[1])
-                if check:
-                    basic_hierarchy_checks, connections_map = basic_verilog_hierarchy_checks(verilog_netlist,toplevel,user_module)
-                    if basic_hierarchy_checks:
-                        basic_hierarchy_checks, tmp = verilog_utils.extract_instance_name(verilog_netlist[0],toplevel,user_module)
-                        if basic_hierarchy_checks:
-                            instance_name = tmp
-                            check, top_name_list,top_type_list= verilog_utils.extract_cell_list(verilog_netlist[0],toplevel)
-                            check, user_name_list,user_type_list= verilog_utils.extract_cell_list(verilog_netlist[1],user_module)
-                            print(instance_name)
-                else:
-                    print(reason)
-            else:
-                print(reason)
-
-    if basic_hierarchy_checks:
-        print("Basic Hierarchy Checks Passed.")
-        pin_name_diffs= match_pin_names(list(connections_map.keys()), list(connections_map.keys())) # replace with the true benchmark list of pins once acquired
-        if len(pin_name_diffs):
-            print ("Pins check failed. The user is using different pins: ", pin_name_diffs)
-        else:
-            print("Pins check passed")
-            print(check_power_pins(connections_map,reserved_power_list,user_power_list))
-    else:
-        print("Basic Hierarchy Checks Failed.")
-
-check, reason = check_source_gds_consitency(target_path, toplevel, user_module,instance_name,output_directory,top_type_list,top_name_list, user_type_list, user_name_list)
-if check:
-    print(reason)
-    print('GDS Checks Passed')
-else:
-    print('GDS Checks Failed: ', reason)
+    print(fuzzyCheck(target_path,spice_netlist,verilog_netlist,output_directory))
