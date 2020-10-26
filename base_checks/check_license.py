@@ -8,10 +8,10 @@ _lib_license_filename = 'LICENSE'
 _apache_license_url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
 
 def check_main_license(path):
-    data = urlopen(_apache_license_url).read()
+    data = urlopen(_apache_license_url).read().strip()
     remote_hash = hashlib.md5(data)
     try:
-        local_hash = hashlib.md5(open(os.path.join(path, _license_filename), 'rb').read())
+        local_hash = hashlib.md5(open(os.path.join(path, _license_filename), 'rb').read().strip())
         return remote_hash.hexdigest() == local_hash.hexdigest()
     except OSError:
         return False
