@@ -3,8 +3,8 @@ import hashlib
 from urllib.request import urlopen
 
 
-_license_filename = 'LICENSE.txt'
-_lib_license_filename = 'LICENSE.txt'
+_license_filename = 'LICENSE'
+_lib_license_filename = 'LICENSE'
 _apache_license_url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
 
 def check_main_license(path):
@@ -15,7 +15,7 @@ def check_main_license(path):
         return remote_hash.hexdigest() == local_hash.hexdigest()
     except OSError:
         return False
-    
+
 def check_lib_license(path):
     libs = []
     if os.path.exists(path):
@@ -26,7 +26,7 @@ def check_lib_license(path):
             except OSError:
                 libs.append((lib_path, False))
     return libs
-    
+
 if __name__ == "__main__":
     if check_main_license('.'):
         print("License there!")

@@ -20,8 +20,8 @@ def check_yaml(path):
         return False
     except FileNotFoundError as e:
         return False
-    
-    
+
+
 if __name__ == "__main__":
     if check_yaml('.'):
         print("YAML file valid!")
