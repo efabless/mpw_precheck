@@ -61,18 +61,9 @@ if spice_netlist is not None:
 run_prep_cmd = "cd {target_path}; make uncompress; cp */*.gds .;".format(
     target_path = target_path
 )
-process = subprocess.Popen(run_prep_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-try:
-    while True:
-        output = process.stdout.readline()
-        if not output:
-            break
-        if output:
-            print (str(output.strip())[2:-1])
-except subprocess.CalledProcessError as e:
-    error_msg = e.stderr.decode(sys.getfilesystemencoding())
-    print(str(error_msg))
-    exit(255)
+
+process = subprocess.Popen(run_prep_cmd,stdout=subprocess.PIPE, shell=True)
+proc_stdout = process.communicate()[0].strip()
 
 # Step 1: Check LICENSE.
 if check_license.check_main_license(target_path):
