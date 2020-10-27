@@ -29,8 +29,9 @@ docExts = ['.rst', '.html','.md','.pdf','.doc','.docx','.odt']
 
 makefileTargets = ['verify', 'clean', 'compress', 'uncompress']
 
+user_project_wrapper_lef = 'user_project_wrapper_empty.lef'
 user_power_list = ['vdda1', 'vssa1', 'vccd1', 'vssd1'] # To be changed when we have a final caravel netlist
-reserved_power_list = ['vddio', 'vdda', 'vccd'] # To be changed when we have a final caravel netlist
+reserved_power_list = ['vddio', 'vdda', 'vccd', 'vssa', 'vssd','vssio', 'vdda'] # To be changed when we have a final caravel netlist
 
 toplevel = 'caravel' #caravel
 user_module = 'user_project_wrapper' #user_project_wrapper
@@ -137,7 +138,11 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
 
     if basic_hierarchy_checks:
         print("Basic Hierarchy Checks Passed.")
-        pin_name_diffs= match_pin_names(list(connections_map.keys()), list(connections_map.keys())) # replace with the true benchmark list of pins once acquired
+        check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path)+'/'+user_project_wrapper_lef))
+        if check == False:
+            return False, reason
+        user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
+        pin_name_diffs= match_pin_names(user_pin_list, user_project_wrapper_pin_list) # replace with the true benchmark list of pins once acquired
         if len(pin_name_diffs):
             return False, "Pins check failed. The user is using different pins: "+ pin_name_diffs
         else:
@@ -158,6 +163,22 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
         return False, 'GDS Checks Failed: '+ reason
     return True, 'Fuzzy Checks Passed!'
 
+
+def extract_user_project_wrapper_pin_list(lef):
+    try:
+        lefOpener = open(lef)
+        if lefOpener.mode == 'r':
+            lefContent = lefOpener.read()
+        lefOpener.close()
+        pattern = re.compile(r'\bPIN\b\s*\b[S+]+\s*')
+        pins = re.findall(pattern, lefContent)
+        if len(pins):
+            ret_pins = [pin.strip().split()[-1] for pin in pins]
+            return True, ret_pins
+        else:
+            return False, 'No Pins found in LEF'
+    except OSError:
+        return False, 'LEF file not found'
 
 def basic_spice_hierarchy_checks(spice_netlist, toplevel,user_module):
     check, reason = spice_utils.find_subckt(spice_netlist[0],toplevel)
