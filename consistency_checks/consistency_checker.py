@@ -140,7 +140,7 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
         print("Basic Hierarchy Checks Passed.")
         check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path)+'/'+user_project_wrapper_lef))
         if check == False:
-            return False, reason
+            return False, user_project_wrapper_pin_list
         user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
         pin_name_diffs= match_pin_names(user_pin_list, user_project_wrapper_pin_list) # replace with the true benchmark list of pins once acquired
         if len(pin_name_diffs):
@@ -170,7 +170,7 @@ def extract_user_project_wrapper_pin_list(lef):
         if lefOpener.mode == 'r':
             lefContent = lefOpener.read()
         lefOpener.close()
-        pattern = re.compile(r'\bPIN\b\s*\b[S+]+\s*')
+        pattern = re.compile(r'\s*\bPIN\b\s*\b[\S+]+\s*')
         pins = re.findall(pattern, lefContent)
         if len(pins):
             ret_pins = [pin.strip().split()[-1] for pin in pins]

@@ -101,7 +101,7 @@ def extract_connections_from_inst(spice_netlist, toplevel,user_module):
             instances.append('.ends')
             if len(instances)>1:
                 ins_start_idx = 0
-                for ins in instances:
+                for ins in instances[1:]:
                     ins_end_idx = subckt.find(ins,ins_start_idx)
                     instantiation = subckt[ins_start_idx:ins_end_idx]
                     if instantiation.strip().split()[-1] == user_module:
@@ -121,7 +121,7 @@ def extract_connections_from_inst(spice_netlist, toplevel,user_module):
                     instances = re.findall(pattern, subckt)
                     if len(instances):
                         subckt = subckt[:subckt.find(instances[0])]
-                    pins_list =  subckt.replace('+',' ').split()[1:-1]
+                    pins_list =  subckt.replace('+',' ').split()[2:]
                 if len(pins_list):
                     if len(pins_list) == len(connections):
                         connections_map=dict(zip(pins_list,connections))
