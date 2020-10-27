@@ -112,8 +112,8 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
                     con = inst[start_idx:end_idx].split('(')[1]
                     concat=con.strip()[1:-1].split(',')
                     concat = [i.strip() for i in concat]
-                    connections_map[con_name] = concat
-
+                    for idx in range(len(concat)):
+                        connections_map[str(con_name)+'['+str(idx)+']'] = concat[idx]
                 return True, connections_map
             else:
                 return False, 'Hierarchy Check Failed'
