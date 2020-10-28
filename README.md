@@ -39,6 +39,13 @@ The steps are as follows:
 - The user module name is `user_project_wrapper`
 
 # How To Run:
+Mount the docker file:
+```
+docker run -it -v $MAGIC_ROOT:/magic_root -v $(pwd):$(pwd) \
+    -v $(pwd)/tech-files:/EF/SW \
+    -u $(id -u $USER):$(id -g $USER) \
+    magic:latest
+```
 Run the following command:
 
 ```
