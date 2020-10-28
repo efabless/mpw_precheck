@@ -53,8 +53,8 @@ if args.output_directory is None:
 else:
     output_directory = args.output_directory
 
-verilog_netlist= None
-spice_netlist = None
+verilog_netlist = []
+spice_netlist = []
 
 toplvl_extension = os.path.splitext(top_level_netlist)[1]
 userlvl_extension = os.path.splitext(user_level_netlist)[1]
