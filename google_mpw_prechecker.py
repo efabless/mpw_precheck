@@ -36,7 +36,7 @@ parser.add_argument('--verilog_netlist', '-v', nargs='+', default=[],
 parser.add_argument('--output_directory', '-o', required=False,
                     help='Output Directory, defaults to /target_path/checks')
 
-parser.add_argument('--waive_fuzzy_checks', '-wfs',action='store_true', default=False,
+parser.add_argument('--waive_fuzzy_checks', '-wfc',action='store_true', default=False,
                 help="Specifies whether or not to waive fuzzy consistency checks.")
 
 parser.add_argument('--skip_drc', '-sd',action='store_true', default=False,
@@ -69,7 +69,7 @@ run_prep_cmd = "cd {target_path}; make uncompress; cp */*.gds .;".format(
 process = subprocess.Popen(run_prep_cmd,stdout=subprocess.PIPE, shell=True)
 proc_stdout = process.communicate()[0].strip()
 print("[INFO]: Step ", stp_cnt, " done without fatal errors.")
-
+stp_cnt+=1
 
 # Step 1: Check LICENSE.
 print("[INFO]: Executing Step ", stp_cnt, " of ", steps, ": Checking License files.")
