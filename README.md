@@ -42,7 +42,7 @@ The steps are as follows:
 Run the following command:
 
 ```
-python3 overall_script.py --target_path TARGET_PATH
+python3 google_mpw_prechecker.py --target_path TARGET_PATH
                          [--spice_netlist SPICE_NETLIST [SPICE_NETLIST ...]]
                          [--verilog_netlist VERILOG_NETLIST [VERILOG_NETLIST ...]]
                          [--output_directory OUTPUT_DIRECTORY]

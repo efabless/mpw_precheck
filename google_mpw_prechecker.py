@@ -57,6 +57,10 @@ if verilog_netlist is not None:
 if spice_netlist is not None:
     spice_netlist = [str(target_path)+'/'+str(s) for s in spice_netlist]
 
+steps = 4 - int(args.skip_drc) - int(args.waive_fuzzy_checks)
+stp_cnt = 0
+
+print("[INFO]: Executing Step ", stp_cnt, " of ", steps, ": Uncompressing the gds files")
 # Decompress project items and copies all GDS-II files to top level.
 run_prep_cmd = "cd {target_path}; make uncompress; cp */*.gds .;".format(
     target_path = target_path
@@ -64,12 +68,17 @@ run_prep_cmd = "cd {target_path}; make uncompress; cp */*.gds .;".format(
 
 process = subprocess.Popen(run_prep_cmd,stdout=subprocess.PIPE, shell=True)
 proc_stdout = process.communicate()[0].strip()
+print("[INFO]: Step ", stp_cnt, " done without fatal errors.")
+
 
 # Step 1: Check LICENSE.
+print("[INFO]: Executing Step ", stp_cnt, " of ", steps, ": Checking License files.")
+print("[INFO]:")
 if check_license.check_main_license(target_path):
-    print("APACHE-2.0 LICENSE exists in target path")
+    print("[INFO]: APACHE-2.0 LICENSE exists in target path")
 else:
-    print("APACHE-2.0 LICENSE is Not Found in target path")
+    print("[ERROR]: APACHE-2.0 LICENSE is Not Found in target path")
+    print("[FAIL]: TEST FAILED AT STEP ", stp_cnt)
     exit(255)
 
 third_party_licenses=  check_license.check_lib_license(str(target_path)+'/third-party/')
@@ -77,42 +86,59 @@ third_party_licenses=  check_license.check_lib_license(str(target_path)+'/third-
 if len(third_party_licenses):
     for key in third_party_licenses:
         if third_party_licenses[key] == False:
-            print("Third Party", str(key),"License Not Found")
+            print("[ERROR]: Third Party", str(key),"License Not Found")
+            print("[FAIL]: TEST FAILED AT STEP ", stp_cnt)
             exit(255)
-    print("Third Party Licenses Found")
+    print("[INFO]: Third Party Licenses Found")
 else:
-    print("No third party libraries found.")
+    print("[INFO]: No third party libraries found.")
+print("[INFO]: Step ", stp_cnt, " done without fatal errors.")
+stp_cnt+=1
+
 
 # Step 2: Check YAML description.
+print("[INFO]: Executing Step ", stp_cnt, " of ", steps, ": Checking YAML description.")
 if check_yaml.check_yaml(target_path):
-    print("YAML file valid!")
+    print("[INFO]: YAML file valid!")
 else:
-    print("YAML file not valid in target path")
+    print("[ERROR]: YAML file not valid in target path")
+    print("[FAIL]: TEST FAILED AT STEP ", stp_cnt)
     exit(255)
+print("[INFO]: Step ", stp_cnt, " done without fatal errors.")
+stp_cnt+=1
+
 
 # Step 3: Check Fuzzy Consistency.
+print("[INFO]: Executing Step ", stp_cnt, " of ", steps, ": Executing Fuzzy Consistency Checks.")
 check, reason = consistency_checker.fuzzyCheck(target_path=target_path,spice_netlist=spice_netlist,verilog_netlist=verilog_netlist,output_directory=output_directory,waive_consistency_checks=args.waive_fuzzy_checks)
 if check:
-    print("Fuzzy Consistency Checks Passed!")
+    print("[INFO]: Fuzzy Consistency Checks Passed!")
 else:
     print("Fuzzy Consistency Checks Failed, Reason: ", reason)
+    print("[FAIL]: TEST FAILED AT STEP ", stp_cnt)
     exit(255)
+print("[INFO]: Step ", stp_cnt, " done without fatal errors.")
+stp_cnt+=1
 
 # Step 4: Not Yet Implemented.
 
 # Step 5: Perform DRC checks on the GDS.
 # assumption that we'll always be using a caravel top module based on what's on step 3
+print("[INFO]: Executing Step ", stp_cnt, " of ", steps, ": Checking DRC Violations.")
 if args.skip_drc:
-    print("Skipping DRC Checks...")
+    print("[WARNING]: Skipping DRC Checks...")
 else:
     check, reason = gds_drc_checker.gds_drc_check(target_path, 'caravel', output_directory)
 
     if check:
-        print("DRC Checks on GDS-II Passed!")
+        print("[INFO]: DRC Checks on GDS-II Passed!")
     else:
-        print("DRC Checks on GDS-II Failed, Reason: ", reason)
+        print("[ERROR]: DRC Checks on GDS-II Failed, Reason: ", reason)
+        print("[FAIL]: TEST FAILED AT STEP ", stp_cnt)
         exit(255)
+print("[INFO]: Step ", stp_cnt, " done without fatal errors.")
+stp_cnt+=1
 
 # Step 6: Not Yet Implemented.
 # Step 7: Not Yet Implemented.
-print("All Checks PASSED!")
+print("[SUCCESS]: All Checks PASSED!")
