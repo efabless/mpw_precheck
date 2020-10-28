@@ -24,15 +24,20 @@ RUN yum install -y https://repo.ius.io/ius-release-el6.rpm
 RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-tkinter
 RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
 
-RUN pip3.6 install --upgrade pip && \
-    pip install pyyaml
+RUN pip3.6 install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \ 
+                pyyaml \
+                awscli \
+                requests \
+                boto3
 
 # magic dependencies
 RUN yum install -y csh wget tcl-devel tk-devel libX11-devel cairo-devel ncurses-devel
 
 #General utils
-RUN yum install -y tcllib
-RUN yum install -y git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb
+RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb  && \
+	yum clean all && \
+	rm -rf /var/cache/yum
 
 RUN git clone git://opencircuitdesign.com/magic magic_15102020
 
