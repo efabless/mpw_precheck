@@ -2,8 +2,7 @@
 
 # Prerequisites:
 
-- python
-- yaml python package
+- Docker
 
 # Setup:
 
@@ -19,19 +18,20 @@ It runs a sequence of checks and aborts with the appropriate error message(s) if
 
 The steps are as follows:
 
-- LICENSE checks.
-- YAML description check.
-- The existence of documentation.
-- The existence of a Makefile in the project root that at least has the following targets:
+- Step #1: LICENSE checks.
+- Step #2: YAML description check.
+- Step #3: Fuzzy Consistency checks
+  - Step #3.1: The existence of documentation.
+  - Step #3.2: The existence of a Makefile in the project root that at least has the following targets:
     - verify: Runs simulations and testbench verifications.
     - clean: Removes all simulation and verification outputs.
     - compress: compresses the project directory.
     - uncompress: decompresses the project directory.
-- Fuzzy Consistency checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
-- TBA
-- Runs DRC checks on the GDS-II.
-- TBA
-- TBA
+  - Step #3.3: Fuzzy Consistency checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
+- Step #4: TBA
+- Step #5: Runs DRC checks on the GDS-II.
+- Step #6: TBA
+- Step #7: TBA
 
 # Current Assumptions:
 - The project is compressed, and so before running anything we should run make uncompress and then copy all .gds files to the top level (target path) to process them.
@@ -40,6 +40,9 @@ The steps are as follows:
 
 # How To Run:
 Mount the docker file:
+
+You should export `TARGET_PATH=/path/to/target/path` and add this argument `-v $TARGET_PATH:$TARGET_PATH` to the `docker run` command, if the directory is outside the cloned google_mpw_precheck directory.
+
 ```
 docker run -it -v $(pwd):/prechecker_root \
     -v $(pwd)/tech-files:/EF/SW \
@@ -75,6 +78,5 @@ optional arguments:
 ```
 
 # To-Dos:
-- Add the proper user_project_wrapper pin list once it's finalized in the caravel project.
 - Add checks #4, #6, and #7.
 - Test on a real/dummy caravel project output.
