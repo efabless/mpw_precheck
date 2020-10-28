@@ -52,29 +52,34 @@ docker run -it -v $(pwd):/prechecker_root \
 Run the following command:
 
 ```
-python3 google_mpw_prechecker.py --target_path TARGET_PATH
-                         [--spice_netlist SPICE_NETLIST [SPICE_NETLIST ...]]
-                         [--verilog_netlist VERILOG_NETLIST [VERILOG_NETLIST ...]]
-                         [--output_directory OUTPUT_DIRECTORY]
-                         [--waive_fuzzy_checks] [--skip_drc]
+python3 google_mpw_prechecker.py [-h] --target_path TARGET_PATH
+                                --top_level_netlist TOP_LEVEL_NETLIST
+                                --user_level_netlist USER_LEVEL_NETLIST
+                                [--output_directory OUTPUT_DIRECTORY]
+                                [--waive_fuzzy_checks] [--skip_drc]
 
 Runs the precheck tool by calling the various checks in order.
 
 optional arguments:
-  -h, --help            show this help message and exit
   --target_path TARGET_PATH, -t TARGET_PATH
-                        Absolute Path to the Project
-  --spice_netlist SPICE_NETLIST [SPICE_NETLIST ...], -s SPICE_NETLIST [SPICE_NETLIST ...]
-                        Spice Netlists: toplvl.spice user_module.spice, both
-                        should be in /target_path
-  --verilog_netlist VERILOG_NETLIST [VERILOG_NETLIST ...], -v VERILOG_NETLIST [VERILOG_NETLIST ...]
-                        Verilog Netlist: toplvl.v user_module.v , both should
-                        be in /target_path
+                        Absolute Path to the project.
+  --top_level_netlist TOP_LEVEL_NETLIST, -tn TOP_LEVEL_NETLIST
+                        Netlist: toplvl.spice or toplvl.v should be in
+                        /target_path and could be spice or verilog (.spice or
+                        .v) as long as it's of the same type as
+                        user_level_netlist.
+  --user_level_netlist USER_LEVEL_NETLIST, -un USER_LEVEL_NETLIST
+                        Netlist: user_level_netlist.spice or
+                        user_level_netlist.v should be in /target_path and
+                        could be spice or verilog (.spice or .v) as long as
+                        it's of the same type as top_level_netlist.
   --output_directory OUTPUT_DIRECTORY, -o OUTPUT_DIRECTORY
                         Output Directory, defaults to /target_path/checks
-  --waive_fuzzy_checks, -wfs
-                        Specifies whether or not to waive fuzzy consistency checks.
+  --waive_fuzzy_checks, -wfc
+                        Specifies whether or not to waive fuzzy consistency
+                        checks.
   --skip_drc, -sd       Specifies whether or not to skip DRC checks.
+
 ```
 
 # To-Dos:

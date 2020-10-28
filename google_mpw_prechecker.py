@@ -15,6 +15,7 @@
 import argparse
 import subprocess
 import sys
+import os.path
 import base_checks.check_license as check_license
 import base_checks.check_yaml as check_yaml
 import consistency_checks.consistency_checker as consistency_checker
@@ -27,11 +28,11 @@ parser = argparse.ArgumentParser(
 parser.add_argument('--target_path', '-t', required=True,
                     help='Absolute Path to the project.')
 
-parser.add_argument('--spice_netlist', '-s', nargs='+', default=[],
-                    help='Spice Netlists: toplvl.spice user_module.spice, both should be in /target_path')
+parser.add_argument('--top_level_netlist', '-tn', required=True,
+                    help="Netlist: toplvl.spice or toplvl.v should be in /target_path and could be spice or verilog (.spice or .v) as long as it's of the same type as user_level_netlist.")
 
-parser.add_argument('--verilog_netlist', '-v', nargs='+', default=[],
-                    help='Verilog Netlist: toplvl.v user_module.v , both should be in /target_path')
+parser.add_argument('--user_level_netlist', '-un',  required=True,
+                    help="Netlist: user_level_netlist.spice or user_level_netlist.v should be in /target_path and could be spice or verilog (.spice or .v) as long as it's of the same type as top_level_netlist.")
 
 parser.add_argument('--output_directory', '-o', required=False,
                     help='Output Directory, defaults to /target_path/checks')
@@ -45,17 +46,25 @@ parser.add_argument('--skip_drc', '-sd',action='store_true', default=False,
 
 args = parser.parse_args()
 target_path = args.target_path
-verilog_netlist = args.verilog_netlist
-spice_netlist = args.spice_netlist
+top_level_netlist = str(target_path)+'/'+str(args.top_level_netlist)
+user_level_netlist = str(target_path)+'/'+str(args.user_level_netlist)
 if args.output_directory is None:
     output_directory = str(target_path)+ '/checks'
 else:
     output_directory = args.output_directory
 
-if verilog_netlist is not None:
-    verilog_netlist = [str(target_path)+'/'+str(v) for v in verilog_netlist]
-if spice_netlist is not None:
-    spice_netlist = [str(target_path)+'/'+str(s) for s in spice_netlist]
+verilog_netlist= None
+spice_netlist = None
+
+toplvl_extension = os.path.splitext(top_level_netlist)[1]
+userlvl_extension = os.path.splitext(user_level_netlist)[1]
+if str(toplvl_extension) == '.v' and str(userlvl_extension) == '.v':
+    verilog_netlist = [top_level_netlist,user_level_netlist]
+elif str(toplvl_extension) == '.spice' and str(userlvl_extension) == '.spice':
+    spice_netlist = [top_level_netlist,user_level_netlist]
+else:
+    print("[ERROR]: the provided top level and user level netlists are neither a .spice or a .v files. Please adhere to the required input type.")
+    exit(255)
 
 steps = 4 - int(args.skip_drc) - int(args.waive_fuzzy_checks)
 stp_cnt = 0
