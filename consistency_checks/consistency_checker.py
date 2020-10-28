@@ -142,7 +142,7 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
         if check == False:
             return False, user_project_wrapper_pin_list
         user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
-        pin_name_diffs= match_pin_names(user_pin_list, user_project_wrapper_pin_list) # replace with the true benchmark list of pins once acquired
+        pin_name_diffs= diff_lists(user_pin_list, user_project_wrapper_pin_list)
         if len(pin_name_diffs):
             return False, "Pins check failed. The user is using different pins: "+ ", ".join(pin_name_diffs)
         else:
@@ -257,9 +257,6 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel,user_module):
                             print('verilog Consistency Checks Passed.')
                             return True,connections_map
 
-
-def match_pin_names(benchmark_pins, user_pins):
-    return (list(list(set(benchmark_pins)-set(user_pins)) + list(set(benchmark_pins)-set(user_pins))))
 
 def check_power_pins(connections_map, forbidden_list, check_list):
     for key in connections_map:

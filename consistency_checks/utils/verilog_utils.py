@@ -106,7 +106,7 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
                     sec = con.split('(')
                     connections_map[sec[0].strip()] = sec[1].strip()
                 for con in comp_cons:
-                    con_name = con.split('(')[0].strip()
+                    con_name = con.split('(')[0].strip()[1:]
                     start_idx = inst.find(con)
                     end_idx = inst.find(')',start_idx)
                     con = inst[start_idx:end_idx].split('(')[1]
