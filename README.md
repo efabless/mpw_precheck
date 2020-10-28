@@ -41,10 +41,10 @@ The steps are as follows:
 # How To Run:
 Mount the docker file:
 ```
-docker run -it -v $MAGIC_ROOT:/magic_root -v $(pwd):$(pwd) \
+docker run -it -v $(pwd):/prechecker_root \
     -v $(pwd)/tech-files:/EF/SW \
     -u $(id -u $USER):$(id -g $USER) \
-    magic:latest
+    google_mpw_prechecker:latest
 ```
 Run the following command:
 

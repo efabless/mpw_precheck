@@ -24,6 +24,9 @@ RUN yum install -y https://repo.ius.io/ius-release-el6.rpm
 RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-tkinter
 RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
 
+RUN pip3.6 install --upgrade pip && \
+    pip install pyyaml
+
 # magic dependencies
 RUN yum install -y csh wget tcl-devel tk-devel libX11-devel cairo-devel ncurses-devel
 
@@ -43,10 +46,10 @@ RUN ./configure --prefix=/build && \
     make install
 
 
-ENV MAGIC_ROOT=/magic_root
+ENV PRECHECKER_ROOT=/prechecker_root
 ENV BUILD_PATH=/build/
 
-ENV PATH=$MAGIC_ROOT:$MAGIC_ROOT/scripts:$BUILD_PATH/bin:$BUILD_PATH/bin/Linux-x86_64:$BUILD_PATH/pdn/scripts:$PATH
+ENV PATH=$PRECHECKER_ROOT:$PRECHECKER_ROOT/scripts:$BUILD_PATH/bin:$BUILD_PATH/bin/Linux-x86_64:$BUILD_PATH/pdn/scripts:$PATH
 ENV LD_LIBRARY_PATH=$BUILD_PATH/lib:$BUILD_PATH/lib/Linux-x86_64:$LD_LIBRARY_PATH
 ENV MANPATH=$BUILD_PATH/share/man:$MANPATH
 
@@ -57,4 +60,4 @@ RUN date +"Build Timestamp: %Y-%m-%d_%H-%M-%S" > /build/version/magic.version
 RUN git rev-parse HEAD >> /build/version/magic.version
 RUN tar -czf /build.tar.gz /build
 
-WORKDIR /magic_root
+WORKDIR /prechecker_root

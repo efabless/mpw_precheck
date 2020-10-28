@@ -14,5 +14,5 @@
 
 mkdir -p logs/docker
 echo "dir created"
-docker build --rm -t magic . | tee logs/docker/magic.build.txt
+docker build --rm -t google_mpw_prechecker . | tee logs/docker/google_mpw_prechecker.build.txt
 
