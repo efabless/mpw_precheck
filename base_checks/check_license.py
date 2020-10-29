@@ -43,8 +43,8 @@ def check_lib_license(path):
 
 if __name__ == "__main__":
     if check_main_license('.'):
-        print("License there!")
+        print("{{RESULT}} License there!")
     else:
-        print("License not there or empty!")
+        print("{{FAIL}}License not there or empty!")
 
-    print(check_lib_license('.'))
+    print("{{RESULT}} ", check_lib_license('.'))

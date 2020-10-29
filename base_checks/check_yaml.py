@@ -38,6 +38,6 @@ def check_yaml(path):
 
 if __name__ == "__main__":
     if check_yaml('.'):
-        print("YAML file valid!")
+        print("{{RESULT}} YAML file valid!")
     else:
-        print("YAML file not valid!")
+        print("{{FAIL}} YAML file not valid!")

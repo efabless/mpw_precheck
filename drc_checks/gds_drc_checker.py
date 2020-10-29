@@ -27,7 +27,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='./drc_c
         output_directory = output_directory
     )
 
-    print ("Starting...")
+    print ("{{PROGRESS}} Starting DRC Checks...")
 
     process = subprocess.Popen(run_drc_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:
@@ -36,7 +36,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='./drc_c
             if not output:
                 break
             if output:
-                print ('\r'+str(output.strip())[2:-1])
+                print ("\r{{FULL LOG}} "+str(output.strip())[2:-1])
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         return False, str(error_msg)
@@ -67,7 +67,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='./drc_c
             for key in vioDict:
                 val = vioDict[key]
                 cnt+=val
-                print("Violation Message \""+key.strip(), " \"found ",val, " Times.")
+                print("{{PROGRESS}} Violation Message \""+key.strip(), " \"found ",val, " Times.")
             return False, "Total # of DRC violations is "+ str(cnt)
 
 
@@ -93,4 +93,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    print(gds_drc_check(target_path, design_name, output_directory,'.'))
+    print("{{RESULT}} ", gds_drc_check(target_path, design_name, output_directory,'.'))
