@@ -157,8 +157,7 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
 
     check, reason = check_source_gds_consitency(target_path, toplevel, user_module,instance_name,output_directory,top_type_list,top_name_list, user_type_list, user_name_list,call_path)
     if check:
-        print("{{PROGRESS}} ", reason)
-        print("{{PROGRESS}} GDS Checks Passed")
+        print("{{PROGRESS}} ", reason,"\nGDS Checks Passed")
     else:
         return False, "GDS Checks Failed: "+ reason
     return True, "Fuzzy Checks Passed!"
@@ -298,7 +297,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
             if not output:
                 break
             if output:
-                print ("\r{{FULL LOG}} "+str(output.strip())[2:-1])
+                print ("\r"+str(output.strip())[2:-1])
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         print("{{ERROR}} ",str(error_msg))

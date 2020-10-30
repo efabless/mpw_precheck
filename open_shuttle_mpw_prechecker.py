@@ -55,12 +55,10 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
 
     # Step 1: Check LICENSE.
     print("{{PROGRESS}} Executing Step ", stp_cnt, " of ", steps, ": Checking License files.")
-    print("{{PROGRESS}}")
     if check_license.check_main_license(target_path):
         print("{{PROGRESS}} APACHE-2.0 LICENSE exists in target path")
     else:
-        print("{{ERROR}} APACHE-2.0 LICENSE is Not Found in target path")
-        print("{{FAIL}} TEST FAILED AT STEP ", stp_cnt)
+        print("{{ERROR}} APACHE-2.0 LICENSE is Not Found in target path\nTEST FAILED AT STEP ", stp_cnt)
         exit(255)
 
     third_party_licenses=  check_license.check_lib_license(str(target_path)+'/third-party/')
@@ -68,25 +66,21 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     if len(third_party_licenses):
         for key in third_party_licenses:
             if third_party_licenses[key] == False:
-                print("{{ERROR}} Third Party", str(key),"License Not Found")
-                print("{{FAIL}} TEST FAILED AT STEP ", stp_cnt)
+                print("{{ERROR}} Third Party", str(key),"License Not Found\nTEST FAILED AT STEP ", stp_cnt)
                 exit(255)
-        print("{{PROGRESS}} Third Party Licenses Found")
+        print("{{PROGRESS}} Third Party Licenses Found.\nStep ", stp_cnt, " done without fatal errors.")
     else:
-        print("{{PROGRESS}} No third party libraries found.")
-    print("{{PROGRESS}} Step ", stp_cnt, " done without fatal errors.")
+        print("{{PROGRESS}} No third party libraries found.\nStep ", stp_cnt, " done without fatal errors.")
     stp_cnt+=1
 
 
     # Step 2: Check YAML description.
     print("{{PROGRESS}} Executing Step ", stp_cnt, " of ", steps, ": Checking YAML description.")
     if check_yaml.check_yaml(target_path):
-        print("{{PROGRESS}} YAML file valid!")
+        print("{{PROGRESS}} YAML file valid!\nStep ", stp_cnt, " done without fatal errors.")
     else:
-        print("{{ERROR}} YAML file not valid in target path")
-        print("{{FAIL}} TEST FAILED AT STEP ", stp_cnt)
+        print("{{ERROR}} YAML file not valid in target path\nTEST FAILED AT STEP ", stp_cnt)
         exit(255)
-    print("{{PROGRESS}} Step ", stp_cnt, " done without fatal errors.")
     stp_cnt+=1
 
 
@@ -94,12 +88,10 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     print("{{PROGRESS}} Executing Step ", stp_cnt, " of ", steps, ": Executing Fuzzy Consistency Checks.")
     check, reason = consistency_checker.fuzzyCheck(target_path=target_path,spice_netlist=spice_netlist,verilog_netlist=verilog_netlist,output_directory=output_directory,waive_consistency_checks=waive_fuzzy_checks)
     if check:
-        print("{{PROGRESS}} Fuzzy Consistency Checks Passed!")
+        print("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep ", stp_cnt, " done without fatal errors.")
     else:
-        print("{{ERROR}} Consistency Checks Failed, Reason: ", reason)
-        print("{{FAIL}} TEST FAILED AT STEP ", stp_cnt)
+        print("{{ERROR}} Consistency Checks Failed, Reason: ", reason,"\nTEST FAILED AT STEP ", stp_cnt)
         exit(255)
-    print("{{PROGRESS}} Step ", stp_cnt, " done without fatal errors.")
     stp_cnt+=1
 
     # Step 4: Not Yet Implemented.
@@ -113,12 +105,10 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
         check, reason = gds_drc_checker.gds_drc_check(target_path, 'caravel', output_directory)
 
         if check:
-            print("{{PROGRESS}} DRC Checks on GDS-II Passed!")
+            print("{{PROGRESS}} DRC Checks on GDS-II Passed!\nStep ", stp_cnt, " done without fatal errors.")
         else:
-            print("{{ERROR}} DRC Checks on GDS-II Failed, Reason: ", reason)
-            print("{{FAIL}} TEST FAILED AT STEP ", stp_cnt)
+            print("{{ERROR}} DRC Checks on GDS-II Failed, Reason: ", reason, "\nTEST FAILED AT STEP ", stp_cnt)
             exit(255)
-    print("{{PROGRESS}} Step ", stp_cnt, " done without fatal errors.")
     stp_cnt+=1
 
     # Step 6: Not Yet Implemented.

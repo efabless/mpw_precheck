@@ -36,7 +36,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/lo
             if not output:
                 break
             if output:
-                print ("\r{{FULL LOG}} "+str(output.strip())[2:-1])
+                print ("\r"+str(output.strip())[2:-1])
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         return False, str(error_msg)
