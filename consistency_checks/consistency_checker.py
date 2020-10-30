@@ -302,7 +302,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         print_control("{{ERROR}} "+str(error_msg))
-        exit(255)
+        exit_control(255)
 
     toplevelFileOpener = open(output_directory+"/"+toplevel+".magic.typelist")
     if toplevelFileOpener.mode == "r":

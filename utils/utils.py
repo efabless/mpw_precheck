@@ -25,7 +25,7 @@ def print_control(message, log='/usr/local/bin/logs/full_log.log'):
         f.close()
     except OSError:
         print("{{EXCEPTION}} unable to print notification.")
-        exit(255)
+        exit_control(255)
 
 def dump_full_log(log='/usr/local/bin/logs/full_log.log'):
     try:
@@ -36,3 +36,8 @@ def dump_full_log(log='/usr/local/bin/logs/full_log.log'):
     except OSError:
         print("{{EXCEPTION}} unable to print full log.")
         exit(255)
+
+
+def exit_control(code,log='/usr/local/bin/logs/full_log.log'):
+    dump_full_log(log)
+    exit(255)
