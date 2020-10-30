@@ -79,7 +79,7 @@ def checkDocumentation(target_path):
             return True
     return False
 
-def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, call_path="./consistency_checks",waive_docs=False, waive_makefile=False, waive_consistency_checks=False):
+def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks",waive_docs=False, waive_makefile=False, waive_consistency_checks=False):
     if waive_docs == False:
         if checkDocumentation(target_path):
             print("{{PROGRESS}} Documentation Exists")
@@ -279,7 +279,7 @@ def clean_gds_list(cells):
     cells = cells.replace("}","")
     return cells.replace("\\","")
 
-def check_source_gds_consitency(target_path, toplevel, user_module,user_module_name,output_directory, top_type_list,top_name_list, user_type_list, user_name_list, call_path="./consistency_checks"):
+def check_source_gds_consitency(target_path, toplevel, user_module,user_module_name,output_directory, top_type_list,top_name_list, user_type_list, user_name_list, call_path="/usr/local/bin/consistency_checks"):
     call_path = os.path.abspath(call_path)
     run_instance_list_cmd = "sh {call_path}/run_instances_listing.sh {target_path} {design_name} {sub_design_name} {output_directory} {call_path}".format(
         call_path = call_path,

@@ -44,8 +44,7 @@ Mount the docker file:
 You should export `TARGET_PATH=/path/to/target/path` and add this argument `-v $TARGET_PATH:$TARGET_PATH` to the `docker run` command, if the directory is outside the cloned google_mpw_precheck directory.
 
 ```
-docker run -it -v $(pwd):/prechecker_root \
-    -v $(pwd)/tech-files:/EF/SW \
+docker run -it -v $(pwd):/usr/local/bin \
     -u $(id -u $USER):$(id -g $USER) \
     google_mpw_prechecker:latest
 ```

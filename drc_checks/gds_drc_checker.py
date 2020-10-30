@@ -18,7 +18,7 @@ import subprocess
 import sys
 import os
 
-def gds_drc_check(target_path, design_name, output_directory, call_path='./drc_checks'):
+def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/local/bin/drc_checks'):
     call_path = os.path.abspath(call_path)
     run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {output_directory} {call_path}".format(
         call_path = call_path,

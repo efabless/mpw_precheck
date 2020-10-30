@@ -51,7 +51,7 @@ RUN ./configure --prefix=/build && \
     make install
 
 
-ENV PRECHECKER_ROOT=/prechecker_root
+ENV PRECHECKER_ROOT=/usr/local/bin/
 ENV BUILD_PATH=/build/
 
 ENV PATH=$PRECHECKER_ROOT:$PRECHECKER_ROOT/scripts:$BUILD_PATH/bin:$BUILD_PATH/bin/Linux-x86_64:$BUILD_PATH/pdn/scripts:$PATH
@@ -65,4 +65,4 @@ RUN date +"Build Timestamp: %Y-%m-%d_%H-%M-%S" > /build/version/magic.version
 RUN git rev-parse HEAD >> /build/version/magic.version
 RUN tar -czf /build.tar.gz /build
 
-WORKDIR /prechecker_root
+WORKDIR $PRECHECKER_ROOT
