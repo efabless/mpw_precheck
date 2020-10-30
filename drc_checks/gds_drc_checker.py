@@ -68,7 +68,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/lo
             for key in vioDict:
                 val = vioDict[key]
                 cnt+=val
-                print_control("{{PROGRESS}} Violation Message \""+key.strip()+ " \"found "+val+ " Times.")
+                print_control("Violation Message \""+str(key.strip())+ " \"found "+str(val)+ " Times.")
             return False, "Total # of DRC violations is "+ str(cnt)
 
 
