@@ -289,7 +289,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
         output_directory = output_directory
     )
 
-    print_control ("{{PROGRESS}} Starting Magic Extractions From GDS...")
+    print_control ("{{PROGRESS}} Running Magic Extractions From GDS...")
 
     process = subprocess.Popen(run_instance_list_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:

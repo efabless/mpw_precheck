@@ -28,7 +28,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/lo
         output_directory = output_directory
     )
 
-    print_control ("{{PROGRESS}} Starting DRC Checks...")
+    print_control ("{{PROGRESS}} Running DRC Checks...")
 
     process = subprocess.Popen(run_drc_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:
