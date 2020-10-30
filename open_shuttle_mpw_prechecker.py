@@ -32,9 +32,9 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     toplvl_extension = os.path.splitext(top_level_netlist)[1]
     userlvl_extension = os.path.splitext(user_level_netlist)[1]
     if str(toplvl_extension) == '.v' and str(userlvl_extension) == '.v':
-        verilog_netlist = [top_level_netlist,user_level_netlist]
+        verilog_netlist = [ str(target_path) + '/'+str(top_level_netlist),  str(target_path) + '/'+str(user_level_netlist)]
     elif str(toplvl_extension) == '.spice' and str(userlvl_extension) == '.spice':
-        spice_netlist = [top_level_netlist,user_level_netlist]
+        spice_netlist = [ str(target_path) + '/'+str(top_level_netlist),  str(target_path) + '/'+str(user_level_netlist)]
     else:
         print("{{ERROR}} the provided top level and user level netlists are neither a .spice or a .v files. Please adhere to the required input type.")
         exit(255)
@@ -153,8 +153,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     target_path = args.target_path
-    top_level_netlist = str(target_path)+'/'+str(args.top_level_netlist)
-    user_level_netlist = str(target_path)+'/'+str(args.user_level_netlist)
+    top_level_netlist = args.top_level_netlist
+    user_level_netlist =args.user_level_netlist
     skip_drc = args.skip_drc
     waive_fuzzy_checks = args.waive_fuzzy_checks
 
