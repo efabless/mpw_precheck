@@ -16,11 +16,11 @@ import re
 
 
 def print_control(message, log='/usr/local/bin/logs/full_log.log'):
+    if re.search(r'{{(\w+)}}(.*)', message):
+        print(message)
+        message = message.split("}}")[1]
     try:
-        if re.search(r'{{(\w+)}}(.*)', message):
-            print(message)
-            message = message.split("}}")[1]
-        f=open(log,"a")
+        f=open(log,'a')
         f.write(str(message)+'\n')
         f.close()
     except OSError:
