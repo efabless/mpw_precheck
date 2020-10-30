@@ -24,7 +24,7 @@ except ImportError:
     import consistency_checks.utils.verilog_utils as verilog_utils
 import re
 import sys
-from ..utils.utils import *
+from utils.utils import *
 
 docExts = [".rst", ".html",".md",".pdf",".doc",".docx",".odt"]
 

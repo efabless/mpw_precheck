@@ -17,7 +17,7 @@ import argparse
 import subprocess
 import sys
 import os
-from ..utils.utils import *
+from utils.utils import *
 
 def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/local/bin/drc_checks'):
     call_path = os.path.abspath(call_path)
