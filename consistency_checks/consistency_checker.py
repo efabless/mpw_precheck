@@ -24,6 +24,7 @@ except ImportError:
     import consistency_checks.utils.verilog_utils as verilog_utils
 import re
 import sys
+from ..utils.utils import *
 
 docExts = [".rst", ".html",".md",".pdf",".doc",".docx",".odt"]
 
@@ -82,20 +83,20 @@ def checkDocumentation(target_path):
 def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks",waive_docs=False, waive_makefile=False, waive_consistency_checks=False):
     if waive_docs == False:
         if checkDocumentation(target_path):
-            print("{{PROGRESS}} Documentation Exists")
+            print_control("{{PROGRESS}} Documentation Exists")
         else:
             return False, "Documentation Not Found"
     else:
-        print("{{WARNING}} Documentation Check Skipped.")
+        print_control("{{WARNING}} Documentation Check Skipped.")
 
     if waive_makefile == False:
         makefileCheck, makefileReason = checkMakefile(target_path)
         if makefileCheck:
-            print("{{PROGRESS}} Makefile Checks Passed")
+            print_control("{{PROGRESS}} Makefile Checks Passed")
         else:
             return False, "Makefile checks failed because: "+ makefileReason
     else:
-        print("{{WARNING}} Makefile Checks Skipped.")
+        print_control("{{WARNING}} Makefile Checks Skipped.")
 
 
     if waive_consistency_checks == True:
@@ -137,7 +138,7 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
                 return False, reason
 
     if basic_hierarchy_checks:
-        print("{{PROGRESS}} Basic Hierarchy Checks Passed.")
+        print_control("{{PROGRESS}} Basic Hierarchy Checks Passed.")
         check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path)+"/"+user_project_wrapper_lef))
         if check == False:
             return False, user_project_wrapper_pin_list
@@ -146,10 +147,10 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
         if len(pin_name_diffs):
             return False, "Pins check failed. The user is using different pins: "+ ", ".join(pin_name_diffs)
         else:
-            print("{{PROGRESS}} Pins check passed")
+            print_control("{{PROGRESS}} Pins check passed")
             check, reason = check_power_pins(connections_map,reserved_power_list,user_power_list)
             if check:
-                print("{{PROGRESS}} ",reason)
+                print_control("{{PROGRESS}} "+reason)
             else:
                 return False, reason
     else:
@@ -157,7 +158,7 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
 
     check, reason = check_source_gds_consitency(target_path, toplevel, user_module,instance_name,output_directory,top_type_list,top_name_list, user_type_list, user_name_list,call_path)
     if check:
-        print("{{PROGRESS}} ", reason,"\nGDS Checks Passed")
+        print_control("{{PROGRESS}} "+ reason+"\nGDS Checks Passed")
     else:
         return False, "GDS Checks Failed: "+ reason
     return True, "Fuzzy Checks Passed!"
@@ -182,78 +183,78 @@ def extract_user_project_wrapper_pin_list(lef):
 def basic_spice_hierarchy_checks(spice_netlist, toplevel,user_module):
     check, reason = spice_utils.find_subckt(spice_netlist[0],toplevel)
     if check == False:
-        print("{{ERROR}} Spice Check Failed because: ", reason)
+        print_control("{{ERROR}} Spice Check Failed because: "+ reason)
         return False, reason
     else:
-        print("{{PROGRESS}} ",reason)
+        print_control("{{PROGRESS}} "+reason)
         check, reason = spice_utils.find_subckt(spice_netlist[1],user_module)
         if check == False:
-            print("{{ERROR}} Spice Check Failed because:", reason)
+            print_control("{{ERROR}} Spice Check Failed because:"+ reason)
             return False, reason
         else:
-            print("{{PROGRESS}} ",reason)
+            print_control("{{PROGRESS}} "+reason)
             check, reason = spice_utils.confirm_complex_subckt(spice_netlist[0],toplevel,5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
             if check == False:
-                print("{{ERROR}} Spice Check Failed because: ", reason)
+                print_control("{{ERROR}} Spice Check Failed because: "+ reason)
                 return False, reason
             else:
-                print("{{PROGRESS}} ",reason)
+                print_control("{{PROGRESS}} "+reason)
                 check, reason = spice_utils.confirm_complex_subckt(spice_netlist[1],user_module,1)
                 if check == False:
-                    print("{{ERROR}} Spice Check Failed because: ", reason)
+                    print_control("{{ERROR}} Spice Check Failed because: "+ reason)
                     return False, reason
                 else:
-                    print("{{PROGRESS}} ",reason)
+                    print_control("{{PROGRESS}} "+reason)
                     check, reason = spice_utils.confirm_circuit_hierarchy(spice_netlist[0], toplevel, user_module)
                     if check == False:
-                        print("{{ERROR}} Spice Check Failed because: ", reason)
+                        print_control("{{ERROR}} Spice Check Failed because: "+ reason)
                         return False, reason
                     else:
                         check, connections_map = spice_utils.extract_connections_from_inst(spice_netlist[0],toplevel,user_module)
                         if check == False:
-                            print("{{ERROR}} Spice Check Failed because: ", connections_map)
+                            print_control("{{ERROR}} Spice Check Failed because: "+ connections_map)
                             return False,connections_map
                         else:
-                            print("{{PROGRESS}} Spice Consistency Checks Passed.")
+                            print_control("{{PROGRESS}} Spice Consistency Checks Passed.")
                             return True,connections_map
 
 
 def basic_verilog_hierarchy_checks(verilog_netlist, toplevel,user_module):
     check, reason = verilog_utils.find_module(verilog_netlist[0],toplevel)
     if check == False:
-        print("{{ERROR}} verilog Check Failed because: ", reason, " in netlist: ", verilog_netlist[0])
+        print_control("{{ERROR}} verilog Check Failed because: "+ reason, " in netlist: "+ verilog_netlist[0])
         return False, reason
     else:
-        print("{{PROGRESS}} ",reason)
+        print_control("{{PROGRESS}} "+reason)
         check, reason = verilog_utils.find_module(verilog_netlist[1],user_module)
         if check == False:
-            print("{{ERROR}} verilog Check Failed because: ", reason, " in netlist: ", verilog_netlist[1])
+            print_control("{{ERROR}} verilog Check Failed because: "+ reason+ " in netlist: "+ verilog_netlist[1])
             return False,reason
         else:
-            print("{{PROGRESS}} ",reason)
+            print_control("{{PROGRESS}} "+reason)
             check, reason = verilog_utils.confirm_complex_module(verilog_netlist[0],toplevel,5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
             if check == False:
-                print("{{ERROR}} verilog Check Failed because: ", reason, " in netlist: ", verilog_netlist[0])
+                print_control("{{ERROR}} verilog Check Failed because: "+ reason+ " in netlist: "+ verilog_netlist[0])
                 return False,reason
             else:
-                print("{{PROGRESS}} ",reason)
+                print_control("{{PROGRESS}} "+reason)
                 check, reason = verilog_utils.confirm_complex_module(verilog_netlist[1],user_module,1)
                 if check == False:
-                    print("{{ERROR}} verilog Check Failed because: ", reason, " in netlist: ", verilog_netlist[1])
+                    print_control("{{ERROR}} verilog Check Failed because: "+ reason+ " in netlist: "+ verilog_netlist[1])
                     return False,reason
                 else:
-                    print("{{PROGRESS}} ",reason)
+                    print_control("{{PROGRESS}} "+reason)
                     check, reason = verilog_utils.confirm_circuit_hierarchy(verilog_netlist[0], toplevel, user_module)
                     if check == False:
-                        print("{{ERROR}} verilog Check Failed because:", reason, " in netlist: ", verilog_netlist[0])
+                        print_control("{{ERROR}} verilog Check Failed because:"+ reason+ " in netlist: "+ verilog_netlist[0])
                         return False,reason
                     else:
                         check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist[0],toplevel,user_module)
                         if check == False:
-                            print("{{ERROR}} verilog Check Failed because:", connections_map, " in netlist: ", verilog_netlist[0])
+                            print_control("{{ERROR}} verilog Check Failed because:"+ connections_map+ " in netlist: "+ verilog_netlist[0])
                             return False,connections_map
                         else:
-                            print("{{PROGRESS}} verilog Consistency Checks Passed.")
+                            print_control("{{PROGRESS}} verilog Consistency Checks Passed.")
                             return True,connections_map
 
 
@@ -288,7 +289,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
         output_directory = output_directory
     )
 
-    print ("{{PROGRESS}} Starting Magic Extractions From GDS...")
+    print_control ("{{PROGRESS}} Starting Magic Extractions From GDS...")
 
     process = subprocess.Popen(run_instance_list_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:
@@ -297,10 +298,10 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
             if not output:
                 break
             if output:
-                print ("\r"+str(output.strip())[2:-1])
+                print_control ("\r"+str(output.strip())[2:-1])
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
-        print("{{ERROR}} ",str(error_msg))
+        print_control("{{ERROR}} "+str(error_msg))
         exit(255)
 
     toplevelFileOpener = open(output_directory+"/"+toplevel+".magic.typelist")
@@ -332,14 +333,14 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
         top_type_diff= diff_lists(toplvlCells, top_type_list)
 
 
-        print("{{FULL LOG}} user wrapper cell names differences: ")
-        print("{{FULL LOG}} ", user_name_diff)
-        print("{{FULL LOG}} user wrapper cell type differences: ")
-        print("{{FULL LOG}} ", user_type_diff)
-        print("{{FULL LOG}} toplevel cell names differences: ")
-        print("{{FULL LOG}} ", top_name_diff)
-        print("{{FULL LOG}} toplevel cell type differences: ")
-        print("{{FULL LOG}} ", top_type_diff)
+        print_control("user wrapper cell names differences: ")
+        print_control(user_name_diff)
+        print_control("user wrapper cell type differences: ")
+        print_control(user_type_diff)
+        print_control("toplevel cell names differences: ")
+        print_control(top_name_diff)
+        print_control("toplevel cell type differences: ")
+        print_control(top_type_diff)
         if len(user_name_diff)+len(user_type_diff)+len(top_name_diff)+len(top_type_diff):
             return False, "Hierarchy Matching Failed"
         return True, "GDS Hierarchy Check Passed"

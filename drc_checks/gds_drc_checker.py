@@ -17,6 +17,7 @@ import argparse
 import subprocess
 import sys
 import os
+from ..utils.utils import *
 
 def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/local/bin/drc_checks'):
     call_path = os.path.abspath(call_path)
@@ -27,7 +28,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/lo
         output_directory = output_directory
     )
 
-    print ("{{PROGRESS}} Starting DRC Checks...")
+    print_control ("{{PROGRESS}} Starting DRC Checks...")
 
     process = subprocess.Popen(run_drc_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:
@@ -36,7 +37,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/lo
             if not output:
                 break
             if output:
-                print ("\r"+str(output.strip())[2:-1])
+                print_control ("\r"+str(output.strip())[2:-1])
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         return False, str(error_msg)
@@ -67,7 +68,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/lo
             for key in vioDict:
                 val = vioDict[key]
                 cnt+=val
-                print("{{PROGRESS}} Violation Message \""+key.strip(), " \"found ",val, " Times.")
+                print_control("{{PROGRESS}} Violation Message \""+key.strip()+ " \"found "+val+ " Times.")
             return False, "Total # of DRC violations is "+ str(cnt)
 
 
