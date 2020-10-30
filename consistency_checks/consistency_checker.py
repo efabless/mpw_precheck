@@ -138,7 +138,6 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
                 return False, reason
 
     if basic_hierarchy_checks:
-        print_control("{{PROGRESS}} Basic Hierarchy Checks Passed.")
         check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path)+"/"+user_project_wrapper_lef))
         if check == False:
             return False, user_project_wrapper_pin_list
@@ -147,18 +146,19 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
         if len(pin_name_diffs):
             return False, "Pins check failed. The user is using different pins: "+ ", ".join(pin_name_diffs)
         else:
-            print_control("{{PROGRESS}} Pins check passed")
+            print_control("Pins check passed")
             check, reason = check_power_pins(connections_map,reserved_power_list,user_power_list)
             if check:
-                print_control("{{PROGRESS}} "+reason)
+                print_control(reason)
             else:
                 return False, reason
+        print_control("{{PROGRESS}} Basic Hierarchy Checks Passed.")
     else:
         return False, "Basic Hierarchy Checks Failed."
 
     check, reason = check_source_gds_consitency(target_path, toplevel, user_module,instance_name,output_directory,top_type_list,top_name_list, user_type_list, user_name_list,call_path)
     if check:
-        print_control("{{PROGRESS}} "+ reason+"\nGDS Checks Passed")
+        print_control( reason+"\nGDS Checks Passed")
     else:
         return False, "GDS Checks Failed: "+ reason
     return True, "Fuzzy Checks Passed!"
@@ -186,25 +186,25 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel,user_module):
         print_control("{{ERROR}} Spice Check Failed because: "+ reason)
         return False, reason
     else:
-        print_control("{{PROGRESS}} "+reason)
+        print_control(reason)
         check, reason = spice_utils.find_subckt(spice_netlist[1],user_module)
         if check == False:
             print_control("{{ERROR}} Spice Check Failed because:"+ reason)
             return False, reason
         else:
-            print_control("{{PROGRESS}} "+reason)
+            print_control(reason)
             check, reason = spice_utils.confirm_complex_subckt(spice_netlist[0],toplevel,5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
             if check == False:
                 print_control("{{ERROR}} Spice Check Failed because: "+ reason)
                 return False, reason
             else:
-                print_control("{{PROGRESS}} "+reason)
+                print_control(reason)
                 check, reason = spice_utils.confirm_complex_subckt(spice_netlist[1],user_module,1)
                 if check == False:
                     print_control("{{ERROR}} Spice Check Failed because: "+ reason)
                     return False, reason
                 else:
-                    print_control("{{PROGRESS}} "+reason)
+                    print_control(reason)
                     check, reason = spice_utils.confirm_circuit_hierarchy(spice_netlist[0], toplevel, user_module)
                     if check == False:
                         print_control("{{ERROR}} Spice Check Failed because: "+ reason)
@@ -215,7 +215,7 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel,user_module):
                             print_control("{{ERROR}} Spice Check Failed because: "+ connections_map)
                             return False,connections_map
                         else:
-                            print_control("{{PROGRESS}} Spice Consistency Checks Passed.")
+                            print_control("Spice Consistency Checks Passed.")
                             return True,connections_map
 
 
@@ -225,25 +225,25 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel,user_module):
         print_control("{{ERROR}} verilog Check Failed because: "+ reason, " in netlist: "+ verilog_netlist[0])
         return False, reason
     else:
-        print_control("{{PROGRESS}} "+reason)
+        print_control(reason)
         check, reason = verilog_utils.find_module(verilog_netlist[1],user_module)
         if check == False:
             print_control("{{ERROR}} verilog Check Failed because: "+ reason+ " in netlist: "+ verilog_netlist[1])
             return False,reason
         else:
-            print_control("{{PROGRESS}} "+reason)
+            print_control(reason)
             check, reason = verilog_utils.confirm_complex_module(verilog_netlist[0],toplevel,5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
             if check == False:
                 print_control("{{ERROR}} verilog Check Failed because: "+ reason+ " in netlist: "+ verilog_netlist[0])
                 return False,reason
             else:
-                print_control("{{PROGRESS}} "+reason)
+                print_control(reason)
                 check, reason = verilog_utils.confirm_complex_module(verilog_netlist[1],user_module,1)
                 if check == False:
                     print_control("{{ERROR}} verilog Check Failed because: "+ reason+ " in netlist: "+ verilog_netlist[1])
                     return False,reason
                 else:
-                    print_control("{{PROGRESS}} "+reason)
+                    print_control(reason)
                     check, reason = verilog_utils.confirm_circuit_hierarchy(verilog_netlist[0], toplevel, user_module)
                     if check == False:
                         print_control("{{ERROR}} verilog Check Failed because:"+ reason+ " in netlist: "+ verilog_netlist[0])
@@ -254,7 +254,7 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel,user_module):
                             print_control("{{ERROR}} verilog Check Failed because:"+ connections_map+ " in netlist: "+ verilog_netlist[0])
                             return False,connections_map
                         else:
-                            print_control("{{PROGRESS}} verilog Consistency Checks Passed.")
+                            print_control("verilog Consistency Checks Passed.")
                             return True,connections_map
 
 
