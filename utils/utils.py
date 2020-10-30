@@ -15,19 +15,19 @@
 import re
 
 
-def print_control(message, log='/usr/local/bin/logs/full_log.log'):
+def print_control(message, log='/usr/local/bin/full_log.log'):
     if re.search(r'{{(\w+)}}(.*)', message):
         print(message)
         message = message.split("}}")[1]
     try:
-        f=open(log,'a')
+        f=open(log,'a',encoding="UTF-8")
         f.write(str(message)+'\n')
         f.close()
     except OSError:
         print("{{EXCEPTION}} unable to print notification.")
         exit_control(255)
 
-def dump_full_log(log='/usr/local/bin/logs/full_log.log'):
+def dump_full_log(log='/usr/local/bin/full_log.log'):
     try:
         f=open(log,"r")
         content = f.read()
@@ -38,6 +38,6 @@ def dump_full_log(log='/usr/local/bin/logs/full_log.log'):
         exit(255)
 
 
-def exit_control(code,log='/usr/local/bin/logs/full_log.log'):
+def exit_control(code,log='/usr/local/bin/full_log.log'):
     dump_full_log(log)
     exit(255)
