@@ -42,7 +42,7 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     steps = 4 - int(skip_drc) - int(waive_fuzzy_checks)
     stp_cnt = 0
 
-    print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Uncompressing the gds files")
+    print_control("Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Uncompressing the gds files")
     # Decompress project items and copies all GDS-II files to top level.
     run_prep_cmd = "cd {target_path}; make uncompress; cp */*.gds .;".format(
         target_path = target_path
@@ -50,7 +50,7 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
 
     process = subprocess.Popen(run_prep_cmd,stdout=subprocess.PIPE, shell=True)
     proc_stdout = process.communicate()[0].strip()
-    print_control("{{PROGRESS}} Step "+ str(stp_cnt)+ " done without fatal errors.")
+    print_control("Step "+ str(stp_cnt)+ " done without fatal errors.")
     stp_cnt+=1
 
     # Step 1: Check LICENSE.
