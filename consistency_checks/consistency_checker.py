@@ -298,7 +298,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module,user_module_n
             if not output:
                 break
             if output:
-                print_control ("\r"+str(output.strip())[2:-1])
+                continue
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         print_control("{{ERROR}} "+str(error_msg))

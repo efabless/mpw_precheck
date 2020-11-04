@@ -20,7 +20,7 @@ def print_control(message, log='/usr/local/bin/full_log.log'):
         print(str(message))
         message = str(message).split("}}")[1]
     try:
-        f=open(log,'a',encoding="UTF-8")
+        f=open(log,'a')
         f.write(str(message)+'\n')
         f.close()
     except OSError:
@@ -28,14 +28,7 @@ def print_control(message, log='/usr/local/bin/full_log.log'):
         exit_control(255)
 
 def dump_full_log(log='/usr/local/bin/full_log.log'):
-    try:
-        f=open(log,"r")
-        content = f.read()
-        f.close()
-        print("{{FULL LOG}} ", content)
-    except OSError:
-        print("{{ERROR}} unable to print full log.")
-        exit(255)
+    print("Full log could be found at "+ str(log))
 
 
 def exit_control(code,log='/usr/local/bin/full_log.log'):
