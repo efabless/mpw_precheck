@@ -29,6 +29,13 @@ The steps are as follows:
   - All third_party material should be under a third_party directory and have a license identifier. https://opensource.google/docs/releasing/preparing/#third-party-components
   - All text files should have a copyright header (and appropriate SPDX identifier). https://opensource.google/docs/releasing/preparing/#license-headers
 - Step #2: YAML description check.
+  - YAML file should include:
+    - name
+    - description
+    - git_url
+    - version
+    - top_level_netlist: toplvl.spice or toplvl.v should be in /target_path and could be spice or verilog (.spice or .v) as long as it's of the same type as user_level_netlist.
+    - user_level_netlist: user_level_netlist.spice or user_level_netlist.v should be in /target_path and could be spice or verilog (.spice or .v) as long as it's of the same type as top_level_netlist.
 - Step #3: Fuzzy Consistency checks
   - Step #3.1: The existence of documentation.
     - There is a README text file at the top level.
@@ -68,8 +75,6 @@ Run the following command:
 
 ```
 python3 google_mpw_prechecker.py [-h] --target_path TARGET_PATH
-                                --top_level_netlist TOP_LEVEL_NETLIST
-                                --user_level_netlist USER_LEVEL_NETLIST
                                 [--output_directory OUTPUT_DIRECTORY]
                                 [--waive_fuzzy_checks] [--skip_drc]
                                 [--drc_only]
@@ -79,16 +84,6 @@ Runs the precheck tool by calling the various checks in order.
 optional arguments:
   --target_path TARGET_PATH, -t TARGET_PATH
                         Absolute Path to the project.
-  --top_level_netlist TOP_LEVEL_NETLIST, -tn TOP_LEVEL_NETLIST
-                        Netlist: toplvl.spice or toplvl.v should be in
-                        /target_path and could be spice or verilog (.spice or
-                        .v) as long as it's of the same type as
-                        user_level_netlist.
-  --user_level_netlist USER_LEVEL_NETLIST, -un USER_LEVEL_NETLIST
-                        Netlist: user_level_netlist.spice or
-                        user_level_netlist.v should be in /target_path and
-                        could be spice or verilog (.spice or .v) as long as
-                        it's of the same type as top_level_netlist.
   --output_directory OUTPUT_DIRECTORY, -o OUTPUT_DIRECTORY
                         Output Directory, defaults to /target_path/checks
   --waive_fuzzy_checks, -wfc

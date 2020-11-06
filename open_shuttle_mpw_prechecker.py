@@ -22,13 +22,9 @@ import consistency_checks.consistency_checker as consistency_checker
 import drc_checks.gds_drc_checker as gds_drc_checker
 from utils.utils import *
 
-def run_check_sequence(target_path, top_level_netlist, user_level_netlist, output_directory=None,waive_fuzzy_checks=False,skip_drc=False, drc_only=False):
-    if output_directory is None:
-        output_directory = str(target_path)+ '/checks'
-
+def parse_netlists(top_level_netlist,user_level_netlist):
     verilog_netlist = []
     spice_netlist = []
-
     toplvl_extension = os.path.splitext(top_level_netlist)[1]
     userlvl_extension = os.path.splitext(user_level_netlist)[1]
     if str(toplvl_extension) == '.v' and str(userlvl_extension) == '.v':
@@ -38,6 +34,11 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     else:
         print_control("{{FAIL}} the provided top level and user level netlists are neither a .spice or a .v files. Please adhere to the required input type.")
         exit_control(2)
+    return verilog_netlist, spice_netlist
+
+def run_check_sequence(target_path, output_directory=None,waive_fuzzy_checks=False,skip_drc=False, drc_only=False):
+    if output_directory is None:
+        output_directory = str(target_path)+ '/checks'
 
     steps = 4
     if drc_only:
@@ -79,13 +80,15 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
 
         # Step 2: Check YAML description.
         print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking YAML description.")
-        if check_yaml.check_yaml(target_path):
+        check, top_level_netlist,user_level_netlist = check_yaml.check_yaml(target_path)
+        if check:
             print_control("{{PROGRESS}} YAML file valid!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
         else:
-            print_control("{{FAIL}} YAML file not valid in target path\nTEST FAILED AT STEP "+ str(stp_cnt))
+            print_control("{{FAIL}} YAML file not valid in target path, please check the README.md for more info on the structure\nTEST FAILED AT STEP "+ str(stp_cnt))
             exit_control(2)
         stp_cnt+=1
 
+        verilog_netlist,spice_netlist=parse_netlists(top_level_netlist,user_level_netlist)
 
         # Step 3: Check Fuzzy Consistency.
         print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Executing Fuzzy Consistency Checks.")
@@ -129,12 +132,6 @@ if __name__ == "__main__":
     parser.add_argument('--target_path', '-t', required=True,
                         help='Absolute Path to the project.')
 
-    parser.add_argument('--top_level_netlist', '-tn', required=True,
-                        help="Netlist: toplvl.spice or toplvl.v should be in /target_path and could be spice or verilog (.spice or .v) as long as it's of the same type as user_level_netlist.")
-
-    parser.add_argument('--user_level_netlist', '-un',  required=True,
-                        help="Netlist: user_level_netlist.spice or user_level_netlist.v should be in /target_path and could be spice or verilog (.spice or .v) as long as it's of the same type as top_level_netlist.")
-
     parser.add_argument('--output_directory', '-o', required=False,
                         help='Output Directory, defaults to /target_path/checks')
 
@@ -149,10 +146,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     target_path = args.target_path
-    top_level_netlist = args.top_level_netlist
-    user_level_netlist =args.user_level_netlist
     skip_drc = args.skip_drc
     waive_fuzzy_checks = args.waive_fuzzy_checks
     drc_only = args.drc_only
 
-    run_check_sequence(target_path, top_level_netlist, user_level_netlist, args.output_directory,waive_fuzzy_checks,skip_drc,drc_only)
+    run_check_sequence(target_path, args.output_directory, waive_fuzzy_checks, skip_drc, drc_only)

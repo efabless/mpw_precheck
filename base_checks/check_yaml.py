@@ -23,17 +23,19 @@ class YamlStructure(NamedTuple):
     description: str
     git_url: str
     version: int = 1
+    top_level_netlist: str
+    user_level_netlist: str
 
 
 def check_yaml(path):
     try:
         content = yaml.load(open(os.path.join(path, _yaml_filename)).read())
         obj = YamlStructure(**content)
-        return True
+        return True, content["top_level_netlist"], content["user_level_netlist"]
     except TypeError as e:
-        return False
+        return False, None, None
     except FileNotFoundError as e:
-        return False
+        return False, None, None
 
 
 if __name__ == "__main__":
