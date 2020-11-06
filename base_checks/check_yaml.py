@@ -23,8 +23,8 @@ class YamlStructure(NamedTuple):
     description: str
     git_url: str
     version: int = 1
-    top_level_netlist: str
-    user_level_netlist: str
+    top_level_netlist: str = "caravel.v"
+    user_level_netlist: str = "user_project_wrapper.v"
 
 
 def check_yaml(path):
