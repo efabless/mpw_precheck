@@ -19,14 +19,15 @@ import os
 try:
     import utils.spice_utils as spice_utils
     import utils.verilog_utils as verilog_utils
+    import utils.doc_utils as doc_utils
 except ImportError:
     import consistency_checks.utils.spice_utils as spice_utils
     import consistency_checks.utils.verilog_utils as verilog_utils
+    import consistency_checks.utils.doc_utils as doc_utils
 import re
 import sys
 from utils.utils import *
 
-docExts = [".rst", ".html",".md",".pdf",".doc",".docx",".odt"]
 
 makefileTargets = ["verify", "clean", "compress", "uncompress"]
 
@@ -36,22 +37,6 @@ reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd","vssio", "vdda"] 
 
 toplevel = "caravel" #caravel
 user_module = "user_project_wrapper" #user_project_wrapper
-
-def getListOfFiles(dirName):
-    # create a list of file and sub directories
-    # names in the given directory
-    listOfFile = os.listdir(dirName)
-    allFiles = list()
-    # Iterate over all the entries
-    for entry in listOfFile:
-        # Create full path
-        fullPath = os.path.join(dirName, entry)
-        # If entry is a directory then get the list of files in this directory
-        if os.path.isdir(fullPath):
-            allFiles = allFiles + getListOfFiles(fullPath)
-        else:
-            allFiles.append(fullPath)
-    return allFiles
 
 def checkMakefile(target_path):
     try:
@@ -72,17 +57,10 @@ def checkMakefile(target_path):
         return False, "Makefile not found at top level"
 
 
-def checkDocumentation(target_path):
-    files = getListOfFiles(target_path)
-    for f in files:
-        extension = os.path.splitext(f)[1]
-        if extension in docExts:
-            return True
-    return False
 
 def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks",waive_docs=False, waive_makefile=False, waive_consistency_checks=False):
     if waive_docs == False:
-        if checkDocumentation(target_path):
+        if doc_utils.checkDocumentation(target_path):
             print_control("{{PROGRESS}} Documentation Exists")
         else:
             return False, "Documentation Not Found"
