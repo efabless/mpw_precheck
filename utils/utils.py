@@ -17,7 +17,7 @@ import re
 
 def print_control(message, log='/usr/local/bin/full_log.log'):
     if re.search(r'{{(\w+)}}(.*)', str(message)):
-        print(str(message))
+        print(str(message),flush=True)
         message = str(message).split("}}")[1]
     try:
         f=open(log,'a')
@@ -28,7 +28,7 @@ def print_control(message, log='/usr/local/bin/full_log.log'):
         exit_control(255)
 
 def dump_full_log(log='/usr/local/bin/full_log.log'):
-    print("Full log could be found at "+ str(log))
+    print("Full log could be found at "+ str(log),flush=True)
 
 
 def exit_control(code,log='/usr/local/bin/full_log.log'):
