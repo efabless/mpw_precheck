@@ -22,7 +22,7 @@ import consistency_checks.consistency_checker as consistency_checker
 import drc_checks.gds_drc_checker as gds_drc_checker
 from utils.utils import *
 
-def run_check_sequence(target_path, top_level_netlist, user_level_netlist, output_directory=None,waive_fuzzy_checks=False,skip_drc=False):
+def run_check_sequence(target_path, top_level_netlist, user_level_netlist, output_directory=None,waive_fuzzy_checks=False,skip_drc=False, drc_only=False):
     if output_directory is None:
         output_directory = str(target_path)+ '/checks'
 
@@ -38,8 +38,10 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     else:
         print_control("{{FAIL}} the provided top level and user level netlists are neither a .spice or a .v files. Please adhere to the required input type.")
         exit_control(2)
-
-    steps = 4 - int(skip_drc) - int(waive_fuzzy_checks)
+    
+    steps = 4 
+    if drc_only:
+        steps = 1
     stp_cnt = 0
 
     print_control("Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Uncompressing the gds files")
@@ -53,48 +55,49 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     print_control("Step "+ str(stp_cnt)+ " done without fatal errors.")
     stp_cnt+=1
 
-    # Step 1: Check LICENSE.
-    print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking License files.")
-    if check_license.check_main_license(target_path):
-        print_control("{{PROGRESS}} APACHE-2.0 LICENSE exists in target path")
-    else:
-        print_control("{{FAIL}} APACHE-2.0 LICENSE is Not Found in target path\nTEST FAILED AT STEP "+ str(stp_cnt))
-        exit_control(2)
+    if drc_only == False:
+        # Step 1: Check LICENSE.
+        print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking License files.")
+        if check_license.check_main_license(target_path):
+            print_control("{{PROGRESS}} APACHE-2.0 LICENSE exists in target path")
+        else:
+            print_control("{{FAIL}} APACHE-2.0 LICENSE is Not Found in target path\nTEST FAILED AT STEP "+ str(stp_cnt))
+            exit_control(2)
 
-    third_party_licenses=  check_license.check_lib_license(str(target_path)+'/third-party/')
+        third_party_licenses=  check_license.check_lib_license(str(target_path)+'/third-party/')
 
-    if len(third_party_licenses):
-        for key in third_party_licenses:
-            if third_party_licenses[key] == False:
-                print_control("{{FAIL}} Third Party"+ str(key),"License Not Found\nTEST FAILED AT STEP "+ str(stp_cnt))
-                exit_control(2)
-        print_control("{{PROGRESS}} Third Party Licenses Found.\nStep "+ str(stp_cnt)+ " done without fatal errors.")
-    else:
-        print_control("{{PROGRESS}} No third party libraries found.\nStep "+ str(stp_cnt)+ " done without fatal errors.")
-    stp_cnt+=1
-
-
-    # Step 2: Check YAML description.
-    print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking YAML description.")
-    if check_yaml.check_yaml(target_path):
-        print_control("{{PROGRESS}} YAML file valid!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
-    else:
-        print_control("{{FAIL}} YAML file not valid in target path\nTEST FAILED AT STEP "+ str(stp_cnt))
-        exit_control(2)
-    stp_cnt+=1
+        if len(third_party_licenses):
+            for key in third_party_licenses:
+                if third_party_licenses[key] == False:
+                    print_control("{{FAIL}} Third Party"+ str(key),"License Not Found\nTEST FAILED AT STEP "+ str(stp_cnt))
+                    exit_control(2)
+            print_control("{{PROGRESS}} Third Party Licenses Found.\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+        else:
+            print_control("{{PROGRESS}} No third party libraries found.\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+        stp_cnt+=1
 
 
-    # Step 3: Check Fuzzy Consistency.
-    print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Executing Fuzzy Consistency Checks.")
-    check, reason = consistency_checker.fuzzyCheck(target_path=target_path,spice_netlist=spice_netlist,verilog_netlist=verilog_netlist,output_directory=output_directory,waive_consistency_checks=waive_fuzzy_checks)
-    if check:
-        print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
-    else:
-        print_control("{{FAIL}} Consistency Checks Failed+ Reason: "+ reason,"\nTEST FAILED AT STEP "+ str(stp_cnt))
-        exit_control(2)
-    stp_cnt+=1
+        # Step 2: Check YAML description.
+        print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking YAML description.")
+        if check_yaml.check_yaml(target_path):
+            print_control("{{PROGRESS}} YAML file valid!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+        else:
+            print_control("{{FAIL}} YAML file not valid in target path\nTEST FAILED AT STEP "+ str(stp_cnt))
+            exit_control(2)
+        stp_cnt+=1
 
-    # Step 4: Not Yet Implemented.
+
+        # Step 3: Check Fuzzy Consistency.
+        print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Executing Fuzzy Consistency Checks.")
+        check, reason = consistency_checker.fuzzyCheck(target_path=target_path,spice_netlist=spice_netlist,verilog_netlist=verilog_netlist,output_directory=output_directory,waive_consistency_checks=waive_fuzzy_checks)
+        if check:
+            print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+        else:
+            print_control("{{FAIL}} Consistency Checks Failed+ Reason: "+ reason,"\nTEST FAILED AT STEP "+ str(stp_cnt))
+            exit_control(2)
+        stp_cnt+=1
+
+        # Step 4: Not Yet Implemented.
 
     # Step 5: Perform DRC checks on the GDS.
     # assumption that we'll always be using a caravel top module based on what's on step 3
@@ -141,6 +144,8 @@ if __name__ == "__main__":
     parser.add_argument('--skip_drc', '-sd',action='store_true', default=False,
                     help="Specifies whether or not to skip DRC checks.")
 
+    parser.add_argument('--drc_only', '-do',action='store_true', default=False,
+                    help="Specifies whether or not to only run DRC checks.")
 
     args = parser.parse_args()
     target_path = args.target_path
@@ -148,5 +153,6 @@ if __name__ == "__main__":
     user_level_netlist =args.user_level_netlist
     skip_drc = args.skip_drc
     waive_fuzzy_checks = args.waive_fuzzy_checks
+    drc_only = args.drc_only
 
-    run_check_sequence(target_path, top_level_netlist, user_level_netlist, args.output_directory,waive_fuzzy_checks,skip_drc)
+    run_check_sequence(target_path, top_level_netlist, user_level_netlist, args.output_directory,waive_fuzzy_checks,skip_drc,drc_only)
