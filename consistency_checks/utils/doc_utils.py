@@ -45,11 +45,12 @@ def checkInclusiveLang(file):
     return True
 
 def checkDocumentation(target_path):
-    found = False
-    for ext in docExts.append(""):
-        if os.path.exists(target_path+"/README"+str(ext)):
-            found = True
-            break
+    found = os.path.exists(target_path+"/README")
+    if found == False:
+        for ext in docExts:
+            if os.path.exists(target_path+"/README"+str(ext)):
+                found = True
+                break
     if found:
         files = getListOfFiles(target_path)
         for f in files:
