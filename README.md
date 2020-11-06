@@ -56,6 +56,7 @@ python3 google_mpw_prechecker.py [-h] --target_path TARGET_PATH
                                 --user_level_netlist USER_LEVEL_NETLIST
                                 [--output_directory OUTPUT_DIRECTORY]
                                 [--waive_fuzzy_checks] [--skip_drc]
+                                [--drc_only]
 
 Runs the precheck tool by calling the various checks in order.
 
@@ -78,6 +79,7 @@ optional arguments:
                         Specifies whether or not to waive fuzzy consistency
                         checks.
   --skip_drc, -sd       Specifies whether or not to skip DRC checks.
+  --drc_only, -do       Specifies whether or not to only run DRC checks.
 
 ```
 
