@@ -41,8 +41,8 @@ def checkInclusiveLang(file):
     docOpener.close()
     for word in bannedList:
         if docContent.find(word) != -1:
-            return False
-    return True
+            return False, word
+    return True,""
 
 def checkDocumentation(target_path):
     found = os.path.exists(target_path+"/README")
@@ -56,10 +56,11 @@ def checkDocumentation(target_path):
         for f in files:
             extension = os.path.splitext(f)[1]
             if extension in docExts:
-                if checkInclusiveLang(f) == False:
-                    return False
-        return True
+                check, reason = checkInclusiveLang(f)
+                if check == False:
+                    return False, "The documentation file " + str(f) + "contains non-inclusive language: "+reason
+        return True, ""
     else:
-        return False
+        return False, "Documentation Not Found"
 
 

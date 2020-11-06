@@ -60,17 +60,18 @@ def checkMakefile(target_path):
 
 def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks",waive_docs=False, waive_makefile=False, waive_consistency_checks=False):
     if waive_docs == False:
-        if doc_utils.checkDocumentation(target_path):
-            print_control("{{PROGRESS}} Documentation Exists")
+        check, reason = doc_utils.checkDocumentation(target_path)
+        if check:
+            print_control("{{PROGRESS}} Documentation Checks Passed.")
         else:
-            return False, "Documentation Not Found"
+            return False, reason
     else:
         print_control("{{WARNING}} Documentation Check Skipped.")
 
     if waive_makefile == False:
         makefileCheck, makefileReason = checkMakefile(target_path)
         if makefileCheck:
-            print_control("{{PROGRESS}} Makefile Checks Passed")
+            print_control("{{PROGRESS}} Makefile Checks Passed.")
         else:
             return False, "Makefile checks failed because: "+ makefileReason
     else:
