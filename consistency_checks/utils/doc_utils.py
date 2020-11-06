@@ -58,9 +58,7 @@ def checkDocumentation(target_path):
             if extension in docExts:
                 check, reason = checkInclusiveLang(f)
                 if check == False:
-                    return False, "The documentation file " + str(f) + "contains non-inclusive language: "+reason
+                    return False, "The documentation file " + str(f) + " contains non-inclusive language: "+reason
         return True, ""
     else:
         return False, "Documentation Not Found"
-
-
