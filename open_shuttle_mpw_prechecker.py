@@ -38,8 +38,8 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     else:
         print_control("{{FAIL}} the provided top level and user level netlists are neither a .spice or a .v files. Please adhere to the required input type.")
         exit_control(2)
-    
-    steps = 4 
+
+    steps = 4
     if drc_only:
         steps = 1
     stp_cnt = 0
