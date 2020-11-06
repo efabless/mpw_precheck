@@ -46,7 +46,7 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
 
     print_control("Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Uncompressing the gds files")
     # Decompress project items and copies all GDS-II files to top level.
-    run_prep_cmd = "cd {target_path}; make uncompress; cp */*.gds .;".format(
+    run_prep_cmd = "cd {target_path}; make uncompress;".format(
         target_path = target_path
     )
 
@@ -105,7 +105,7 @@ def run_check_sequence(target_path, top_level_netlist, user_level_netlist, outpu
     if skip_drc:
         print_control("{{WARNING}} Skipping DRC Checks...")
     else:
-        check, reason = gds_drc_checker.gds_drc_check(target_path, 'caravel', output_directory)
+        check, reason = gds_drc_checker.gds_drc_check(str(target_path)+'/gds/', 'caravel', output_directory)
 
         if check:
             print_control("{{PROGRESS}} DRC Checks on GDS-II Passed!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
