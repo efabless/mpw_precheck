@@ -22,7 +22,7 @@ import consistency_checks.consistency_checker as consistency_checker
 import drc_checks.gds_drc_checker as gds_drc_checker
 from utils.utils import *
 
-def parse_netlists(top_level_netlist,user_level_netlist):
+def parse_netlists(target_path,top_level_netlist,user_level_netlist):
     verilog_netlist = []
     spice_netlist = []
     toplvl_extension = os.path.splitext(top_level_netlist)[1]
@@ -89,7 +89,7 @@ def run_check_sequence(target_path, output_directory=None,waive_fuzzy_checks=Fal
             exit_control(2)
         stp_cnt+=1
 
-        verilog_netlist,spice_netlist=parse_netlists(top_level_netlist,user_level_netlist)
+        verilog_netlist,spice_netlist=parse_netlists(target_path,top_level_netlist,user_level_netlist)
 
         # Step 3: Check Fuzzy Consistency.
         print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Executing Fuzzy Consistency Checks.")
