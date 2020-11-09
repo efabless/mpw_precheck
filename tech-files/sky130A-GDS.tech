@@ -4,7 +4,7 @@ tech
 end
 
 version
-    version 20200508
+    version 20200927
     description "SkyWater S8: Vendor GDS layers"
 end
 
