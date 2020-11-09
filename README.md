@@ -1,4 +1,4 @@
-# google_mpw_precheck
+# open_mpw_precheck
 
 ## Prerequisites:
 
@@ -64,17 +64,17 @@ The steps are as follows:
 ## How To Run:
 Mount the docker file:
 
-You should export `TARGET_PATH=/path/to/target/path` and add this argument `-v $TARGET_PATH:$TARGET_PATH` to the `docker run` command, if the target project directory is outside the cloned google_mpw_precheck directory.
+You should export `TARGET_PATH=/path/to/target/path` and add this argument `-v $TARGET_PATH:$TARGET_PATH` to the `docker run` command, if the target project directory is outside the cloned open_mpw_precheck directory.
 
 ```
 docker run -it -v $(pwd):/usr/local/bin \
     -u $(id -u $USER):$(id -g $USER) \
-    google_mpw_prechecker:latest
+    open_mpw_prechecker:latest
 ```
 Run the following command:
 
 ```
-python3 google_mpw_prechecker.py [-h] --target_path TARGET_PATH
+python3 open_mpw_prechecker.py [-h] --target_path TARGET_PATH
                                 [--output_directory OUTPUT_DIRECTORY]
                                 [--waive_fuzzy_checks] [--skip_drc]
                                 [--drc_only]

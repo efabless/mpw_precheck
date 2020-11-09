@@ -27,6 +27,15 @@ def print_control(message, log='/usr/local/bin/full_log.log'):
         print("{{ERROR}} unable to print notification.")
         exit_control(255)
 
+def create_full_log(log='/usr/local/bin/full_log.log'):
+    try:
+        f=open(log,'w+')
+        f.write("FULL RUN LOG:\n")
+        f.close()
+    except OSError:
+        print("{{ERROR}} unable to create log file.")
+        exit_control(255)
+
 def dump_full_log(log='/usr/local/bin/full_log.log'):
     print("Full log could be found at "+ str(log),flush=True)
 

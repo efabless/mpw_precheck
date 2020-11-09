@@ -39,6 +39,7 @@ def parse_netlists(top_level_netlist,user_level_netlist):
 def run_check_sequence(target_path, output_directory=None,waive_fuzzy_checks=False,skip_drc=False, drc_only=False):
     if output_directory is None:
         output_directory = str(target_path)+ '/checks'
+    create_full_log()
 
     steps = 4
     if drc_only:
