@@ -29,13 +29,7 @@ The steps are as follows:
   - All third_party material should be under a third_party directory and have a license identifier. https://opensource.google/docs/releasing/preparing/#third-party-components
   - All text files should have a copyright header (and appropriate SPDX identifier). https://opensource.google/docs/releasing/preparing/#license-headers
 - Step #2: YAML description check.
-  - YAML file should include:
-    - name
-    - description
-    - git_url
-    - version
-    - top_level_netlist: toplvl.spice or toplvl.v should be in /target_path and could be spice or verilog (.spice or .v) as long as it's of the same type as user_level_netlist.
-    - user_level_netlist: user_level_netlist.spice or user_level_netlist.v should be in /target_path and could be spice or verilog (.spice or .v) as long as it's of the same type as top_level_netlist.
+  - YAML file should follow [this](https://github.com/efabless/caravel/blob/release/info.yaml) yaml file as list of requirements. It must be named info.yaml and must exist in the top level of the project.
 - Step #3: Fuzzy Consistency checks
   - Step #3.1: The existence of documentation.
     - There is a README text file at the top level.
