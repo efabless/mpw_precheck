@@ -19,7 +19,7 @@ import sys
 import os
 from utils.utils import *
 
-def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/local/bin/drc_checks',lc=logging_controller('/user/local/bin/full_log.log')):
+def gds_drc_check(target_path, design_name, output_directory, lc=logging_controller('/user/local/bin/full_log.log'),call_path='/usr/local/bin/drc_checks'):
     call_path = os.path.abspath(call_path)
     run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {output_directory} {call_path}".format(
         call_path = call_path,
@@ -94,4 +94,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    print("{{RESULT}} ", gds_drc_check(target_path, design_name, output_directory,'.'))
+    print("{{RESULT}} ", gds_drc_check(target_path, design_name, output_directory,logging_controller(str(output_directory)+'/full_log.log'),'.'))
