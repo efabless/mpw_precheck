@@ -18,8 +18,7 @@ import re
 class logging_controller:
     def __init__(self, log):
         self.log = log
-        self.create_full_log(log)
-   
+
     def switch_log(self,log):
         self.log = log
 
@@ -35,9 +34,9 @@ class logging_controller:
             print("{{ERROR}} unable to print notification.")
             self.exit_control(255)
 
-    def create_full_log(self,log):
+    def create_full_log(self):
         try:
-            f=open(log,'w+')
+            f=open(self.log,'w+')
             f.write("FULL RUN LOG:\n")
             f.close()
         except OSError:

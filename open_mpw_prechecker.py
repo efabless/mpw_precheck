@@ -41,6 +41,7 @@ def run_check_sequence(target_path, output_directory=None,waive_fuzzy_checks=Fal
         output_directory = str(target_path)+ '/checks'
     # Create the logging controller
     lc = logging_controller(str(output_directory)+'/full_log.log')
+    lc.create_full_log()
 
     steps = 4
     if drc_only:
