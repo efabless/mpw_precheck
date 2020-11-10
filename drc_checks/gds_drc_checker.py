@@ -19,7 +19,7 @@ import sys
 import os
 from utils.utils import *
 
-def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/local/bin/drc_checks'):
+def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/local/bin/drc_checks',lc=logging_controller('/user/local/bin/full_log.log')):
     call_path = os.path.abspath(call_path)
     run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {output_directory} {call_path}".format(
         call_path = call_path,
@@ -28,7 +28,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/lo
         output_directory = output_directory
     )
 
-    print_control ("{{PROGRESS}} Running DRC Checks...")
+    lc.print_control ("{{PROGRESS}} Running DRC Checks...")
 
     process = subprocess.Popen(run_drc_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:
@@ -68,7 +68,7 @@ def gds_drc_check(target_path, design_name, output_directory, call_path='/usr/lo
             for key in vioDict:
                 val = vioDict[key]
                 cnt+=val
-                print_control("Violation Message \""+str(key.strip())+ " \"found "+str(val)+ " Times.")
+                lc.print_control("Violation Message \""+str(key.strip())+ " \"found "+str(val)+ " Times.")
             return False, "Total # of DRC violations is "+ str(cnt)
 
 

@@ -22,7 +22,7 @@ import consistency_checks.consistency_checker as consistency_checker
 import drc_checks.gds_drc_checker as gds_drc_checker
 from utils.utils import *
 
-def parse_netlists(target_path,top_level_netlist,user_level_netlist):
+def parse_netlists(target_path,top_level_netlist,user_level_netlist,lc=logging_controller('/user/local/bin/full_log.log')):
     verilog_netlist = []
     spice_netlist = []
     toplvl_extension = os.path.splitext(top_level_netlist)[1]
@@ -32,96 +32,97 @@ def parse_netlists(target_path,top_level_netlist,user_level_netlist):
     elif str(toplvl_extension) == '.spice' and str(userlvl_extension) == '.spice':
         spice_netlist = [ str(target_path) + '/'+str(top_level_netlist),  str(target_path) + '/'+str(user_level_netlist)]
     else:
-        print_control("{{FAIL}} the provided top level and user level netlists are neither a .spice or a .v files. Please adhere to the required input type.")
-        exit_control(2)
+        lc.print_control("{{FAIL}} the provided top level and user level netlists are neither a .spice or a .v files. Please adhere to the required input type.")
+        lc.exit_control(2)
     return verilog_netlist, spice_netlist
 
 def run_check_sequence(target_path, output_directory=None,waive_fuzzy_checks=False,skip_drc=False, drc_only=False):
     if output_directory is None:
         output_directory = str(target_path)+ '/checks'
-    create_full_log()
+    # Create the logging controller
+    lc = logging_controller(str(output_directory)+'/full_log.log')
 
     steps = 4
     if drc_only:
         steps = 1
     stp_cnt = 0
 
-    print_control("Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Uncompressing the gds files")
+    lc.print_control("Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Uncompressing the gds files")
     # Decompress project items and copies all GDS-II files to top level.
     run_prep_cmd = "cd {target_path}; make uncompress;".format(
         target_path = target_path
     )
 
     process = subprocess.Popen(run_prep_cmd,stdout=subprocess.PIPE, shell=True)
-    proc_stdout = process.communicate()[0].strip()
-    print_control("Step "+ str(stp_cnt)+ " done without fatal errors.")
+    process.communicate()[0].strip()
+    lc.print_control("Step "+ str(stp_cnt)+ " done without fatal errors.")
     stp_cnt+=1
 
     if drc_only == False:
         # Step 1: Check LICENSE.
-        print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking License files.")
+        lc.print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking License files.")
         if check_license.check_main_license(target_path):
-            print_control("{{PROGRESS}} APACHE-2.0 LICENSE exists in target path")
+            lc.print_control("{{PROGRESS}} APACHE-2.0 LICENSE exists in target path")
         else:
-            print_control("{{FAIL}} APACHE-2.0 LICENSE is Not Found in target path\nTEST FAILED AT STEP "+ str(stp_cnt))
-            exit_control(2)
+            lc.print_control("{{FAIL}} APACHE-2.0 LICENSE is Not Found in target path\nTEST FAILED AT STEP "+ str(stp_cnt))
+            lc.exit_control(2)
 
         third_party_licenses=  check_license.check_lib_license(str(target_path)+'/third-party/')
 
         if len(third_party_licenses):
             for key in third_party_licenses:
                 if third_party_licenses[key] == False:
-                    print_control("{{FAIL}} Third Party"+ str(key),"License Not Found\nTEST FAILED AT STEP "+ str(stp_cnt))
-                    exit_control(2)
-            print_control("{{PROGRESS}} Third Party Licenses Found.\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+                    lc.print_control("{{FAIL}} Third Party"+ str(key)+"License Not Found\nTEST FAILED AT STEP "+ str(stp_cnt))
+                    lc.exit_control(2)
+            lc.print_control("{{PROGRESS}} Third Party Licenses Found.\nStep "+ str(stp_cnt)+ " done without fatal errors.")
         else:
-            print_control("{{PROGRESS}} No third party libraries found.\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+            lc.print_control("{{PROGRESS}} No third party libraries found.\nStep "+ str(stp_cnt)+ " done without fatal errors.")
         stp_cnt+=1
 
 
         # Step 2: Check YAML description.
-        print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking YAML description.")
+        lc.print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking YAML description.")
         check, top_level_netlist,user_level_netlist = check_yaml.check_yaml(target_path)
         if check:
-            print_control("{{PROGRESS}} YAML file valid!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+            lc.print_control("{{PROGRESS}} YAML file valid!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
         else:
-            print_control("{{FAIL}} YAML file not valid in target path, please check the README.md for more info on the structure\nTEST FAILED AT STEP "+ str(stp_cnt))
-            exit_control(2)
+            lc.print_control("{{FAIL}} YAML file not valid in target path, please check the README.md for more info on the structure\nTEST FAILED AT STEP "+ str(stp_cnt))
+            lc.exit_control(2)
         stp_cnt+=1
 
-        verilog_netlist,spice_netlist=parse_netlists(target_path,top_level_netlist,user_level_netlist)
+        verilog_netlist,spice_netlist=parse_netlists(target_path,top_level_netlist,user_level_netlist,lc)
 
         # Step 3: Check Fuzzy Consistency.
-        print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Executing Fuzzy Consistency Checks.")
-        check, reason = consistency_checker.fuzzyCheck(target_path=target_path,spice_netlist=spice_netlist,verilog_netlist=verilog_netlist,output_directory=output_directory,waive_consistency_checks=waive_fuzzy_checks)
+        lc.print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Executing Fuzzy Consistency Checks.")
+        check, reason = consistency_checker.fuzzyCheck(target_path=target_path,spice_netlist=spice_netlist,verilog_netlist=verilog_netlist,output_directory=output_directory,waive_consistency_checks=waive_fuzzy_checks, lc=lc)
         if check:
-            print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+            lc.print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
         else:
-            print_control("{{FAIL}} Consistency Checks Failed+ Reason: "+ reason,"\nTEST FAILED AT STEP "+ str(stp_cnt))
-            exit_control(2)
+            lc.print_control("{{FAIL}} Consistency Checks Failed+ Reason: "+ reason+"\nTEST FAILED AT STEP "+ str(stp_cnt))
+            lc.exit_control(2)
         stp_cnt+=1
 
         # Step 4: Not Yet Implemented.
 
     # Step 5: Perform DRC checks on the GDS.
     # assumption that we'll always be using a caravel top module based on what's on step 3
-    print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking DRC Violations.")
+    lc.print_control("{{PROGRESS}} Executing Step "+ str(stp_cnt)+ " of "+ str(steps)+ ": Checking DRC Violations.")
     if skip_drc:
-        print_control("{{WARNING}} Skipping DRC Checks...")
+        lc.print_control("{{WARNING}} Skipping DRC Checks...")
     else:
-        check, reason = gds_drc_checker.gds_drc_check(str(target_path)+'/gds/', 'caravel', output_directory)
+        check, reason = gds_drc_checker.gds_drc_check(str(target_path)+'/gds/', 'caravel', output_directory, lc)
 
         if check:
-            print_control("{{PROGRESS}} DRC Checks on GDS-II Passed!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
+            lc.print_control("{{PROGRESS}} DRC Checks on GDS-II Passed!\nStep "+ str(stp_cnt)+ " done without fatal errors.")
         else:
-            print_control("{{FAIL}} DRC Checks on GDS-II Failed, Reason: "+ reason+ "\nTEST FAILED AT STEP "+ str(stp_cnt))
-            exit_control(2)
+            lc.print_control("{{FAIL}} DRC Checks on GDS-II Failed, Reason: "+ reason+ "\nTEST FAILED AT STEP "+ str(stp_cnt))
+            lc.exit_control(2)
     stp_cnt+=1
 
     # Step 6: Not Yet Implemented.
     # Step 7: Not Yet Implemented.
-    print_control("{{SUCCESS}} All Checks PASSED!")
-    dump_full_log()
+    lc.print_control("{{SUCCESS}} All Checks PASSED!")
+    lc.dump_full_log()
 
 
 
