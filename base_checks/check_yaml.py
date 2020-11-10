@@ -19,19 +19,41 @@ from typing import NamedTuple
 _yaml_filename = 'info.yaml'
 
 class YamlStructure(NamedTuple):
-    name: str
     description: str
+    foundry: str
     git_url: str
-    version: int = 1
-    top_level_netlist: str = "caravel.v"
-    user_level_netlist: str = "user_project_wrapper.v"
+    organization: str
+    organization_url: str
+    owner: str
+    process: str
+    project_name: str
+    tags: list
+    category: str
+    top_level_netlist: str
+    user_level_netlist: str
+    version: str
+    cover_image: str
 
+class MainYamlStructure(NamedTuple):
+    project: YamlStructure
+
+
+sample = YamlStructure(description='A template SoC for Google sponsored Open MPW shuttles for SKY130.', foundry='SkyWater', git_url='https://github.com/efabless/caravel.git', organization='Efabless', organization_url='http://efabless.com', owner='Tim Edwards', process='SKY130', project_name='Caravel', tags=['Open MPW', 'Test Harness'], category='Test Harness', top_level_netlist='verilog/rtl/caravel.v', user_level_netlist='verilog/rtl/user_proj_wrapper.v', version='1.00', cover_image='doc/ciic_harness.png')
+
+def diff_lists(li1, li2):
+    return (list(list(set(li1)-set(li2)) + list(set(li2)-set(li1))))
 
 def check_yaml(path):
     try:
-        content = yaml.load(open(os.path.join(path, _yaml_filename)).read())
-        obj = YamlStructure(**content)
-        return True, content["top_level_netlist"], content["user_level_netlist"]
+        content = yaml.load(open(os.path.join(path, _yaml_filename)).read(),Loader=yaml.FullLoader)
+        obj = MainYamlStructure(**content)
+        yamlKeys = [a for a in dir(sample) if not a.startswith('_') and not callable(getattr(sample, a))]
+        inKeys = list(content["project"].keys())
+        diff = diff_lists(inKeys,yamlKeys)
+        if len(diff):
+            return False, None, None
+        else:
+            return True, content["project"]["top_level_netlist"], content["project"]["user_level_netlist"]
     except TypeError as e:
         return False, None, None
     except FileNotFoundError as e:
@@ -39,7 +61,8 @@ def check_yaml(path):
 
 
 if __name__ == "__main__":
-    if check_yaml('.'):
+    check, a,b =check_yaml('.')
+    if check:
         print("{{RESULT}} YAML file valid!")
     else:
         print("{{FAIL}} YAML file not valid!")
