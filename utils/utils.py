@@ -15,31 +15,38 @@
 import re
 
 
-def print_control(message, log='/usr/local/bin/full_log.log'):
-    if re.search(r'{{(\w+)}}(.*)', str(message)):
-        print(str(message),flush=True)
-        message = str(message).split("}}")[1]
-    try:
-        f=open(log,'a')
-        f.write(str(message)+'\n')
-        f.close()
-    except OSError:
-        print("{{ERROR}} unable to print notification.")
-        exit_control(255)
+class logging_controller:
+    def __init__(self, log):
+        self.log = log
 
-def create_full_log(log='/usr/local/bin/full_log.log'):
-    try:
-        f=open(log,'w+')
-        f.write("FULL RUN LOG:\n")
-        f.close()
-    except OSError:
-        print("{{ERROR}} unable to create log file.")
-        exit_control(255)
+    def switch_log(self,log):
+        self.log = log
 
-def dump_full_log(log='/usr/local/bin/full_log.log'):
-    print("Full log could be found at "+ str(log),flush=True)
+    def print_control(self,message):
+        if re.search(r'{{(\w+)}}(.*)', str(message)):
+            print(str(message),flush=True)
+            message = str(message).split("}}")[1]
+        try:
+            f=open(self.log,'a')
+            f.write(str(message)+'\n')
+            f.close()
+        except OSError:
+            print("{{ERROR}} unable to print notification.")
+            self.exit_control(255)
+
+    def create_full_log(self):
+        try:
+            f=open(self.log,'w+')
+            f.write("FULL RUN LOG:\n")
+            f.close()
+        except OSError:
+            print("{{ERROR}} unable to create log file.")
+            self.exit_control(255)
+
+    def dump_full_log(self):
+        print("Full log could be found at "+ str(self.log),flush=True)
 
 
-def exit_control(code,log='/usr/local/bin/full_log.log'):
-    dump_full_log(log)
-    exit(code)
+    def exit_control(self,code):
+        self.dump_full_log()
+        exit(code)
