@@ -84,10 +84,11 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
         else:
             lc.print_control("{{PROGRESS}} No third party libraries found.\nStep " + str(stp_cnt) + " done without fatal errors.")
 
-        spdx_compliance_list = check_license.check_dir_spdx_compliance([], target_path)
-        count_non_compliant_files = [x for x in spdx_compliance_list if not x.get("compliant")].__len__()
-        if spdx_compliance_list:
-            lc.print_control("{{SPDX COMPLIANCE WARNING}} We found %s files not compliant with the SPDX Standard" % count_non_compliant_files)
+        spdx_non_compliant_list = check_license.check_dir_spdx_compliance([], target_path)
+        if spdx_non_compliant_list:
+            lc.print_control(
+                "{{SPDX COMPLIANCE WARNING}} We found %s files not compliant with the SPDX Standard \n%s" % (spdx_non_compliant_list.__len__(),
+                                                                                                             spdx_non_compliant_list[:20]))
         else:
             lc.print_control("{{SPDX COMPLIANCE PASSED}} Project is compliant with SPDX Standard")
 

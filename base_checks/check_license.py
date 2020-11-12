@@ -46,24 +46,25 @@ def check_lib_license(path):
     return libs
 
 
-def check_dir_spdx_compliance(compliance_list, path):
+def check_dir_spdx_compliance(non_compliant_list, path):
     if os.path.exists(path):
         root, dirs, files = next(os.walk(path))
         for file in files:
             try:
                 result = check_file_spdx_compliance(os.path.join(root, file))
                 if result:
-                    compliance_list.append(result)
+                    non_compliant_list.append(result)
             except Exception as e:
                 print("DIRECTORY (%s) ERROR: %s" % (root, e))
         for dr in dirs:
+            # NOTE: ignoring third party directory for SPDX compliance
             if dr != "third_party":
                 try:
-                    check_dir_spdx_compliance(compliance_list, os.path.join(root, dr))
+                    check_dir_spdx_compliance(non_compliant_list, os.path.join(root, dr))
                 except Exception as e:
                     print("DIRECTORY (%s) ERROR: %s" % (dr, e))
 
-    return compliance_list
+    return non_compliant_list
 
 
 def check_file_spdx_compliance(file_path):
@@ -88,7 +89,7 @@ def check_file_spdx_compliance(file_path):
                 if spdx_cp_compliant and spdx_ls_compliant:
                     spdx_compliant = True
                     break
-            return {"name": file_path, "compliant": spdx_compliant}
+            return file_path if not spdx_compliant else None
 
     except UnicodeDecodeError:
         pass
