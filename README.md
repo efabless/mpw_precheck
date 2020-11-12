@@ -39,7 +39,12 @@ The steps are as follows:
     - clean: Removes all simulation and verification outputs.
     - compress: compresses the project directory.
     - uncompress: decompresses the project directory.
-  - Step #3.3: Fuzzy Consistency checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
+  - Step #3.3: Consistency Checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
+    - The top level module is `caravel` and there is a `user_project_wrapper` under it.
+    - `caravel` and `user_project_wrapper` exist and are non-trivial.
+    - You have not changed the pin list of the `user_project_wrapper`.
+    - You are only using the allowed power connections with the pads.
+    - The instance names and types match for `caravel` and the `user_project_wrapper` (a comparison between the netlist and the gds).
 - Step #4: TBA
 - Step #5: Runs DRC checks on the GDS-II.
 - Step #6: TBA
