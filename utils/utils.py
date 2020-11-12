@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import re
-
+import os
+from pathlib import Path
 
 class logging_controller:
     def __init__(self, log):
@@ -36,6 +37,10 @@ class logging_controller:
 
     def create_full_log(self):
         try:
+            path = Path(self.log)
+            dir = path.parent
+            if not os.path.exists(dir):
+                os.mkdir(dir)
             f=open(self.log,'w+')
             f.write("FULL RUN LOG:\n")
             f.close()
