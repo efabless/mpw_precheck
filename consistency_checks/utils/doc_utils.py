@@ -35,7 +35,7 @@ def getListOfFiles(dirName):
     return allFiles
 
 def checkInclusiveLang(file):
-    docOpener = open(file)
+    docOpener = open(file,'r', encoding='utf-8')
     if docOpener.mode == 'r':
         docContent = docOpener.read()
     docOpener.close()
