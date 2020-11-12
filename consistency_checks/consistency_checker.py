@@ -218,7 +218,7 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=lo
 
     check, reason = verilog_utils.find_module(verilog_netlist[0], toplevel)
     if check == False:
-        lc.print_control("{{ERROR}} verilog Check Failed because: " + reason, " in netlist: " + verilog_netlist[0])
+        lc.print_control("{{ERROR}} verilog Check Failed because: " + reason+ " in netlist: " + verilog_netlist[0])
         return False, reason
     else:
         lc.print_control(reason)
