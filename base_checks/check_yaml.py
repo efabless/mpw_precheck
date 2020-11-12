@@ -18,6 +18,7 @@ from typing import NamedTuple
 
 _yaml_filename = 'info.yaml'
 
+
 class YamlStructure(NamedTuple):
     description: str
     foundry: str
@@ -34,22 +35,29 @@ class YamlStructure(NamedTuple):
     version: str
     cover_image: str
 
+
 class MainYamlStructure(NamedTuple):
     project: YamlStructure
 
 
-sample = YamlStructure(description='A template SoC for Google sponsored Open MPW shuttles for SKY130.', foundry='SkyWater', git_url='https://github.com/efabless/caravel.git', organization='Efabless', organization_url='http://efabless.com', owner='Tim Edwards', process='SKY130', project_name='Caravel', tags=['Open MPW', 'Test Harness'], category='Test Harness', top_level_netlist='verilog/rtl/caravel.v', user_level_netlist='verilog/rtl/user_proj_wrapper.v', version='1.00', cover_image='doc/ciic_harness.png')
+sample = YamlStructure(description='A template SoC for Google sponsored Open MPW shuttles for SKY130.', foundry='SkyWater',
+                       git_url='https://github.com/efabless/caravel.git', organization='Efabless', organization_url='http://efabless.com',
+                       owner='Tim Edwards', process='SKY130', project_name='Caravel', tags=['Open MPW', 'Test Harness'], category='Test Harness',
+                       top_level_netlist='verilog/rtl/caravel.v', user_level_netlist='verilog/rtl/user_proj_wrapper.v', version='1.00',
+                       cover_image='doc/ciic_harness.png')
+
 
 def diff_lists(li1, li2):
-    return (list(list(set(li1)-set(li2)) + list(set(li2)-set(li1))))
+    return (list(list(set(li1) - set(li2)) + list(set(li2) - set(li1))))
+
 
 def check_yaml(path):
     try:
-        content = yaml.load(open(os.path.join(path, _yaml_filename)).read(),Loader=yaml.FullLoader)
+        content = yaml.load(open(os.path.join(path, _yaml_filename)).read(), Loader=yaml.FullLoader)
         obj = MainYamlStructure(**content)
         yamlKeys = [a for a in dir(sample) if not a.startswith('_') and not callable(getattr(sample, a))]
         inKeys = list(content["project"].keys())
-        diff = diff_lists(inKeys,yamlKeys)
+        diff = diff_lists(inKeys, yamlKeys)
         if len(diff):
             return False, None, None
         else:
@@ -61,7 +69,7 @@ def check_yaml(path):
 
 
 if __name__ == "__main__":
-    check, a,b =check_yaml('.')
+    check, a, b = check_yaml('.')
     if check:
         print("{{RESULT}} YAML file valid!")
     else:
