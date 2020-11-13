@@ -30,6 +30,7 @@ The steps are as follows:
   - All text files should have a copyright header (and appropriate SPDX identifier). https://opensource.google/docs/releasing/preparing/#license-headers
 - Step #2: YAML description check.
   - YAML file should follow [this](https://github.com/efabless/caravel/blob/release/info.yaml) yaml file as list of requirements: all fields in the linked example are mandatory. It must be named `info.yaml` and must exist in the project root.
+    - Make sure that you're pointing to gate level netlists or spice models with blackboxed macros when setting `top_level_netlist` and `user_level_netlist`.
 - Step #3: Fuzzy Consistency checks
   - Step #3.1: The existence of documentation.
     - There is a README text file at the project root.
