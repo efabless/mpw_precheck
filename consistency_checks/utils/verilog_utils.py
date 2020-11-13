@@ -18,9 +18,14 @@ def removeComments(string):
     string = re.sub(re.compile("/\*.*?\*/",re.DOTALL ) ,"" ,string) # remove all occurrences streamed comments (/*COMMENT */) from string
     string = re.sub(re.compile("//.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
     return string
+def removeIfDefs(string):
+    string = re.sub(re.compile("`ifndef.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
+    string = re.sub(re.compile("`ifdef.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
+    string = re.sub(re.compile("`endif.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
+    return string
 
 def cleanupFile(string):
-    return removeComments(string)
+    return removeIfDefs(removeComments(string))
 
 def find_module(verilog_netlist, module_name):
     try:
@@ -28,9 +33,6 @@ def find_module(verilog_netlist, module_name):
         if verilogOpener.mode == 'r':
             verilogContent = cleanupFile(verilogOpener.read())
         verilogOpener.close()
-        printer = open('this.v','w')
-        printer.write(verilogContent)
-        printer.close()
         pattern = re.compile(r'module\s*\b%s\b\s*\#?\(' % module_name)
         if len(re.findall(pattern, verilogContent)):
             return True, 'instance '+module_name+ ' found'
@@ -51,7 +53,7 @@ def confirm_complex_module(verilog_netlist,module_name,minimum_instantiations_nu
             start_idx = verilogContent.find(modules[0])
             end_idx =verilogContent.find('endmodule',start_idx)
             module = verilogContent[start_idx:end_idx]
-            pattern2 = re.compile(r'\s*\b[\w_]+\b\s*\b[\w_]+\s*\#?\(')
+            pattern2 = re.compile(r'\s*\b[\w\_\[\]\.\\]+\b\s*\\?\w[\w\_\[\]\.\\]+\s*\#?\(')
             instances = re.findall(pattern2, module)
             if len(instances) > minimum_instantiations_number:
                 return True, 'Design is complex and contains: '+str(len(instances))+' modules'
@@ -203,7 +205,7 @@ def extract_cell_list(verilog_netlist, toplevel,exclude_prefix=None):
             start_idx = verilogContent.find(modules[0])
             end_idx =verilogContent.find('endmodule',start_idx)
             module = verilogContent[start_idx:end_idx]
-            pattern = re.compile(r'\s*\b[\w_]+\b\s*\b[\w_]+\s*\#?\(')
+            pattern = re.compile(r'\s*\b[\w\_\[\]\.\\]+\b\s*\\?\w[\w\_\[\]\.\\]+\s*\#?\(')
             instances = re.findall(pattern, module)
             if len(instances[1:]):
                 name_list = list()
