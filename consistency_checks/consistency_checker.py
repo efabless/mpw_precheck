@@ -182,7 +182,7 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=loggin
         else:
             lc.print_control(reason)
             check, reason = spice_utils.confirm_complex_subckt(spice_netlist[0], toplevel,
-                                                               5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
+                                                               1)  # 1 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
             if check == False:
                 lc.print_control("{{ERROR}} Spice Check Failed because: " + reason)
                 return False, reason
@@ -229,7 +229,7 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=lo
         else:
             lc.print_control(reason)
             check, reason = verilog_utils.confirm_complex_module(verilog_netlist[0], toplevel,
-                                                                 5)  # 5 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
+                                                                 1)  # 1 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
             if check == False:
                 lc.print_control("{{ERROR}} verilog Check Failed because: " + reason + " in netlist: " + verilog_netlist[0])
                 return False, reason

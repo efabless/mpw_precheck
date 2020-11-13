@@ -19,12 +19,18 @@ def removeComments(string):
     string = re.sub(re.compile("//.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
     return string
 
+def cleanupFile(string):
+    return removeComments(string)
+
 def find_module(verilog_netlist, module_name):
     try:
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
-            verilogContent = removeComments(verilogOpener.read())
+            verilogContent = cleanupFile(verilogOpener.read())
         verilogOpener.close()
+        printer = open('this.v','w')
+        printer.write(verilogContent)
+        printer.close()
         pattern = re.compile(r'module\s*\b%s\b\s*\#?\(' % module_name)
         if len(re.findall(pattern, verilogContent)):
             return True, 'instance '+module_name+ ' found'
@@ -37,15 +43,15 @@ def confirm_complex_module(verilog_netlist,module_name,minimum_instantiations_nu
     try:
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
-            verilogContent = removeComments(verilogOpener.read())
+            verilogContent = cleanupFile(verilogOpener.read())
         verilogOpener.close()
-        pattern = re.compile(r'module\s*\b%s\b\s\#?*\(' % module_name)
+        pattern = re.compile(r'module\s*\b%s\b\s*\#?\(' % module_name)
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
             end_idx =verilogContent.find('endmodule',start_idx)
             module = verilogContent[start_idx:end_idx]
-            pattern2 = re.compile(r'\s*\b\S+\s*\b\S+\s*\#?\(')
+            pattern2 = re.compile(r'\s*\b[\w_]+\b\s*\b[\w_]+\s*\#?\(')
             instances = re.findall(pattern2, module)
             if len(instances) > minimum_instantiations_number:
                 return True, 'Design is complex and contains: '+str(len(instances))+' modules'
@@ -61,9 +67,9 @@ def confirm_circuit_hierarchy(verilog_netlist, toplevel, user_module):
     try:
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
-            verilogContent = removeComments(verilogOpener.read())
+            verilogContent = cleanupFile(verilogOpener.read())
         verilogOpener.close()
-        pattern = re.compile(r'module\s*\b%s\b\s\#?*\(' % toplevel)
+        pattern = re.compile(r'module\s*\b%s\b\s*\#?\(' % toplevel)
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
@@ -86,7 +92,7 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
     try:
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
-            verilogContent = removeComments(verilogOpener.read())
+            verilogContent = cleanupFile(verilogOpener.read())
         verilogOpener.close()
         pattern = re.compile(r'module\s*\b%s\b\s*\#?\(' % toplevel)
         modules = re.findall(pattern, verilogContent)
@@ -128,7 +134,6 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
 
 
 behavioral_keywords = ['always', 'initial', 'if', 'while', 'for', 'forever', 'repeat','reg', 'case','force']
-control_characters = ['#', '$', '@']
 
 def verify_non_behavioral_netlist(verilog_netlist):
     try:
@@ -138,22 +143,23 @@ def verify_non_behavioral_netlist(verilog_netlist):
         verilogOpener.close()
         skipper=False
         for lineIdx in range(len(verilogContent)):
-            line = verilogContent[lineIdx].split("//")[0]
+            line = verilogContent[lineIdx]
             if skipper:
                 if line.find("*/") != -1:
                     skipper =False
             elif line.find("/*") != -1:
                 skipper = True
+                if line.find("*/") != -1:
+                    skipper =False
             else:
+                if line.find("//") != -1:
+                    line = line.split("//")[0]
                 for keyword in behavioral_keywords:
-                    pattern = re.compile(r'\s*\b%s\b\s*' % keyword)
+                    pattern = re.compile(r'\s*?\b%s\b\s*' % keyword)
                     occ = re.findall(pattern, line)
                     if len(occ):
                         return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(occ[0])+' file: '+verilog_netlist+' line: '+str(lineIdx+1)
-                for char in control_characters:
-                    if line.find(char) != -1:
-                        return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(char) +' file: '+verilog_netlist+' line: '+str(lineIdx+1)
-                return True, 'Netlist is Structural'
+        return True, 'Netlist is Structural'
     except OSError:
         return False, 'Verilog file '+verilog_netlist+' not found'
 
@@ -161,9 +167,9 @@ def extract_instance_name(verilog_netlist, toplevel, instance):
     try:
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
-            verilogContent = removeComments(verilogOpener.read())
+            verilogContent = cleanupFile(verilogOpener.read())
         verilogOpener.close()
-        pattern = re.compile(r'module\s*\b%s\b\s\#?*\(' % toplevel)
+        pattern = re.compile(r'module\s*\b%s\b\s*\#?\(' % toplevel)
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
@@ -189,15 +195,15 @@ def extract_cell_list(verilog_netlist, toplevel,exclude_prefix=None):
     try:
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
-            verilogContent = removeComments(verilogOpener.read())
+            verilogContent = cleanupFile(verilogOpener.read())
         verilogOpener.close()
-        pattern = re.compile(r'module\s*\b%s\b\s\#?*\(' % toplevel)
+        pattern = re.compile(r'module\s*\b%s\b\s*\#?\(' % toplevel)
         modules = re.findall(pattern, verilogContent)
         if len(modules):
             start_idx = verilogContent.find(modules[0])
             end_idx =verilogContent.find('endmodule',start_idx)
             module = verilogContent[start_idx:end_idx]
-            pattern = re.compile(r'\s*\b\S+\b\s*\S+\s*\#?\(')
+            pattern = re.compile(r'\s*\b[\w_]+\b\s*\b[\w_]+\s*\#?\(')
             instances = re.findall(pattern, module)
             if len(instances[1:]):
                 name_list = list()
