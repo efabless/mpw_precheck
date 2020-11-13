@@ -71,30 +71,31 @@ def check_file_spdx_compliance(file_path):
     spdx_compliant = False
     spdx_cp_compliant = False
     spdx_ls_compliant = False
-    try:
-        with open(file_path, "tr") as f:
-            lines = [x.rstrip() for x in f.readlines()]
-        f.close()
+    if os.path.basename(file_path) != "LICENSE":
+        try:
+            with open(file_path, "tr") as f:
+                lines = [x.rstrip() for x in f.readlines()]
+            f.close()
 
-        if lines and list(filter(None, lines)):
-            header_char = list(filter(None, lines))[0][0]
-            for line in lines:
-                if line and line[0] == header_char:
-                    if _spdx_copyright_header in line:
-                        spdx_cp_compliant = True
-                    if _spdx_license_header in line:
-                        spdx_ls_compliant = True
-                else:
-                    break
-                if spdx_cp_compliant and spdx_ls_compliant:
-                    spdx_compliant = True
-                    break
-            return file_path if not spdx_compliant else None
+            if lines and list(filter(None, lines)):
+                header_char = list(filter(None, lines))[0][0]
+                for line in lines:
+                    if line and line[0] == header_char:
+                        if _spdx_copyright_header in line:
+                            spdx_cp_compliant = True
+                        if _spdx_license_header in line:
+                            spdx_ls_compliant = True
+                    else:
+                        break
+                    if spdx_cp_compliant and spdx_ls_compliant:
+                        spdx_compliant = True
+                        break
+                return file_path if not spdx_compliant else None
 
-    except UnicodeDecodeError:
-        pass
-    except Exception as e:
-        print("FILE (%s) ERROR: %s" % (file_path, e))
+        except UnicodeDecodeError:
+            pass
+        except Exception as e:
+            print("FILE (%s) ERROR: %s" % (file_path, e))
     return None
 
 
