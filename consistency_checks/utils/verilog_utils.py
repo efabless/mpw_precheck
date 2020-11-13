@@ -23,11 +23,11 @@ def find_module(verilog_netlist, module_name):
         verilogOpener.close()
         pattern = re.compile(r'module\s*\b%s\b\s*\(' % module_name)
         if len(re.findall(pattern, verilogContent)):
-            return True, 'instance found'
+            return True, 'instance '+module_name+ ' found'
         else:
-            return False, 'instance not found'
+            return False, 'instance '+module_name+ ' not found'
     except OSError:
-        return False, 'Verilog file not found'
+        return False, 'Verilog file '+verilog_netlist+' not found'
 
 def confirm_complex_module(verilog_netlist,module_name,minimum_instantiations_number):
     try:
@@ -46,11 +46,11 @@ def confirm_complex_module(verilog_netlist,module_name,minimum_instantiations_nu
             if len(instances) > minimum_instantiations_number:
                 return True, 'Design is complex and contains: '+str(len(instances))+' modules'
             else:
-                return False, "The module doesn't contain the minimum number of instantiations required"
+                return False, "The module "+str(module_name) +" doesn't contain the minimum number of instantiations required"
         else:
-            return False, 'instance not found'
+            return False, 'instance '+(module_name)+ ' not found'
     except OSError:
-        return False, 'Verilog file not found'
+        return False, 'Verilog file '+verilog_netlist+' not found'
 
 
 def confirm_circuit_hierarchy(verilog_netlist, toplevel, user_module):
@@ -72,9 +72,9 @@ def confirm_circuit_hierarchy(verilog_netlist, toplevel, user_module):
             else:
                 return False, 'Hierarchy Check Failed'
         else:
-            return False, 'instance not found'
+            return False, 'instance '+ str(toplevel) +' not found'
     except OSError:
-        return False, 'verilog file not found'
+        return False, 'Verilog file '+verilog_netlist+' not found'
 
 
 
@@ -118,9 +118,9 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
             else:
                 return False, 'Hierarchy Check Failed'
         else:
-            return False, 'instance not found'
+            return False, 'instance '+toplevel+ ' not found'
     except OSError:
-        return False, 'verilog file not found'
+        return False, 'Verilog file '+verilog_netlist+' not found'
 
 
 behavioral_keywords = ['always', 'initial', 'if', 'while', 'for', 'forever', 'repeat','reg', 'case','force']
@@ -130,19 +130,28 @@ def verify_non_behavioral_netlist(verilog_netlist):
     try:
         verilogOpener = open(verilog_netlist)
         if verilogOpener.mode == 'r':
-            verilogContent = verilogOpener.read()
+            verilogContent = verilogOpener.read().split("\n")
         verilogOpener.close()
-        for keyword in behavioral_keywords:
-            pattern = re.compile(r'\s*\b%s\b\s*' % keyword)
-            occ = re.findall(pattern, verilogContent)
-            if len(occ):
-                return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(occ[0])
-        for char in control_characters:
-            if verilogContent.find(char) != -1:
-                return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(char)
-        return True, 'Netlist is Structural'
+        skipper=False
+        for lineIdx in range(len(verilogContent)):
+            line = verilogContent[lineIdx].split("//")[0]
+            if skipper:
+                if line.find("*/") != -1:
+                    skipper =False
+            elif line.line.find("/*") != -1:
+                skipper = True
+            else:
+                for keyword in behavioral_keywords:
+                    pattern = re.compile(r'\s*\b%s\b\s*' % keyword)
+                    occ = re.findall(pattern, line)
+                    if len(occ):
+                        return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(occ[0])+' file: '+verilog_netlist+' line: '+str(lineIdx+1)
+                for char in control_characters:
+                    if line.find(char) != -1:
+                        return False, 'Behavioral Verilog Syntax Found in Netlist Code: '+ str(char) +' file: '+verilog_netlist+' line: '+str(lineIdx+1)
+                return True, 'Netlist is Structural'
     except OSError:
-        return False, 'verilog file not found'
+        return False, 'Verilog file '+verilog_netlist+' not found'
 
 def extract_instance_name(verilog_netlist, toplevel, instance):
     try:
@@ -164,9 +173,9 @@ def extract_instance_name(verilog_netlist, toplevel, instance):
             else:
                 return False, 'Hierarchy Check Failed'
         else:
-            return False, 'instance not found'
+            return False, 'instance '+toplevel+ ' not found'
     except OSError:
-        return False, 'verilog file not found'
+        return False, 'Verilog file '+verilog_netlist+' not found'
 
 
 def remove_backslashes(name):
@@ -202,6 +211,6 @@ def extract_cell_list(verilog_netlist, toplevel,exclude_prefix=None):
             else:
                 return False, 'Hierarchy Check Failed'
         else:
-            return False, 'instance not found'
+            return False, 'instance '+toplevel+ ' not found'
     except OSError:
-        return False, 'verilog file not found'
+        return False, 'Verilog file '+verilog_netlist+' not found'

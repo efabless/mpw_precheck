@@ -23,11 +23,11 @@ def find_subckt(spice_netlist, subckt_name):
         spiceOpener.close()
         pattern = re.compile(r'\.subckt\s*\b%s\b\s*' % subckt_name)
         if len(re.findall(pattern, spiceContent)):
-            return True, 'instance found'
+            return True, 'instance '+subckt_name+ ' found'
         else:
-            return False, 'instance not found'
+            return False, 'instance '+subckt_name+ ' not found'
     except OSError:
-        return False, 'Spice file not found'
+        return False, 'Spice file '+str(spice_netlist)+ ' not found'
 
 def confirm_complex_subckt(spice_netlist,subckt_name,minimum_devices_number):
     try:
@@ -46,11 +46,11 @@ def confirm_complex_subckt(spice_netlist,subckt_name,minimum_devices_number):
             if len(instances) > minimum_devices_number:
                 return True, 'Design is complex and contains: '+str(len(instances))+' subckts'
             else:
-                return False, "The subckt doesn't contain the minimum number of devices required"
+                return False, "The subckt "+subckt_name + " doesn't contain the minimum number of devices required"
         else:
-            return False, 'instance not found'
+            return False, 'instance '+subckt_name+ ' not found'
     except OSError:
-        return False, 'Spice file not found'
+        return False, 'Spice file '+str(spice_netlist)+ ' not found'
 
 
 def confirm_circuit_hierarchy(spice_netlist, toplevel, user_module):
@@ -78,9 +78,9 @@ def confirm_circuit_hierarchy(spice_netlist, toplevel, user_module):
                     ins_start_idx = ins_end_idx
             return False, 'Hierarchy Check Failed'
         else:
-            return False, 'instance not found'
+            return False, 'instance '+toplevel+ ' not found'
     except OSError:
-        return False, 'Spice file not found'
+        return False, 'Spice file '+str(spice_netlist)+ ' not found'
 
 def extract_connections_from_inst(spice_netlist, toplevel,user_module):
     try:
@@ -134,7 +134,7 @@ def extract_connections_from_inst(spice_netlist, toplevel,user_module):
         else:
             return False, 'Hierarchy Check Failed'
     except OSError:
-        return False, 'Spice file not found'
+        return False, 'Spice file '+str(spice_netlist)+ ' not found'
 
 def extract_instance_name(spice_netlist, toplevel,instance):
     try:
@@ -166,7 +166,7 @@ def extract_instance_name(spice_netlist, toplevel,instance):
         else:
             return False, 'Hierarchy Check Failed'
     except OSError:
-        return False, 'Spice file not found'
+        return False, 'Spice file '+str(spice_netlist)+ ' not found'
 
 
 
@@ -212,4 +212,4 @@ def extract_cell_list(spice_netlist, toplevel,exclude_prefix=None):
         else:
             return False, 'Hierarchy Check Failed'
     except OSError:
-        return False, 'Spice file not found'
+        return False, 'Spice file '+str(spice_netlist)+ ' not found'
