@@ -43,7 +43,7 @@ class MainYamlStructure(NamedTuple):
 sample = YamlStructure(description='A template SoC for Google sponsored Open MPW shuttles for SKY130.', foundry='SkyWater',
                        git_url='https://github.com/efabless/caravel.git', organization='Efabless', organization_url='http://efabless.com',
                        owner='Tim Edwards', process='SKY130', project_name='Caravel', tags=['Open MPW', 'Test Harness'], category='Test Harness',
-                       top_level_netlist='verilog/rtl/caravel.v', user_level_netlist='verilog/rtl/user_proj_wrapper.v', version='1.00',
+                       top_level_netlist='verilog/gl/caravel.v', user_level_netlist='verilog/gl/user_project_wrapper.v', version='1.00',
                        cover_image='doc/ciic_harness.png')
 
 
