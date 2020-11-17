@@ -117,6 +117,7 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
                 return False, reason
 
     if basic_hierarchy_checks:
+        """
         check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path) + "/" + user_project_wrapper_lef))
         if check == False:
             return False, user_project_wrapper_pin_list
@@ -131,6 +132,7 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
                 lc.print_control(reason)
             else:
                 return False, reason
+        """
         lc.print_control("{{PROGRESS}} Basic Hierarchy Checks Passed.")
     else:
         return False, "Basic Hierarchy Checks Failed."
