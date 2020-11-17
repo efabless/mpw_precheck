@@ -277,6 +277,7 @@ def diff_lists(li1, li2):
 def clean_gds_list(cells):
     cells = cells.replace("{", "")
     cells = cells.replace("}", "")
+    cells = re.sub(r'\[[^]]*\]', '', cells)
     return cells.replace("\\", "")
 
 

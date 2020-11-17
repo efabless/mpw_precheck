@@ -230,6 +230,18 @@ def extract_cell_list(verilog_netlist, toplevel,exclude_prefix=None):
                         if sinstance[0].startswith(exclude_prefix) == False:
                             name_list.append(remove_backslashes(sinstance[1]))
                             type_list.append(sinstance[0])
+                pattern = re.compile(r'\s*\b[\w\_\[\]\.\\]+\b\s*\\?\w[\w\_\[\]\.\\]+\s*\[[^]]*\]\s*\(')
+                instances = re.findall(pattern, module)
+                if len(instances):
+                    for instance in instances:
+                        sinstance = instance.strip()[:-1].split()
+                        if exclude_prefix is None:
+                            name_list.append(remove_backslashes(sinstance[1]))
+                            type_list.append(sinstance[0])
+                        else:
+                            if sinstance[0].startswith(exclude_prefix) == False:
+                                name_list.append(remove_backslashes(sinstance[1]))
+                                type_list.append(sinstance[0])
                 return True, name_list, type_list
             else:
                 return False, 'Hierarchy Check Failed'
