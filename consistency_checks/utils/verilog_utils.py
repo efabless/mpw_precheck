@@ -19,13 +19,24 @@ def removeComments(string):
     string = re.sub(re.compile("//.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
     return string
 def removeIfDefs(string):
-    string = re.sub(re.compile("`ifndef.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
-    string = re.sub(re.compile("`ifdef.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
-    string = re.sub(re.compile("`endif.*?\n" ) ,"" ,string) # remove all occurrence single-line comments (//COMMENT\n ) from string
+    string = re.sub(re.compile("`ifndef.*?\n" ) ,"" ,string)
+    string = re.sub(re.compile("`ifdef.*?\n" ) ,"" ,string)
+    string = re.sub(re.compile("`endif.*?\n" ) ,"" ,string)
+    return string
+
+# just a lazy way to remove the parameterization from the instances.
+def removeParamterization(string):
+    before_string = string
+    string = re.sub(r'\#\(\s*\)', '', string)
+    string = re.sub(r'\#\([^)]*\)', '#(', string)
+    while before_string != string:
+        before_string = string
+        string = re.sub(r'\#\(\s*\)', '', string)
+        string = re.sub(r'\#\([^)]*\)', '#(', string)
     return string
 
 def cleanupFile(string):
-    return removeIfDefs(removeComments(string))
+    return removeParamterization(removeIfDefs(removeComments(string)))
 
 def find_module(verilog_netlist, module_name):
     try:
