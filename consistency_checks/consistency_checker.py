@@ -345,6 +345,10 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
         lc.print_control("toplevel cell names differences: ")
         lc.print_control(top_name_diff)
         lc.print_control("toplevel cell type differences: ")
+        if 'sky130_fd_sc_hvl__lsbufhv2lv_1' in top_type_diff:
+            top_type_diff.remove('sky130_fd_sc_hvl__lsbufhv2lv_1')
+        if 'sky130_fd_sc_hvl__lsbufhv2lv' in top_type_diff:
+            top_type_diff.remove('sky130_fd_sc_hvl__lsbufhv2lv')
         lc.print_control(top_type_diff)
         if len(user_name_diff) + len(user_type_diff) + len(top_name_diff) + len(top_type_diff):
             return False, "Hierarchy Matching Failed"
