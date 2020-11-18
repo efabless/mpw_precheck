@@ -66,6 +66,9 @@ def check_yaml(path):
         return False, None, None
     except FileNotFoundError as e:
         return False, None, None
+    except UnicodeDecodeError as e:
+        print(e)
+        return False, None, None
 
 
 if __name__ == "__main__":
