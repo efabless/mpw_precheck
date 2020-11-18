@@ -53,7 +53,7 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
         steps = 1
     stp_cnt = 0
 
-    lc.print_control("Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Uncompressing the gds files")
+    lc.print_control("{{PROGRESS}} Uncompressing the gds files")
     # Decompress project items and copies all GDS-II files to top level.
     run_prep_cmd = "cd {target_path}; make uncompress;".format(
         target_path=target_path
