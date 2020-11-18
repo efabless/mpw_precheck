@@ -309,52 +309,54 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         lc.print_control("{{ERROR}} " + str(error_msg))
         lc.exit_control(255)
+    try:
+        toplevelFileOpener = open(output_directory + "/" + toplevel + ".magic.typelist")
+        if toplevelFileOpener.mode == "r":
+            toplevelContent = toplevelFileOpener.read()
+        toplevelFileOpener.close()
+        toplvlCells = clean_gds_list(toplevelContent).split()
+        toplevelFileOpener = open(output_directory + "/" + toplevel + ".magic.namelist")
+        if toplevelFileOpener.mode == "r":
+            toplevelContent = toplevelFileOpener.read()
+        toplevelFileOpener.close()
+        toplvlInsts = clean_gds_list(toplevelContent).split()
+        if toplvlCells.count(user_module) == 1:
+            user_moduleFileOpener = open(output_directory + "/" + user_module_name + ".magic.typelist")
+            if user_moduleFileOpener.mode == "r":
+                user_moduleContent = user_moduleFileOpener.read()
+            user_moduleFileOpener.close()
+            userCells = clean_gds_list(user_moduleContent).split()
+            user_moduleFileOpener = open(output_directory + "/" + user_module_name + ".magic.namelist")
+            if user_moduleFileOpener.mode == "r":
+                user_moduleContent = user_moduleFileOpener.read()
+            user_moduleFileOpener.close()
 
-    toplevelFileOpener = open(output_directory + "/" + toplevel + ".magic.typelist")
-    if toplevelFileOpener.mode == "r":
-        toplevelContent = toplevelFileOpener.read()
-    toplevelFileOpener.close()
-    toplvlCells = clean_gds_list(toplevelContent).split()
-    toplevelFileOpener = open(output_directory + "/" + toplevel + ".magic.namelist")
-    if toplevelFileOpener.mode == "r":
-        toplevelContent = toplevelFileOpener.read()
-    toplevelFileOpener.close()
-    toplvlInsts = clean_gds_list(toplevelContent).split()
-    if toplvlCells.count(user_module) == 1:
-        user_moduleFileOpener = open(output_directory + "/" + user_module_name + ".magic.typelist")
-        if user_moduleFileOpener.mode == "r":
-            user_moduleContent = user_moduleFileOpener.read()
-        user_moduleFileOpener.close()
-        userCells = clean_gds_list(user_moduleContent).split()
-        user_moduleFileOpener = open(output_directory + "/" + user_module_name + ".magic.namelist")
-        if user_moduleFileOpener.mode == "r":
-            user_moduleContent = user_moduleFileOpener.read()
-        user_moduleFileOpener.close()
+            userInsts = clean_gds_list(user_moduleContent).split()
+            user_name_diff = list()#diff_lists(userInsts, user_name_list)
+            user_type_diff = list()#diff_lists(userCells, user_type_list)
 
-        userInsts = clean_gds_list(user_moduleContent).split()
-        user_name_diff = list()#diff_lists(userInsts, user_name_list)
-        user_type_diff = list()#diff_lists(userCells, user_type_list)
+            top_name_diff = diff_lists(toplvlInsts, top_name_list)
+            top_type_diff = diff_lists(toplvlCells, top_type_list)
 
-        top_name_diff = diff_lists(toplvlInsts, top_name_list)
-        top_type_diff = diff_lists(toplvlCells, top_type_list)
-
-        lc.print_control("user wrapper cell names differences: ")
-        lc.print_control(user_name_diff)
-        lc.print_control("user wrapper cell type differences: ")
-        lc.print_control(user_type_diff)
-        lc.print_control("toplevel cell names differences: ")
-        lc.print_control(top_name_diff)
-        lc.print_control("toplevel cell type differences: ")
-        if 'sky130_fd_sc_hvl__lsbufhv2lv_1' in top_type_diff:
-            top_type_diff.remove('sky130_fd_sc_hvl__lsbufhv2lv_1')
-        if 'sky130_fd_sc_hvl__lsbufhv2lv' in top_type_diff:
-            top_type_diff.remove('sky130_fd_sc_hvl__lsbufhv2lv')
-        lc.print_control(top_type_diff)
-        if len(user_name_diff) + len(user_type_diff) + len(top_name_diff) + len(top_type_diff):
-            return False, "Hierarchy Matching Failed"
-        return True, "GDS Hierarchy Check Passed"
-    else:
-        return False, "GDS Hierarchy Check Failed"
+            lc.print_control("user wrapper cell names differences: ")
+            lc.print_control(user_name_diff)
+            lc.print_control("user wrapper cell type differences: ")
+            lc.print_control(user_type_diff)
+            lc.print_control("toplevel cell names differences: ")
+            lc.print_control(top_name_diff)
+            lc.print_control("toplevel cell type differences: ")
+            if 'sky130_fd_sc_hvl__lsbufhv2lv_1' in top_type_diff:
+                top_type_diff.remove('sky130_fd_sc_hvl__lsbufhv2lv_1')
+            if 'sky130_fd_sc_hvl__lsbufhv2lv' in top_type_diff:
+                top_type_diff.remove('sky130_fd_sc_hvl__lsbufhv2lv')
+            lc.print_control(top_type_diff)
+            if len(user_name_diff) + len(user_type_diff) + len(top_name_diff) + len(top_type_diff):
+                return False, "Hierarchy Matching Failed"
+            return True, "GDS Hierarchy Check Passed"
+        else:
+            return False, "GDS Hierarchy Check Failed"
+    except FileNotFoundError:
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken."
 
 
 if __name__ == "__main__":
