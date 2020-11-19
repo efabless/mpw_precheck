@@ -53,7 +53,7 @@ def diff_lists(li1, li2):
 
 def check_yaml(path):
     try:
-        content = yaml.load(open(os.path.join(path, _yaml_filename)).read(), Loader=yaml.FullLoader)
+        content = yaml.load(open(os.path.join(path, _yaml_filename),'r+',encoding='utf-8').read(), Loader=yaml.FullLoader)
         obj = MainYamlStructure(**content)
         yamlKeys = [a for a in dir(sample) if not a.startswith('_') and not callable(getattr(sample, a))]
         inKeys = list(content["project"].keys())
