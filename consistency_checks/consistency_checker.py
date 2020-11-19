@@ -332,6 +332,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
             user_moduleFileOpener.close()
 
             userInsts = clean_gds_list(user_moduleContent).split()
+            # user area in the repo's gl doesn't follow the same hierarchy as the GDS currently. The next 2 lines should be reverted when this is fixed.
             user_name_diff = list()#diff_lists(userInsts, user_name_list)
             user_type_diff = list()#diff_lists(userCells, user_type_list)
 
@@ -345,10 +346,6 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
             lc.print_control("toplevel cell names differences: ")
             lc.print_control(top_name_diff)
             lc.print_control("toplevel cell type differences: ")
-            if 'sky130_fd_sc_hvl__lsbufhv2lv_1' in top_type_diff:
-                top_type_diff.remove('sky130_fd_sc_hvl__lsbufhv2lv_1')
-            if 'sky130_fd_sc_hvl__lsbufhv2lv' in top_type_diff:
-                top_type_diff.remove('sky130_fd_sc_hvl__lsbufhv2lv')
             lc.print_control(top_type_diff)
             if len(user_name_diff) + len(user_type_diff) + len(top_name_diff) + len(top_type_diff):
                 return False, "Hierarchy Matching Failed"
