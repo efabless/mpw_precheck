@@ -48,33 +48,36 @@ def gds_drc_check(target_path, design_name, output_directory, lc=logging_control
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         return False, str(error_msg)
 
-    drcFileOpener = open(output_directory + '/' + design_name + '.magic.drc')
-    if drcFileOpener.mode == 'r':
-        drcContent = drcFileOpener.read()
-    drcFileOpener.close()
+    try:
+        drcFileOpener = open(output_directory + '/' + design_name + '.magic.drc')
+        if drcFileOpener.mode == 'r':
+            drcContent = drcFileOpener.read()
+        drcFileOpener.close()
 
-    splitLine = '----------------------------------------'
+        splitLine = '----------------------------------------'
 
-    # design name
-    # violation message
-    # list of violations
-    # Total Count:
-    if drcContent is None:
-        return False, "No DRC report generated..."
-    else:
-        drcSections = drcContent.split(splitLine)
-        if (len(drcSections) == 2):
-            return True, "0 DRC Violations"
+        # design name
+        # violation message
+        # list of violations
+        # Total Count:
+        if drcContent is None:
+            return False, "No DRC report generated..."
         else:
-            vioDict = dict()
-            for i in range(1, len(drcSections) - 1, 2):
-                vioDict[drcSections[i]] = len(drcSections[i + 1].split("\n"))
-            cnt = 0
-            for key in vioDict:
-                val = vioDict[key]
-                cnt += val
-                lc.print_control("Violation Message \"" + str(key.strip()) + " \"found " + str(val) + " Times.")
-            return False, "Total # of DRC violations is " + str(cnt)
+            drcSections = drcContent.split(splitLine)
+            if (len(drcSections) == 2):
+                return True, "0 DRC Violations"
+            else:
+                vioDict = dict()
+                for i in range(1, len(drcSections) - 1, 2):
+                    vioDict[drcSections[i]] = len(drcSections[i + 1].split("\n"))
+                cnt = 0
+                for key in vioDict:
+                    val = vioDict[key]
+                    cnt += val
+                    lc.print_control("Violation Message \"" + str(key.strip()) + " \"found " + str(val) + " Times.")
+                return False, "Total # of DRC violations is " + str(cnt)
+    except FileNotFoundError:
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted."
 
 
 if __name__ == "__main__":
