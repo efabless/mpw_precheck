@@ -115,8 +115,7 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
         if check:
             lc.print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
-            lc.print_control("{{FAIL}} Consistency Checks Failed+ Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
-            lc.exit_control(2)
+            lc.print_control("{{WARNING}} Consistency Checks Failed+ Reason: " + reason)
         stp_cnt += 1
 
         # NOTE: Step 4: Not Yet Implemented.
