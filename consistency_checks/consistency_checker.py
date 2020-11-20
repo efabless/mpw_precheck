@@ -38,6 +38,7 @@ reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]
 toplevel = "caravel"  # caravel
 user_module = "user_project_wrapper"  # user_project_wrapper
 default_logger_path = '/usr/local/bin/full_log.log'
+default_target_path = '/usr/local/bin/caravel/'
 
 def checkMakefile(target_path):
     try:
@@ -59,7 +60,7 @@ def checkMakefile(target_path):
 
 
 def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks", waive_docs=False,
-               waive_makefile=False, waive_consistency_checks=False, lc=logging_controller(default_logger_path)):
+               waive_makefile=False, waive_consistency_checks=False, lc=logging_controller(default_logger_path,default_target_path)):
     if waive_docs == False:
         check, reason = doc_utils.checkDocumentation(target_path)
         if check:
@@ -163,7 +164,7 @@ def extract_user_project_wrapper_pin_list(lef):
         return False, "LEF file not found"
 
 
-def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=logging_controller(default_logger_path)):
+def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=logging_controller(default_logger_path,default_target_path)):
     path=Path(spice_netlist[0])
     if not os.path.exists(path):
         return False, "top level netlist not found"
@@ -210,7 +211,7 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=loggin
                             return True, connections_map
 
 
-def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=logging_controller(default_logger_path)):
+def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=logging_controller(default_logger_path,default_target_path)):
     path=Path(verilog_netlist[0])
     if not os.path.exists(path):
         return False, "top level netlist not found"
@@ -282,7 +283,7 @@ def clean_gds_list(cells):
 
 
 def check_source_gds_consitency(target_path, toplevel, user_module, user_module_name, output_directory, top_type_list, top_name_list, user_type_list,
-                                user_name_list, lc=logging_controller(default_logger_path), call_path="/usr/local/bin/consistency_checks"):
+                                user_name_list, lc=logging_controller(default_logger_path,default_target_path), call_path="/usr/local/bin/consistency_checks"):
     path=Path(target_path+"/"+toplevel+".gds")
     if not os.path.exists(path):
         return False,"GDS not found"

@@ -38,8 +38,8 @@ The steps are as follows:
   - Step #3.2: The existence of a Makefile in the project root that at least has the following targets:
     - verify: Runs simulations and testbench verifications.
     - clean: Removes all simulation and verification outputs.
-    - compress: compresses the project directory.
-    - uncompress: decompresses the project directory.
+    - compress: compresses the large items in the project directory and cleanup decompressed items.
+    - uncompress: decompresses the large items in the project directory and cleanup compressed items.
   - Step #3.3: Consistency Checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
     - The top level module is `caravel` and there is a `user_project_wrapper` under it.
     - `caravel` and `user_project_wrapper` exist and are non-trivial.

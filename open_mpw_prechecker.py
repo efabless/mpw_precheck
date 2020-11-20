@@ -23,9 +23,9 @@ import drc_checks.gds_drc_checker as gds_drc_checker
 import consistency_checks.consistency_checker as consistency_checker
 
 default_logger_path = '/usr/local/bin/full_log.log'
+default_target_path = '/usr/local/bin/caravel/'
 
-
-def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logging_controller(default_logger_path)):
+def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logging_controller(default_logger_path,default_target_path)):
     verilog_netlist = []
     spice_netlist = []
     toplvl_extension = os.path.splitext(top_level_netlist)[1]
