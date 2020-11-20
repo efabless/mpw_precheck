@@ -45,7 +45,7 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
-    lc = logging_controller(str(output_directory) + '/full_log.log')
+    lc = logging_controller(str(output_directory) + '/full_log.log', target_path)
     lc.create_full_log()
 
     steps = 4
@@ -54,7 +54,7 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
     stp_cnt = 0
 
     lc.print_control("{{PROGRESS}} Uncompressing the gds files")
-    # Decompress project items and copies all GDS-II files to top level.
+    # Decompress project items.
     run_prep_cmd = "cd {target_path}; make uncompress;".format(
         target_path=target_path
     )

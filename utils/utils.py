@@ -14,11 +14,13 @@
 
 import re
 import os
+import subprocess
 from pathlib import Path
 
 class logging_controller:
-    def __init__(self, log):
+    def __init__(self, log, target_path):
         self.log = log
+        self.target_path = target_path
 
     def switch_log(self,log):
         self.log = log
@@ -54,4 +56,12 @@ class logging_controller:
 
     def exit_control(self,code):
         self.dump_full_log()
+        print("{{PROGRESS}} Compressing the gds files")
+        # Compress project items.
+        run_prep_cmd = "cd {target_path}; make compress;".format(
+            target_path=self.target_path
+        )
+
+        process = subprocess.Popen(run_prep_cmd, stdout=subprocess.PIPE, shell=True)
+        process.communicate()[0].strip()
         exit(code)
