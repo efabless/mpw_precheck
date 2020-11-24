@@ -13,33 +13,60 @@
 # limitations under the License.
 
 import os
-import hashlib
-from urllib.request import urlopen
+from pathlib import Path
+from strsimpy.sorensen_dice import SorensenDice
 
+# Default value for file headers, names, and paths
 _license_filename = 'LICENSE'
 _lib_license_filename = 'LICENSE'
-_apache_license_url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+_prohibited_licenses_path = 'base_checks/_licenses/_prohibited_licenses'
+_approved_licenses_path = 'base_checks/_licenses/_approved_licenses'
 
 _spdx_copyright_header = 'SPDX-FileCopyrightText'
 _spdx_license_header = 'SPDX-License-Identifier'
 
 # Directories ignored for license check
-IGNORED_DIRS=['third_party', '.git']
+IGNORED_DIRS = ['third_party', '.git']
 
 # Files ignored for license check
-IGNORED_FILES=['LICENSE']
+IGNORED_FILES = ['LICENSE']
 
-# File extentions to be ignored for license check
-IGNORED_EXTS=['.mag', '.lef', '.def']
+# File extensions to be ignored for license check
+IGNORED_EXTS = ['.def', '.gds', '.lef', '.mag']
+
+
+def check_license(user_license_path, licenses_path):
+    confidence_map = []
+    user_license_content = user_license_path.open(encoding="utf-8").read()
+    for license_file in Path(licenses_path).iterdir():
+        license_content = license_file.open(encoding="utf-8").read()
+        confidence = 100 * (1 - SorensenDice().distance(license_content.strip(), user_license_content.strip()))
+        confidence_map.append({"license_key": license_file.stem, "confidence": confidence})
+    license_check_result = max(confidence_map, key=lambda x: x["confidence"])
+    if license_check_result["confidence"] > 95:
+        return license_check_result["license_key"]
+    else:
+        return None
+
 
 def check_main_license(path):
-    data = urlopen(_apache_license_url).read().strip()
-    remote_hash = hashlib.md5(data)
+    path = Path(os.path.join(path, _license_filename))
     try:
-        local_hash = hashlib.md5(open(os.path.join(path, _license_filename), 'rb').read().strip())
-        return remote_hash.hexdigest() == local_hash.hexdigest()
-    except OSError:
-        return False
+        result = check_license(path, _prohibited_licenses_path)
+        if result:
+            return {"approved": False, "license_key": result}
+        else:
+            result = check_license(path, _approved_licenses_path)
+            if result:
+                return {"approved": True, "license_key": result}
+            else:
+                return {"approved": True, "license_key": None}
+    except OSError as e:
+        print("MAIN LICENSE OS ERROR: %s" % e)
+        return None
+    except Exception as e:
+        print("MAIN LICENSE ERROR: %s" % e)
+        return None
 
 
 def check_lib_license(path):
@@ -54,12 +81,12 @@ def check_lib_license(path):
     return libs
 
 
-def check_dir_spdx_compliance(non_compliant_list, path):
+def check_dir_spdx_compliance(non_compliant_list, path, license_key=None):
     if os.path.exists(path):
         root, dirs, files = next(os.walk(path))
         for file in files:
             try:
-                result = check_file_spdx_compliance(os.path.join(root, file))
+                result = check_file_spdx_compliance(os.path.join(root, file), license_key)
                 if result:
                     non_compliant_list.append(result)
             except Exception as e:
@@ -69,14 +96,17 @@ def check_dir_spdx_compliance(non_compliant_list, path):
             if dr in IGNORED_DIRS:
                 continue
             try:
-                check_dir_spdx_compliance(non_compliant_list, os.path.join(root, dr))
+                check_dir_spdx_compliance(non_compliant_list, os.path.join(root, dr), license_key)
             except Exception as e:
                 print("DIRECTORY (%s) ERROR: %s" % (dr, e))
 
     return non_compliant_list
 
 
-def check_file_spdx_compliance(file_path):
+def check_file_spdx_compliance(file_path, license_key):
+    global _spdx_license_header
+    _spdx_license_header = '%s: %s' % ('SPDX-License-Identifier', license_key) if license_key else _spdx_license_header
+
     spdx_compliant = False
     spdx_cp_compliant = False
     spdx_ls_compliant = False
@@ -108,8 +138,8 @@ def check_file_spdx_compliance(file_path):
                     spdx_compliant = True
                     break
             return file_path if not spdx_compliant else None
-
-    except UnicodeDecodeError:
+    except UnicodeDecodeError as e:
+        print("FILE (%s) UD ERROR: %s" % (file_path, e))
         pass
     except Exception as e:
         print("FILE (%s) ERROR: %s" % (file_path, e))
@@ -117,16 +147,16 @@ def check_file_spdx_compliance(file_path):
 
 
 if __name__ == "__main__":
+    _prohibited_licenses_path = '_licenses/_prohibited_licenses'
+    _approved_licenses_path = '_licenses/_approved_licenses'
     if check_main_license('.'):
-        print("{{RESULT}} License there!")
+        print("{{RESULT}} License there! ")
     else:
         print("{{FAIL}} License not there or empty!")
 
-    spdx_compliance_list = []
-    spdx_compliance_list = check_dir_spdx_compliance(spdx_compliance_list, '.')
-    if spdx_compliance_list:
-        print("{{SPDX COMPLIANCE WARNING}} We found %s files that are not compliant with the SPDX Standard" % [x for x in spdx_compliance_list if
-                                                                                                               not x.get("compliant")].__len__())
+    spdx_non_compliant_list = check_dir_spdx_compliance([], '.')
+    if spdx_non_compliant_list:
+        print("{{SPDX COMPLIANCE WARNING}} We found %s files that are not compliant with the SPDX Standard" % spdx_non_compliant_list.__len__())
     else:
         print("{{SPDX COMPLIANCE PASSED}} Project is compliant with SPDX Standard")
 
