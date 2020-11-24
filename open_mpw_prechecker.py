@@ -25,7 +25,8 @@ import consistency_checks.consistency_checker as consistency_checker
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
-def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logging_controller(default_logger_path,default_target_path)):
+
+def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logging_controller(default_logger_path, default_target_path)):
     verilog_netlist = []
     spice_netlist = []
     toplvl_extension = os.path.splitext(top_level_netlist)[1]
@@ -67,28 +68,46 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
     if drc_only == False:
         # NOTE: Step 1: Check LICENSE.
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking License files.")
-        if check_license.check_main_license(target_path):
-            lc.print_control("{{PROGRESS}} APACHE-2.0 LICENSE exists in target path")
+        lcr = check_license.check_main_license(target_path)
+        if lcr:
+            if not lcr["approved"]:
+                lc.print_control("{{LICENSE COMPLIANCE FAILED}} A prohibited LICENSE (%s) was found in project root." % lcr["license_key"])
+                lc.print_control("TEST FAILED AT STEP %s" % str(stp_cnt))
+                lc.exit_control(2)
+            elif lcr["approved"]:
+                if lcr["license_key"]:
+                    lc.print_control("{{LICENSE COMPLIANCE PASSED}} %s LICENSE file was found in project root" % lcr["license_key"])
+                else:
+                    lc.print_control("{{LICENSE COMPLIANCE WARNING}} A unidentified LICENSE file was found in project root")
         else:
-            lc.print_control("{{FAIL}} APACHE-2.0 LICENSE is Not Found in target path\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{LICENSE COMPLIANCE FAILED}} A LICENSE file was not found in project root.")
+            lc.print_control("TEST FAILED AT STEP %s" % str(stp_cnt))
             lc.exit_control(2)
 
         third_party_licenses = check_license.check_lib_license(target_path + '/third-party/')
 
         if len(third_party_licenses):
             for key in third_party_licenses:
-                if third_party_licenses[key] == False:
+                if not third_party_licenses[key]:
                     lc.print_control("{{FAIL}} Third Party" + str(key) + "License Not Found\nTEST FAILED AT STEP " + str(stp_cnt))
                     lc.exit_control(2)
             lc.print_control("{{PROGRESS}} Third Party Licenses Found.\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
             lc.print_control("{{PROGRESS}} No third party libraries found.\nStep " + str(stp_cnt) + " done without fatal errors.")
 
-        spdx_non_compliant_list = check_license.check_dir_spdx_compliance([], target_path)
+        spdx_non_compliant_list = check_license.check_dir_spdx_compliance([], target_path, lcr["license_key"])
         if spdx_non_compliant_list:
-            lc.print_control(
-                "{{SPDX COMPLIANCE WARNING}} We found %s files not compliant with the SPDX Standard \n%s" % (spdx_non_compliant_list.__len__(),
-                                                                                                             spdx_non_compliant_list[:20]))
+            paths = spdx_non_compliant_list[:20] if spdx_non_compliant_list.__len__() >= 20 else spdx_non_compliant_list
+            lc.print_control("{{SPDX COMPLIANCE WARNING}} Found %s non-compliant files with the SPDX Standard. "
+                             "Check full log for more information" % spdx_non_compliant_list.__len__())
+            lc.print_control("SPDX COMPLIANCE: NON-COMPLIANT FILES PREVIEW: %s" % paths)
+
+            lc.switch_log('%s/spdx_compliance_report.log' % output_directory)
+            lc.create_full_log()
+            lc.print_control("SPDX NON-COMPLIANT FILES")
+            [lc.print_control(x) for x in spdx_non_compliant_list]
+            lc.switch_log('%s/full_log.log' % output_directory)
+
         else:
             lc.print_control("{{SPDX COMPLIANCE PASSED}} Project is compliant with SPDX Standard")
 

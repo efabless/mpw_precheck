@@ -29,7 +29,8 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
                 pyyaml \
                 awscli \
                 requests \
-                boto3
+                boto3 \
+                strsimpy
 
 # magic dependencies
 RUN yum install -y csh wget tcl-devel tk-devel libX11-devel cairo-devel ncurses-devel
