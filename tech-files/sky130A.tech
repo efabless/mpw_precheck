@@ -17,7 +17,7 @@ tech
 end
 
 version
- version 20200927
+ version 1.0.72-0-gb427e3b
  description "SkyWater SKY130: PRE ALPHA Vendor Open Source rules and DRC"
 end
 
@@ -216,7 +216,7 @@ types
   locali locali,li1,li
  -locali corelocali,coreli1,coreli
   locali rlocali,rli1,rli
-  locali viali,vial,lic,licon,m1c,v0
+  locali viali,vial,mcon,lic,licon,m1c,v0
  -locali obsli1,obsli
  -locali obsli1c,obslic,obslicon
 
@@ -784,7 +784,7 @@ style gdsii
 # HVTP
 #----------------------------------------------------------------
 
- layer HVTP scpfethvt,pfethvt,varhvt,*pdiodehvt
+ layer HVTP scpfethvt,ppu,pfethvt,varhvt,*pdiodehvt
         grow 180
 	bridge	380 380
 	grow	185
@@ -887,6 +887,7 @@ style gdsii
         grow 185
  	grow 	345
  	shrink 	345
+	and-not hvntm_block
 	calma 125 20
 
 #----------------------------------------------------------------
@@ -908,13 +909,25 @@ style gdsii
 # THKOX (HVI) (includes rules NWELL 8-11 and DIFFTAP 14-26)
 #----------------------------------------------------------------
 
- templayer baseTHKOX 	*mvpsd
-	grow-min 470
-	or alldiffmv,mvvar
+ templayer thkox_area 	alldiffmv,mvvar
 	grow	185
-        bloat-all alldiffmv nwell
-	grow-min 600
+	bloat-all alldiffmv nwell
+	grow 345
+	shrink 345
+
+ templayer large_ptap_mv thkox_area
+	shrink	420
+	grow	420
+
+ templayer small_ptap_mv thkox_area
+	and-not large_ptap_mv
+	# (HVI min width rule is 0.6 but CNTM min width rule is 0.84um)
+	grow-min 840
+
+ templayer baseTHKOX 	thkox_area,small_ptap_mv
 	bridge	700 600
+ 	grow 	345
+ 	shrink 	345
 
  templayer extendTHKOX	baseTHKOX,CELLRING
  	grow 	345
@@ -1341,29 +1354,29 @@ style drc
  # no nwell ring is crossed.  There is no difference between
  # ntaps in and out of deep nwell.
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 1270
- and nwell
+ and nwell,pnp
  grow 945
- and nwell
+ and nwell,pnp
  
  templayer ntap_missing *pdiff,*mvpdiff
  and-not pwell_in_dnwell
@@ -1435,16 +1448,48 @@ style drc
  and-not dnwell
  and allpdifflv,allpdiffmv
 
- templayer nwell_with_tap
- bloat-all nsc,mvnsc nwell
+ # MV nwell must be 2um from any other nwell
+ templayer mvnwell
+ bloat-all alldiffmv nwell
+ grow-min 840
+ bridge	700 600
 
- templayer nwell_missing_tap nwell
+ # Simple spacing checks to lvnwell must use CIF-DRC rule
+ templayer allmvdiffnowell *mvndiff,*mvpsd
+
+ templayer lvnwell nwell
+ and-not mvnwell
+
+ templayer nwell_with_tap
+ bloat-all nsc,mvnsc nwell,pnp
+
+ templayer nwell_missing_tap nwell,pnp
  and-not nwell_with_tap
+
+ templayer tap_with_licon
+ bloat-all psc,mvpsc psd,mvpsd
+ bloat-all nsc,mvnsc nsd,mvnsd
+
+ templayer tap_missing_licon psd,nsd,mvpsd,mvnsd
+ and-not tap_with_licon
 
  # Make sure varactor nwell contains no P diffusion
  templayer pdiff_in_varactor_well
  bloat-all varactor,mvvaractor nwell
  and allpactive
+
+ # HVNTM spacing requires recreating HVNTM
+ templayer hvntm_block *mvpsd
+ grow 185
+
+ templayer hvntm_generate
+ bloat-all mvnfet,mvnnfet,*mvndiode,mvrdn,*nndiode *mvndiff
+ bloat-all mvvaractor *mvnsd
+ and-not hvntm_block
+ grow 185
+ grow    345
+ shrink  345
+ and-not hvntm_block
 
  templayer m1_small_hole allm1,obsm1,obslic
  close   140000
@@ -1902,14 +1947,14 @@ style  sky130
  ignore POLYMOD
  ignore LOWTAPDENSITY
 
- layer nwell NWELL,WELLTXT,WELLPIN
- and-not PNPID
+ layer pnp NWELL,WELLTXT,WELLPIN
+ and PNPID
  labels NWELL
  labels WELLTXT text
  labels WELLPIN port
 
- layer pnp NWELL,WELLTXT,WELLPIN
- and PNPID
+ layer nwell NWELL,WELLTXT,WELLPIN
+ and-not PNPID
  labels NWELL
  labels WELLTXT text
  labels WELLPIN port
@@ -2128,7 +2173,7 @@ style  sky130
 
  layer ppu pfetarea
  and-not LVTN
- and-not HVTP
+ and HVTP
  and COREID
  labels DIFF
 
@@ -2143,6 +2188,7 @@ style  sky130
  layer pfethvt pfetarea
  and HVTP
  and-not STDCELL
+ and-not COREID
  labels DIFF
 
  # Always force nwell under pfet (nwell encloses pdiff by 0.18)
@@ -2215,7 +2261,7 @@ style  sky130
  and STDCELL
  labels DIFF
 
- layer npd DIFF
+ layer npass DIFF
  and POLY
  and-not PPLUS
  and NPLUS
@@ -2223,13 +2269,16 @@ style  sky130
  and COREID
  labels DIFF
 
- # layer npass DIFF
- # and POLY
- # and-not PPLUS
- # and NPLUS
- # and-not NWELL
- # and COREID
- # labels DIFF
+ layer npd DIFF
+ and POLY
+ and-not PPLUS
+ and NPLUS
+ and-not NWELL
+ and COREID
+ # Shrink-grow operation eliminates the smaller npass device
+ shrink 70
+ grow 70
+ labels DIFF
 
  layer nfetlvt DIFF
  and POLY
@@ -2816,16 +2865,16 @@ style  sky130
  or mvpdicbase
  labels CONT
 
- layer locali LI,LITXT,LIPIN
+ layer coreli LI,LITXT,LIPIN
  and-not LIRES,LISHORT
- and-not COREID
+ and COREID
  labels LI
  labels LITXT text
  labels LIPIN port
 
- layer coreli LI,LITXT,LIPIN
+ layer locali LI,LITXT,LIPIN
  and-not LIRES,LISHORT
- and COREID
+ and-not COREID
  labels LI
  labels LITXT text
  labels LIPIN port
@@ -3364,14 +3413,14 @@ style  vendorimport
  ignore POLYMOD
  ignore LOWTAPDENSITY
 
- layer nwell NWELL,WELLTXT,WELLPIN
- and-not PNPID
+ layer pnp NWELL,WELLTXT,WELLPIN
+ and PNPID
  labels NWELL
  labels WELLTXT port
  labels WELLPIN port
 
- layer pnp NWELL,WELLTXT,WELLPIN
- and PNPID
+ layer nwell NWELL,WELLTXT,WELLPIN
+ and-not PNPID
  labels NWELL
  labels WELLTXT port
  labels WELLPIN port
@@ -3590,7 +3639,7 @@ style  vendorimport
 
  layer ppu pfetarea
  and-not LVTN
- and-not HVTP
+ and HVTP
  and COREID
  labels DIFF
 
@@ -3605,6 +3654,7 @@ style  vendorimport
  layer pfethvt pfetarea
  and HVTP
  and-not STDCELL
+ and-not COREID
  labels DIFF
 
  # Always force nwell under pfet (nwell encloses pdiff by 0.18)
@@ -3677,7 +3727,7 @@ style  vendorimport
  and STDCELL
  labels DIFF
 
- layer npd DIFF
+ layer npass DIFF
  and POLY
  and-not PPLUS
  and NPLUS
@@ -3685,13 +3735,16 @@ style  vendorimport
  and COREID
  labels DIFF
 
- # layer npass DIFF
- # and POLY
- # and-not PPLUS
- # and NPLUS
- # and-not NWELL
- # and COREID
- # labels DIFF
+ layer npd DIFF
+ and POLY
+ and-not PPLUS
+ and NPLUS
+ and-not NWELL
+ and COREID
+ # Shrink-grow operation eliminates the smaller npass device
+ shrink 70
+ grow 70
+ labels DIFF
 
  layer nfetlvt DIFF
  and POLY
@@ -3909,15 +3962,15 @@ style  vendorimport
 
  layer scpfet POLY
  and DIFF
- and-not HVTP
  and diffresarea
+ and-not HVTP
  and-not NPLUS
  and STDCELL
 
  layer scpfethvt POLY
  and DIFF
- and HVTP
  and diffresarea
+ and HVTP
  and-not NPLUS
  and STDCELL
 
@@ -4278,16 +4331,16 @@ style  vendorimport
  or mvpdicbase
  labels CONT
 
- layer locali LI,LITXT,LIPIN
+ layer coreli LI,LITXT,LIPIN
  and-not LIRES,LISHORT
- and-not COREID
+ and COREID
  labels LI
  labels LITXT port
  labels LIPIN port
 
- layer coreli LI,LITXT,LIPIN
+ layer locali LI,LITXT,LIPIN
  and-not LIRES,LISHORT
- and COREID
+ and-not COREID
  labels LI
  labels LITXT port
  labels LIPIN port
@@ -4860,6 +4913,11 @@ drc
  variants (full)
  cifmaxwidth nwell_missing_tap 0 bend_illegal \
 	"All nwells must contain metal-connected N+ taps (nwell.4)"
+
+ cifspacing mvnwell lvnwell 2000 touching_illegal \
+	"Spacing of HV nwell to LV nwell < 2.0um (nwell.8)"
+ cifspacing mvnwell mvnwell 2000 touching_ok \
+	"Spacing of HV nwell to HV nwell < 2.0um (nwell.8)"
  variants (fast),(full)
 
 #-----------------------------
@@ -4908,6 +4966,11 @@ drc
  spacing *mvndiode *mvndiode 1070 touching_ok \
 	"MV N-diode spacing < %d (hvntm.2 + 2 * hvntm.3)"
 
+variants (full)
+ cifspacing allmvdiffnowell lvnwell 825 touching_illegal \
+	"MV diffusion to LV nwell spacing < %d (hvi.5 + nsd/psd.5)"
+variants (fast),(full)
+
  spacing allnfets allpactivenonfet 270 touching_illegal \
 	"nFET cannot abut P-diffusion (diff/tap.3)"
  spacing allpfets allnactivenonfet 270 touching_illegal \
@@ -4936,9 +4999,13 @@ drc
  edge4way (*pdiff)/a (*nsd)/a 400 ~(*pdiff)/a 0 0 "NSDM width < %d (diff/tap.5)"
  edge4way (*ndiff)/a (*psd)/a 400 ~(*ndiff)/a 0 0 "PSDM width < %d (diff/tap.5)"
 
+ area  *nsd,*mvnsd 70110 150 "N-tap minimum area < 0.07011um^2 (nsd.10b)"
+ area  *psd,*mvpsd 70110 150 "P-tap minimum area < 0.07011um^2 (psd.10b)"
+
  angles allactive 90 "Only 90 degree angles permitted on diff and tap (x.2)"
 
  variants (full)
+ cifmaxwidth tap_missing_licon 0 bend_illegal "All taps must be contacted (licon.16)"
 
  # Latchup rules
  cifmaxwidth ptap_missing 0 bend_illegal \
@@ -4958,7 +5025,7 @@ drc
  spacing allpoly allpoly 210 touching_ok "poly spacing < %d (poly.2)"
 
  spacing allpolynonfet \
-	*ndif,*ndiode,*nndiode,ndiffres,*ndiodelvt,*pdif,*pdiode,pdiffres,*pdiodelvt,*pdiodehvt \
+	*ndiff,*mvndiff,*ndiode,*nndiode,ndiffres,*ndiodelvt,*pdiff,*mvpdiff,*pdiode,pdiffres,*pdiodelvt,*pdiodehvt \
 	75 corner_ok allfets \
 	"poly spacing to Diffusion < %d (poly.4)"
  spacing npres *nsd 480 touching_illegal \
@@ -5152,7 +5219,9 @@ variants *
 
  area allli,*obsli 56100 170 "Local interconnect minimum area < %a (li.6)"
 
- angles allli 90 "Only 90 degree angles permitted on local interconnect (x.2)"
+ angles *locali,rli 90 "Only 90 degree angles permitted on local interconnect (x.2)"
+ angles coreli 45 \
+	"Only 45 degree angles permitted on local interconnect in SRAM cell (x.2)"
 
 #-------------------------------------------------------------
 # MCON - Contact between local interconnect and metal1
@@ -5258,6 +5327,7 @@ variants (fast),(full)
 	"Metal3 > 3um spacing to unrelated m3 < %d (met3.3d)"
  widespacing obsm3 3000 allm3  400 touching_ok \
 	"Metal3 > 3um spacing to unrelated m3 < %d (met3.3d)"
+variants (full)
  cifspacing m3_large_halo m3_large_halo 400 touching_ok \
 	"Spacing of metal3 features attached to and within 0.40um of large metal3 < %d (met3.3c)"
 variants *
@@ -5293,6 +5363,7 @@ variants (fast),(full)
 	"Metal4 > 3um spacing to unrelated m4 < %d (met4.5b)"
  widespacing obsm4 3000 allm4  400 touching_ok \
 	"Metal4 > 3um spacing to unrelated m4 < %d (met4.5b)"
+variants (full)
  cifspacing m4_large_halo m4_large_halo 400 touching_ok \
 	"Spacing of metal4 features attached to and within 0.40um of large metal4 < %d (met4.5a)"
 variants *
@@ -5400,7 +5471,13 @@ variants (fast),(full)
   spacing xhrpoly,uhrpoly,xpc alldiff 480 touching_illegal \
 	"xhrpoly/uhrpoly resistor spacing to diffusion < %d (poly.9)"
 
-  spacing allpolyres,xpc *poly,allfets 480 touching_illegal \
+  spacing allpolyres allfets 480 touching_illegal \
+	"Poly resistor spacing to poly < %d (poly.9)"
+
+  spacing xhrpoly,uhrpoly,xpc *poly 480 touching_illegal \
+	"Poly resistor spacing to poly < %d (poly.9)"
+
+  spacing mrp1,rmp *poly 480 touching_ok \
 	"Poly resistor spacing to poly < %d (poly.9)"
 
   spacing allpolyres,xpc alldiff 480 touching_illegal \
@@ -5468,20 +5545,20 @@ variants (fast),(full)
 	"Metal4 overlap of MiM cap contact in one direction < %d (met4.3 - via3.4)"
  exact_overlap mimcc/c1
 
- width *mimcap2 1000 "MiM cap width < %d (cap2m.1)"
- spacing *mimcap2 *mimcap2 840 touching_ok "MiM cap spacing < %d (cap2m.2a)"
- spacing *mimcap via4/m4 140 touching_illegal \
-	"MiM cap spacing to via4 < %d (cap2m.5)"
+ width *mimcap2 1000 "MiM2 cap width < %d (cap2m.1)"
+ spacing *mimcap2 *mimcap2 840 touching_ok "MiM2 cap spacing < %d (cap2m.2a)"
+ spacing *mimcap2 via4/m4 140 touching_illegal \
+	"MiM2 cap spacing to via4 < %d (cap2m.5)"
  surround *mim2cc *mimcap2 200 absence_illegal \
-	"MiM cap must surround MiM cap contact by %d (cap2m.4)"
- rect_only *mimcap2 "MiM cap must be rectangular (cap2m.7)
+	"MiM2 cap must surround MiM cap 2 contact by %d (cap2m.4)"
+ rect_only *mimcap2 "MiM2 cap must be rectangular (cap2m.7)
 
  surround *mimcap2 *metal4/m4 140 absence_illegal \
-	"Metal4 must surround MiM cap by %d (cap2m.3)"
- spacing via3 *mimcap2 140 touching_illegal "MiM cap spacing to via3 < %d (cap2m.8)"
- spacing via4 *mimcap2 140 touching_illegal "MiM cap spacing to via4 < %d (cap2m.8)"
- spacing *mimcap *metal4/m4 500 surround_ok \
-	"MiM cap spacing to unrelated metal4 < %d (cap2m.11)"
+	"Metal4 must surround MiM2 cap by %d (cap2m.3)"
+ spacing via3 *mimcap2 140 touching_illegal "MiM2 cap spacing to via3 < %d (cap2m.8)"
+ spacing via4 *mimcap2 140 touching_illegal "MiM2 cap spacing to via4 < %d (cap2m.8)"
+ spacing *mimcap2 *metal4/m4 500 surround_ok \
+	"MiM2 cap spacing to unrelated metal4 < %d (cap2m.11)"
 
 variants (full)
  cifspacing mim2_bottom mim2_bottom 1200 touching_ok \
@@ -5497,6 +5574,14 @@ variants (fast),(full)
 	"Metal5 overlap of MiM2 cap contact < %d (met5.3 - via4.4)"
  exact_overlap mim2cc/c2
 
+
+#----------------------------
+# HVNTM
+#----------------------------
+variants (full)
+ cifspacing hvntm_generate hvntm_generate 700 touching_ok \
+ 	"HVNTM spacing < %d (hvntm.2)"
+variants (fast),(full)
 
 #----------------------------
 # End DRC style
@@ -5907,11 +5992,6 @@ variants (),(si)
 	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error l=l w=w
  device msubcircuit sky130_fd_pr__special_nfet_pass npass \
 	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error l=l w=w
-
- device msubcircuit sky130_fd_pr__special_nfet_latch npd \
-	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error l=l w=w
- device msubcircuit sky130_fd_pr__special_nfet_pass npass \
-	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error l=l w=w
  device msubcircuit sky130_fd_pr__nfet_01v8_lvt nfetlvt \
 	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error l=l w=w
  device msubcircuit sky130_fd_bs_flash__special_sonosfet_star nsonos \
@@ -5956,33 +6036,33 @@ variants (),(si)
  device resistor sky130_fd_pr__res_generic_m5 rm5 *m5
 
  device rsubcircuit sky130_fd_pr__res_high_po_0p35 xhrpoly \
-	xpc pwell,space/w error +res0p35 l=l w=w
+	xpc pwell,space/w error +res0p35 l=l
  device rsubcircuit sky130_fd_pr__res_high_po_0p69  xhrpoly \
-	xpc pwell,space/w error +res0p69 l=l w=w
+	xpc pwell,space/w error +res0p69 l=l
  device rsubcircuit sky130_fd_pr__res_high_po_1p41  xhrpoly \
-	xpc pwell,space/w error +res1p41 l=l w=w
+	xpc pwell,space/w error +res1p41 l=l
  device rsubcircuit sky130_fd_pr__res_high_po_2p85  xhrpoly \
-	xpc pwell,space/w error +res2p85 l=l w=w
+	xpc pwell,space/w error +res2p85 l=l
  device rsubcircuit sky130_fd_pr__res_high_po_5p73  xhrpoly \
-	xpc pwell,space/w error +res5p73 l=l w=w
+	xpc pwell,space/w error +res5p73 l=l
  device rsubcircuit sky130_fd_pr__res_high_po	    xhrpoly \
 	xpc pwell,space/w error l=l w=w
  device rsubcircuit sky130_fd_pr__res_xhigh_po_0p35  uhrpoly \
-	xpc pwell,space/w error +res0p35 l=l w=w
+	xpc pwell,space/w error +res0p35 l=l
  device rsubcircuit sky130_fd_pr__res_xhigh_po_0p69  uhrpoly \
-	xpc pwell,space/w error +res0p69 l=l w=w
+	xpc pwell,space/w error +res0p69 l=l
  device rsubcircuit sky130_fd_pr__res_xhigh_po_1p41  uhrpoly \
-	xpc pwell,space/w error +res1p41 l=l w=w
+	xpc pwell,space/w error +res1p41 l=l
  device rsubcircuit sky130_fd_pr__res_xhigh_po_2p85  uhrpoly \
-	xpc pwell,space/w error +res2p85 l=l w=w
+	xpc pwell,space/w error +res2p85 l=l
  device rsubcircuit sky130_fd_pr__res_xhigh_po_5p73  uhrpoly \
-	xpc pwell,space/w error +res5p73 l=l w=w
+	xpc pwell,space/w error +res5p73 l=l
  device rsubcircuit sky130_fd_pr__res_xhigh_po	     uhrpoly \
 	xpc pwell,space/w error l=l w=w
 
- device rsubcircuit sky130_fd_pr_res_generic_nd     ndiffres \
+ device rsubcircuit sky130_fd_pr__res_generic_nd     ndiffres \
 	*ndiff pwell,space/w  error l=l w=w
- device rsubcircuit sky130_fd_pr_res_generic_pd     pdiffres \
+ device rsubcircuit sky130_fd_pr__res_generic_pd     pdiffres \
 	*pdiff nwell    error l=l w=w
  device rsubcircuit sky130_fd_pr__res_iso_pw   rpw \
         pwell dnwell error l=l w=w
@@ -5996,7 +6076,7 @@ variants (),(si)
 	nwell a=area
  device subcircuit  sky130_fd_pr__diode_pd2nw_05v5_lvt *pdiodelvt \
 	nwell a=area
- device subcircuit  sky130_fd_pr_diode_pd2nw_05v5_hvt *pdiodehvt \
+ device subcircuit  sky130_fd_pr__diode_pd2nw_05v5_hvt *pdiodehvt \
 	nwell a=area
  device subcircuit  sky130_fd_pr__diode_pd2nw_11v0 *mvpdiode \
 	nwell a=area
