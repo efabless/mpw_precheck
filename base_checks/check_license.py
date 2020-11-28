@@ -29,7 +29,7 @@ _spdx_license_header = 'SPDX-License-Identifier'
 IGNORED_DIRS = ['third_party', '.git']
 
 # Files ignored for license check
-IGNORED_FILES = ['LICENSE']
+IGNORED_FILES = ['LICENSE', 'pin_order.cfg']
 
 # File extensions to be ignored for license check
 IGNORED_EXTS = ['.def', '.gds', '.lef', '.mag']
