@@ -281,7 +281,6 @@ def diff_lists(li1, li2):
 def clean_gds_list(cells):
     cells = cells.replace("{", "")
     cells = cells.replace("}", "")
-    cells = re.sub(r'\[[^]]*\]', '', cells)
     return cells.replace("\\", "")
 
 
@@ -345,8 +344,8 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
 
             userInsts = clean_gds_list(user_moduleContent).split()
             # user area in the repo's gl doesn't follow the same hierarchy as the GDS currently. The next 2 lines should be reverted when this is fixed.
-            user_name_diff = list()#diff_lists(userInsts, user_name_list)
-            user_type_diff = list()#diff_lists(userCells, user_type_list)
+            user_name_diff = diff_lists(userInsts, user_name_list)
+            user_type_diff = diff_lists(userCells, user_type_list)
 
             top_name_diff = diff_lists(toplvlInsts, top_name_list)
             top_type_diff = diff_lists(toplvlCells, top_type_list)
@@ -359,6 +358,8 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
             lc.print_control(top_name_diff)
             lc.print_control("toplevel cell type differences: ")
             lc.print_control(top_type_diff)
+            if (len(userInsts) + len(userCells) + len(top_name_diff) + len(top_type_diff)) == 0:
+                return False, "Top level Hierarch Check Passed. But, user_project_wrapper is empty in gds/caravel.gds. Thus, Hierarchy Matching Failed."
             if len(user_name_diff) + len(user_type_diff) + len(top_name_diff) + len(top_type_diff):
                 return False, "Hierarchy Matching Failed"
             return True, "GDS Hierarchy Check Passed"
