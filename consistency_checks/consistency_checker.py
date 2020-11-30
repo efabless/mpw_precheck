@@ -362,9 +362,9 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
         else:
             return False, "GDS Hierarchy Check Failed"
     except FileNotFoundError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `"+str(output_directory)+"checks/magic_extract.log` in the output directory for potentially more details."
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `"+str(output_directory)+"/checks/magic_extract.log` in the output directory for potentially more details."
     except OSError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `"+str(output_directory)+"checks/magic_extract.log` in the output directory for potentially more details."
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `"+str(output_directory)+"/checks/magic_extract.log` in the output directory for potentially more details."
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

@@ -75,7 +75,7 @@ def gds_drc_check(target_path, design_name, output_directory, lc=logging_control
             if (len(drcSections) == 2):
                 return True, "0 DRC Violations"
             elif (len(drcSections) < 2):
-                return False, "magic segfaulted. You ran out of RAM. Please check: checks/magic_drc.log"
+                return False, "magic segfaulted. You ran out of RAM. Please check: "+str(output_directory)+"/checks/magic_drc.log"
             else:
                 vioDict = dict()
                 for i in range(1, len(drcSections) - 1, 2):
@@ -87,9 +87,9 @@ def gds_drc_check(target_path, design_name, output_directory, lc=logging_control
                     lc.print_control("Violation Message \"" + str(key.strip()) + " \"found " + str(val) + " Times.")
                 return False, "Total # of DRC violations is " + str(cnt)
     except FileNotFoundError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"checks/magic_drc.log"
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"/checks/magic_drc.log"
     except OSError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"checks/magic_drc.log"
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"/checks/magic_drc.log"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
