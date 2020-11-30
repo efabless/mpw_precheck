@@ -32,6 +32,8 @@ except ImportError:
 makefileTargets = ["verify", "clean", "compress", "uncompress"]
 
 user_project_wrapper_lef = "user_project_wrapper_empty.lef"
+ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
+"vdda2", "vssa1"]
 user_power_list = ["vdda1", "vssa1", "vccd1", "vssd1"]  # To be changed when we have a final caravel netlist
 reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]  # To be changed when we have a final caravel netlist
 
@@ -118,22 +120,23 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
                 return False, reason
 
     if basic_hierarchy_checks:
-        """
         check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path) + "/" + user_project_wrapper_lef))
         if check == False:
             return False, user_project_wrapper_pin_list
         user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
         pin_name_diffs = diff_lists(user_pin_list, user_project_wrapper_pin_list)
+        pin_name_diffs = diff_lists(pin_name_diffs, ignore_list)
         if len(pin_name_diffs):
             return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
         else:
             lc.print_control("Pins check passed")
+            """
             check, reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
             if check:
                 lc.print_control(reason)
             else:
                 return False, reason
-        """
+            """
         lc.print_control("{{PROGRESS}} Basic Hierarchy Checks Passed.")
     else:
         return False, "Basic Hierarchy Checks Failed."
@@ -278,7 +281,6 @@ def diff_lists(li1, li2):
 def clean_gds_list(cells):
     cells = cells.replace("{", "")
     cells = cells.replace("}", "")
-    cells = re.sub(r'\[[^]]*\]', '', cells)
     return cells.replace("\\", "")
 
 
@@ -317,7 +319,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
         logFileOpener.close()
 
         if logContent.find("was used but not defined.") != -1:
-            return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `checks/magic_extract.log` in the output directory for more details."
+            return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `"+str(output_directory)+"/checks/magic_extract.log` in the output directory for more details."
 
         toplevelFileOpener = open(output_directory + "/" + toplevel + ".magic.typelist")
         if toplevelFileOpener.mode == "r":
@@ -342,8 +344,8 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
 
             userInsts = clean_gds_list(user_moduleContent).split()
             # user area in the repo's gl doesn't follow the same hierarchy as the GDS currently. The next 2 lines should be reverted when this is fixed.
-            user_name_diff = list()#diff_lists(userInsts, user_name_list)
-            user_type_diff = list()#diff_lists(userCells, user_type_list)
+            user_name_diff = diff_lists(userInsts, user_name_list)
+            user_type_diff = diff_lists(userCells, user_type_list)
 
             top_name_diff = diff_lists(toplvlInsts, top_name_list)
             top_type_diff = diff_lists(toplvlCells, top_type_list)
@@ -356,6 +358,8 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
             lc.print_control(top_name_diff)
             lc.print_control("toplevel cell type differences: ")
             lc.print_control(top_type_diff)
+            if (len(userInsts) + len(userCells) + len(top_name_diff) + len(top_type_diff)) == 0:
+                return False, "Top level Hierarch Check Passed. But, user_project_wrapper is empty in gds/caravel.gds. Thus, Hierarchy Matching Failed."
             if len(user_name_diff) + len(user_type_diff) + len(top_name_diff) + len(top_type_diff):
                 return False, "Hierarchy Matching Failed"
             return True, "GDS Hierarchy Check Passed"
