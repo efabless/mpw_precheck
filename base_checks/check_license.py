@@ -32,7 +32,7 @@ IGNORED_DIRS = ['third_party', '.git']
 IGNORED_FILES = ['LICENSE']
 
 # File extensions to be ignored for license check
-IGNORED_EXTS = ['.def', '.gds', '.lef', '.mag']
+IGNORED_EXTS = ['.def', '.gds', '.lef', '.mag', '.cfg']
 
 
 def check_license(user_license_path, licenses_path):
