@@ -49,6 +49,14 @@ def gds_drc_check(target_path, design_name, output_directory, lc=logging_control
         return False, str(error_msg)
 
     try:
+        logFileOpener = open(output_directory+'/magic_drc.log')
+        if logFileOpener.mode == 'r':
+            logContent = logFileOpener.read()
+        logFileOpener.close()
+
+        if logContent.find("was used but not defined.") != -1:
+            return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `checks/magic_drc.log` in the output directory for more details."
+
         drcFileOpener = open(output_directory + '/' + design_name + '.magic.drc')
         if drcFileOpener.mode == 'r':
             drcContent = drcFileOpener.read()
@@ -66,6 +74,8 @@ def gds_drc_check(target_path, design_name, output_directory, lc=logging_control
             drcSections = drcContent.split(splitLine)
             if (len(drcSections) == 2):
                 return True, "0 DRC Violations"
+            elif (len(drcSections) < 2):
+                return False, "magic segfaulted. You ran out of RAM. Please check: "+str(output_directory)+"/checks/magic_drc.log"
             else:
                 vioDict = dict()
                 for i in range(1, len(drcSections) - 1, 2):
@@ -77,8 +87,9 @@ def gds_drc_check(target_path, design_name, output_directory, lc=logging_control
                     lc.print_control("Violation Message \"" + str(key.strip()) + " \"found " + str(val) + " Times.")
                 return False, "Total # of DRC violations is " + str(cnt)
     except FileNotFoundError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted."
-
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"/checks/magic_drc.log"
+    except OSError:
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"/checks/magic_drc.log"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

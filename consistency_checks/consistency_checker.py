@@ -311,6 +311,14 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
         lc.print_control("{{ERROR}} " + str(error_msg))
         lc.exit_control(255)
     try:
+        logFileOpener = open(output_directory+'/magic_extract.log')
+        if logFileOpener.mode == 'r':
+            logContent = logFileOpener.read()
+        logFileOpener.close()
+
+        if logContent.find("was used but not defined.") != -1:
+            return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `checks/magic_extract.log` in the output directory for more details."
+
         toplevelFileOpener = open(output_directory + "/" + toplevel + ".magic.typelist")
         if toplevelFileOpener.mode == "r":
             toplevelContent = toplevelFileOpener.read()
@@ -354,8 +362,9 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
         else:
             return False, "GDS Hierarchy Check Failed"
     except FileNotFoundError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken."
-
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `"+str(output_directory)+"/checks/magic_extract.log` in the output directory for potentially more details."
+    except OSError:
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `"+str(output_directory)+"/checks/magic_extract.log` in the output directory for potentially more details."
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
