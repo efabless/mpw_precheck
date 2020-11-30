@@ -29,10 +29,10 @@ _spdx_license_header = 'SPDX-License-Identifier'
 IGNORED_DIRS = ['third_party', '.git']
 
 # Files ignored for license check
-IGNORED_FILES = ['LICENSE', 'pin_order.cfg']
+IGNORED_FILES = ['LICENSE']
 
 # File extensions to be ignored for license check
-IGNORED_EXTS = ['.def', '.gds', '.lef', '.mag']
+IGNORED_EXTS = ['.def', '.gds', '.lef', '.mag', '*.cfg']
 
 
 def check_license(user_license_path, licenses_path):
