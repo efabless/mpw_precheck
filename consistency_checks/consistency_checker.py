@@ -316,7 +316,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
             logContent = logFileOpener.read()
         logFileOpener.close()
 
-        if logContent.find("was used but not defined."):
+        if logContent.find("was used but not defined.") != -1:
             return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `checks/magic_extract.log` in the output directory for more details."
 
         toplevelFileOpener = open(output_directory + "/" + toplevel + ".magic.typelist")

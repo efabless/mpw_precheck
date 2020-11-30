@@ -54,7 +54,7 @@ def gds_drc_check(target_path, design_name, output_directory, lc=logging_control
             logContent = logFileOpener.read()
         logFileOpener.close()
 
-        if logContent.find("was used but not defined."):
+        if logContent.find("was used but not defined.") != -1:
             return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `checks/magic_drc.log` in the output directory for more details."
 
         drcFileOpener = open(output_directory + '/' + design_name + '.magic.drc')
