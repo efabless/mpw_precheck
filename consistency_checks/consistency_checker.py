@@ -32,6 +32,8 @@ except ImportError:
 makefileTargets = ["verify", "clean", "compress", "uncompress"]
 
 user_project_wrapper_lef = "user_project_wrapper_empty.lef"
+ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
+"vdda2", "vssa1"]
 user_power_list = ["vdda1", "vssa1", "vccd1", "vssd1"]  # To be changed when we have a final caravel netlist
 reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]  # To be changed when we have a final caravel netlist
 
@@ -118,22 +120,23 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
                 return False, reason
 
     if basic_hierarchy_checks:
-        """
         check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path) + "/" + user_project_wrapper_lef))
         if check == False:
             return False, user_project_wrapper_pin_list
         user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
         pin_name_diffs = diff_lists(user_pin_list, user_project_wrapper_pin_list)
+        pin_name_diffs = diff_lists(pin_name_diffs, ignore_list)
         if len(pin_name_diffs):
             return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
         else:
             lc.print_control("Pins check passed")
+            """
             check, reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
             if check:
                 lc.print_control(reason)
             else:
                 return False, reason
-        """
+            """
         lc.print_control("{{PROGRESS}} Basic Hierarchy Checks Passed.")
     else:
         return False, "Basic Hierarchy Checks Failed."
