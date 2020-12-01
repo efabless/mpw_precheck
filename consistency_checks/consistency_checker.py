@@ -358,7 +358,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
             lc.print_control("toplevel cell type differences: ")
             lc.print_control(top_type_diff)
             if (len(userInsts) + len(userCells) + len(top_name_diff) + len(top_type_diff)) == 0:
-                return False, "GDS Top level Hierarchy Check Passed. But, user_project_wrapper is empty in gds/caravel.gds. You are probably using the template caravel.gds and didn't add you're integrated caravel chip. Thus, Hierarchy Matching Failed."
+                return False, "GDS Top level Hierarchy Check Passed. But, user_project_wrapper is empty in gds/caravel.gds. You are probably using the template caravel.gds and didn't add your integrated caravel chip. Thus, Hierarchy Matching Failed."
             if len(user_name_diff) + len(user_type_diff) + len(top_name_diff) + len(top_type_diff):
                 return False, "Hierarchy Matching Failed"
             return True, "GDS Hierarchy Check Passed"
