@@ -18,6 +18,10 @@ To setup the necessary docker file, run:
 
 - Make sure you have the top level GDS-II under a directory called `gds/`; thus containing `gds/caravel.gds`, this directory should be compressed and the script will use your Makefile to uncompress it.
 
+- Please create a file `./third_party/used_external_repos.csv` and add to it all `repository name,commit hash` for any external github repository that you are using to build this project.
+
+- Please include any useful statistics about your design, i.e. cell count, core utilization, etc. in a `.csv` file. If you're using OpenLANE then, this file should be created automatically in `<run path>/reports/final_summary_report.csv`.
+
 ## What Does the Script Do?
 
 It runs a sequence of checks and aborts with the appropriate error message(s) if any of them fails.
@@ -46,10 +50,10 @@ The steps are as follows:
     - You have not changed the pin list of the `user_project_wrapper`.
     - You are only using the allowed power connections with the pads.
     - The instance names and types match for `caravel` and the `user_project_wrapper` (a comparison between the netlist and the gds).
-- Step #4: TBA
+- Step #4: TBA -- not for this shuttle.
 - Step #5: Runs DRC checks on the GDS-II.
-- Step #6: TBA
-- Step #7: TBA
+- Step #6: TBA -- not for this shuttle.
+- Step #7: TBA -- not for this shuttle.
 
 ## Current Assumptions:
 - The top module name is `caravel`.
