@@ -34,11 +34,11 @@ makefileTargets = ["verify", "clean", "compress", "uncompress"]
 user_project_wrapper_lef = "user_project_wrapper_empty.lef"
 ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
 "vdda2", "vssa1"]
-user_power_list = ["vdda1", "vssa1", "vccd1", "vssd1"]  # To be changed when we have a final caravel netlist
-reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]  # To be changed when we have a final caravel netlist
+user_power_list = ["vdda1", "vssa1", "vccd1", "vssd1"]  # To be changed when we have a final caravel netlist with power
+reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]  # To be changed when we have a final caravel netlist with power
 
-toplevel = "caravel"  # caravel
-user_module = "user_project_wrapper"  # user_project_wrapper
+toplevel = "caravel"
+user_module = "user_project_wrapper"
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
@@ -188,7 +188,7 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=loggin
         else:
             lc.print_control(reason)
             check, reason = spice_utils.confirm_complex_subckt(spice_netlist[0], toplevel,
-                                                               1)  # 1 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
+                                                               8)
             if check == False:
                 lc.print_control("{{ERROR}} Spice Check Failed because: " + reason)
                 return False, reason
@@ -235,7 +235,7 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=lo
         else:
             lc.print_control(reason)
             check, reason = verilog_utils.confirm_complex_module(verilog_netlist[0], toplevel,
-                                                                 1)  # 1 should be replaced with a more realistic number reflecting the number of PADs, macros and so..
+                                                                 8)
             if check == False:
                 lc.print_control("{{ERROR}} verilog Check Failed because: " + reason + " in netlist: " + verilog_netlist[0])
                 return False, reason
@@ -341,9 +341,8 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
             if user_moduleFileOpener.mode == "r":
                 user_moduleContent = user_moduleFileOpener.read()
             user_moduleFileOpener.close()
-
             userInsts = clean_gds_list(user_moduleContent).split()
-            # user area in the repo's gl doesn't follow the same hierarchy as the GDS currently. The next 2 lines should be reverted when this is fixed.
+
             user_name_diff = diff_lists(userInsts, user_name_list)
             user_type_diff = diff_lists(userCells, user_type_list)
 
@@ -359,7 +358,7 @@ def check_source_gds_consitency(target_path, toplevel, user_module, user_module_
             lc.print_control("toplevel cell type differences: ")
             lc.print_control(top_type_diff)
             if (len(userInsts) + len(userCells) + len(top_name_diff) + len(top_type_diff)) == 0:
-                return False, "Top level Hierarch Check Passed. But, user_project_wrapper is empty in gds/caravel.gds. Thus, Hierarchy Matching Failed."
+                return False, "GDS Top level Hierarchy Check Passed. But, user_project_wrapper is empty in gds/caravel.gds. You are probably using the template caravel.gds and didn't add you're integrated caravel chip. Thus, Hierarchy Matching Failed."
             if len(user_name_diff) + len(user_type_diff) + len(top_name_diff) + len(top_type_diff):
                 return False, "Hierarchy Matching Failed"
             return True, "GDS Hierarchy Check Passed"

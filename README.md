@@ -91,7 +91,3 @@ optional arguments:
   --drc_only, -do       Specifies whether or not to only run DRC checks.
 
 ```
-
-## To-Dos:
-- Add checks #4, #6, and #7.
-- Test on a real/dummy caravel project output.
