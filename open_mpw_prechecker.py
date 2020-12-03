@@ -19,7 +19,7 @@ import subprocess
 from utils.utils import *
 import base_checks.check_yaml as check_yaml
 import base_checks.check_license as check_license
-import drc_checks.gds_drc_checker as gds_drc_checker
+import drc_checks.mag_drc_checker as mag_drc_checker
 import consistency_checks.consistency_checker as consistency_checker
 
 default_logger_path = '/usr/local/bin/full_log.log'
@@ -145,12 +145,12 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
     if skip_drc:
         lc.print_control("{{WARNING}} Skipping DRC Checks...")
     else:
-        check, reason = gds_drc_checker.gds_drc_check(str(target_path) + '/mag/', 'caravel', output_directory, lc)
+        check, reason = mag_drc_checker.mag_drc_check(str(target_path) + '/mag/', 'caravel', output_directory, lc)
 
         if check:
-            lc.print_control("{{PROGRESS}} DRC Checks on GDS-II Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+            lc.print_control("{{PROGRESS}} DRC Checks on MAG Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
-            lc.print_control("{{FAIL}} DRC Checks on GDS-II Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
     stp_cnt += 1
 

@@ -9,11 +9,11 @@ if {[lindex $scalefac 1] < 2} {
 }
 
 drc off
-#drc euclidean on
+# drc euclidean on
 
 # Allow override of PDK path from environment variable PDKPATH
 if {[catch {set PDKPATH $env(PDKPATH)}]} {
-    set PDKPATH "/usr/local/bin/tech-files/"
+    set PDKPATH "/usr/local/bin/tech-files"
 }
 
 # loading technology
@@ -40,6 +40,9 @@ if {[catch {set MAGTYPE $env(MAGTYPE)}]} {
    set MAGTYPE maglef
 }
 
+	path search [concat "../$MAGTYPE" [path search]]
+
+
 # add path to reference cells
 if {[file isdir ${PDKPATH}/libs.ref/${MAGTYPE}]} {
     addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_fd_pr
@@ -52,7 +55,6 @@ if {[file isdir ${PDKPATH}/libs.ref/${MAGTYPE}]} {
     addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_fd_sc_ls
     addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_fd_sc_ms
     addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_osu_sc
-    addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_osu_sc_t18
 } else {
     addpath ${PDKPATH}/libs.ref/sky130_fd_pr/${MAGTYPE}
     addpath ${PDKPATH}/libs.ref/sky130_fd_io/${MAGTYPE}
@@ -64,7 +66,6 @@ if {[file isdir ${PDKPATH}/libs.ref/${MAGTYPE}]} {
     addpath ${PDKPATH}/libs.ref/sky130_fd_sc_ls/${MAGTYPE}
     addpath ${PDKPATH}/libs.ref/sky130_fd_sc_ms/${MAGTYPE}
     addpath ${PDKPATH}/libs.ref/sky130_osu_sc/${MAGTYPE}
-    addpath ${PDKPATH}/libs.ref/sky130_osu_sc_t18/${MAGTYPE}
 }
 
 # add path to GDS cells

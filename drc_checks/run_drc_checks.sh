@@ -26,12 +26,12 @@ then
 fi
 echo "Running Magic..."
 export PDKPATH=/usr/local/bin/tech-files/
-export MAGIC_MAGICRC=$PDKPATH/sky130A.magicrc
-
+cp $PDKPATH/sky130A.magicrc $TARGET_DIR/.magicrc
+export MAGTYPE=maglef
+cd $TARGET_DIR
 magic \
     -noconsole \
     -dnull \
-    -rcfile $MAGIC_MAGICRC \
     $SCRIPTS_ROOT/magic_drc_check.tcl \
     </dev/null \
     |& tee $OUT_DIR/magic_drc.log
