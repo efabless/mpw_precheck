@@ -33,7 +33,7 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
                 strsimpy
 
 # magic dependencies
-RUN yum install -y git libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
+RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
 
 #General utils
 RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb  && \

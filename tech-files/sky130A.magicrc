@@ -8,22 +8,22 @@ if {[lindex $scalefac 1] < 2} {
     scalegrid 1 2
 }
 
-# drc off
-drc euclidean on
+drc off
+# drc euclidean on
 
 # Allow override of PDK path from environment variable PDKPATH
 if {[catch {set PDKPATH $env(PDKPATH)}]} {
-    set PDKPATH "/usr/local/bin/tech-files/"
+    set PDKPATH "$::env(PDK_ROOT)/sky130A"
 }
 
 # loading technology
-tech load $PDKPATH/sky130A.tech
+tech load $PDKPATH/libs.tech/magic/current/sky130A.tech
 
 # load device generator
-source $PDKPATH/sky130A.tcl
+source $PDKPATH/libs.tech/magic/current/sky130A.tcl
 
 # load bind keys (optional)
-# source $PDKPATH/sky130A-BindKeys
+# source $PDKPATH/libs.tech/magic/current/sky130A-BindKeys
 
 # set units to lambda grid 
 snap lambda
@@ -37,8 +37,11 @@ set SUB VSUBS
 # from environment variable MAGTYPE
 
 if {[catch {set MAGTYPE $env(MAGTYPE)}]} {
-   set MAGTYPE mag
+   set MAGTYPE maglef
 }
+
+	path search [concat "../$MAGTYPE" [path search]]
+
 
 # add path to reference cells
 if {[file isdir ${PDKPATH}/libs.ref/${MAGTYPE}]} {
@@ -52,7 +55,6 @@ if {[file isdir ${PDKPATH}/libs.ref/${MAGTYPE}]} {
     addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_fd_sc_ls
     addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_fd_sc_ms
     addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_osu_sc
-    addpath ${PDKPATH}/libs.ref/${MAGTYPE}/sky130_osu_sc_t18
 } else {
     addpath ${PDKPATH}/libs.ref/sky130_fd_pr/${MAGTYPE}
     addpath ${PDKPATH}/libs.ref/sky130_fd_io/${MAGTYPE}
@@ -64,7 +66,6 @@ if {[file isdir ${PDKPATH}/libs.ref/${MAGTYPE}]} {
     addpath ${PDKPATH}/libs.ref/sky130_fd_sc_ls/${MAGTYPE}
     addpath ${PDKPATH}/libs.ref/sky130_fd_sc_ms/${MAGTYPE}
     addpath ${PDKPATH}/libs.ref/sky130_osu_sc/${MAGTYPE}
-    addpath ${PDKPATH}/libs.ref/sky130_osu_sc_t18/${MAGTYPE}
 }
 
 # add path to GDS cells

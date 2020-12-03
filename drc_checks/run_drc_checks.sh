@@ -17,21 +17,21 @@
 
 export TARGET_DIR=$1
 export DESIGN_NAME=$2
-export OUT_DIR=$3
-export SCRIPTS_ROOT=${4:-$(pwd)}
+export PDK_ROOT=$3
+export OUT_DIR=$4
+export SCRIPTS_ROOT=${5:-$(pwd)}
 
 if ! [[ -d "$OUT_DIR" ]]
 then
     mkdir $OUT_DIR
 fi
 echo "Running Magic..."
-export PDKPATH=/usr/local/bin/tech-files/
-export MAGIC_MAGICRC=$PDKPATH/sky130A.magicrc
-
+cp /usr/local/bin/tech-files/sky130A.magicrc $TARGET_DIR/.magicrc
+export MAGTYPE=maglef
+cd $TARGET_DIR
 magic \
     -noconsole \
     -dnull \
-    -rcfile $MAGIC_MAGICRC \
     $SCRIPTS_ROOT/magic_drc_check.tcl \
     </dev/null \
     |& tee $OUT_DIR/magic_drc.log

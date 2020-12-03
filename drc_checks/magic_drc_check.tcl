@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-gds read $::env(TARGET_DIR)/$::env(DESIGN_NAME).gds
+load $::env(DESIGN_NAME) -dereference
 
 set fout [open $::env(OUT_DIR)/$::env(DESIGN_NAME).magic.drc w]
 set oscale [cif scale out]
@@ -22,6 +22,7 @@ puts stdout "\[INFO\]: Loading $cell_name\n"
 flush stdout
 load $cell_name
 select top cell
+expand
 drc euclidean on
 drc style drc(full)
 drc check

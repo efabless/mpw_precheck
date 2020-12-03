@@ -19,7 +19,7 @@ import subprocess
 from utils.utils import *
 import base_checks.check_yaml as check_yaml
 import base_checks.check_license as check_license
-import drc_checks.gds_drc_checker as gds_drc_checker
+import drc_checks.mag_drc_checker as mag_drc_checker
 import consistency_checks.consistency_checker as consistency_checker
 
 default_logger_path = '/usr/local/bin/full_log.log'
@@ -42,7 +42,7 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
     return verilog_netlist, spice_netlist
 
 
-def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=False, skip_drc=False, drc_only=False):
+def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy_checks=False, skip_drc=False, drc_only=False):
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
@@ -129,7 +129,7 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
 
         # NOTE: Step 3: Check Fuzzy Consistency.
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
-        check, reason = consistency_checker.fuzzyCheck(target_path=target_path, spice_netlist=spice_netlist, verilog_netlist=verilog_netlist,
+        check, reason = consistency_checker.fuzzyCheck(target_path=target_path, pdk_root=pdk_root ,spice_netlist=spice_netlist, verilog_netlist=verilog_netlist,
                                                        output_directory=output_directory, waive_consistency_checks=waive_fuzzy_checks, lc=lc)
         if check:
             lc.print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
@@ -139,18 +139,18 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
 
         # NOTE: Step 4: Not Yet Implemented.
 
-    # NOTE: Step 5: Perform DRC checks on the GDS.
+    # NOTE: Step 5: Perform DRC checks on the MAG.
     # assumption that we'll always be using a caravel top module based on what's on step 3
     lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking DRC Violations.")
     if skip_drc:
         lc.print_control("{{WARNING}} Skipping DRC Checks...")
     else:
-        check, reason = gds_drc_checker.gds_drc_check(str(target_path) + '/gds/', 'caravel', output_directory, lc)
+        check, reason = mag_drc_checker.mag_drc_check(str(target_path) + '/mag/', 'caravel', pdk_root, output_directory, lc)
 
         if check:
-            lc.print_control("{{PROGRESS}} DRC Checks on GDS-II Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+            lc.print_control("{{PROGRESS}} DRC Checks on MAG Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
-            lc.print_control("{{FAIL}} DRC Checks on GDS-II Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
     stp_cnt += 1
 
@@ -170,6 +170,9 @@ if __name__ == "__main__":
     parser.add_argument('--output_directory', '-o', required=False,
                         help='Output Directory, defaults to /target_path/checks')
 
+    parser.add_argument('--pdk_root', '-p', required=True,
+                        help='PDK_ROOT, points to pdk installation path')
+
     parser.add_argument('--waive_fuzzy_checks', '-wfc', action='store_true', default=False,
                         help="Specifies whether or not to waive fuzzy consistency checks.")
 
@@ -181,8 +184,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     target_path = args.target_path
+    pdk_root = args.pdk_root
     skip_drc = args.skip_drc
     waive_fuzzy_checks = args.waive_fuzzy_checks
     drc_only = args.drc_only
 
-    run_check_sequence(target_path, args.output_directory, waive_fuzzy_checks, skip_drc, drc_only)
+    run_check_sequence(target_path, pdk_root, args.output_directory, waive_fuzzy_checks, skip_drc, drc_only)

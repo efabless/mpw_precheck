@@ -12,11 +12,20 @@ To setup the necessary docker file, run:
     sh build-docker.sh
 ```
 
+If you don't have the skywater-pdk installed, run:
+```bash 
+    export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
+    cd dependencies
+    sh build-pdk.sh
+```
+
 ## Before Using:
 
 - Before you run the precheck tool, make sure you go through https://opensource.google/docs/releasing/preparing/ and cover the requirements.
 
 - Make sure you have the top level GDS-II under a directory called `gds/`; thus containing `gds/caravel.gds`, this directory should be compressed and the script will use your Makefile to uncompress it.
+
+- Make sure you have the top level mag under a directory called `mag/`; thus containing `mag/caravel.mag`. This should be auto-generated with caravel's `make ship`.
 
 - Please create a file `./third_party/used_external_repos.csv` and add to it all `repository name,commit hash` for any external github repository that you are using to build this project.
 
@@ -51,7 +60,7 @@ The steps are as follows:
     - You are only using the allowed power connections with the pads.
     - The instance names and types match for `caravel` and the `user_project_wrapper` (a comparison between the netlist and the gds).
 - Step #4: TBA -- not for this shuttle.
-- Step #5: Runs DRC checks on the GDS-II.
+- Step #5: Runs DRC checks on the GDS-II by using `mag/caravel.mag` to abstract everthing but the user space.
 - Step #6: TBA -- not for this shuttle.
 - Step #7: TBA -- not for this shuttle.
 
@@ -65,7 +74,9 @@ Mount the docker file:
 You should export `TARGET_PATH=/path/to/target/path` and add this argument `-v $TARGET_PATH:$TARGET_PATH` to the `docker run` command, if the target project directory is outside the cloned open_mpw_precheck directory.
 
 ```
+export PDK_ROOT=<The place where you want to install the pdk>
 docker run -it -v $(pwd):/usr/local/bin \
+    -v $PDK_ROOT:$PDK_ROOT
     -u $(id -u $USER):$(id -g $USER) \
     open_mpw_prechecker:latest
 ```
@@ -73,6 +84,7 @@ Run the following command:
 
 ```
 python3 open_mpw_prechecker.py [-h] --target_path TARGET_PATH
+                                --pdk_root PDK_ROOT
                                 [--output_directory OUTPUT_DIRECTORY]
                                 [--waive_fuzzy_checks] [--skip_drc]
                                 [--drc_only]
@@ -82,6 +94,8 @@ Runs the precheck tool by calling the various checks in order.
 optional arguments:
   --target_path TARGET_PATH, -t TARGET_PATH
                         Absolute Path to the project.
+  --pdk_root PDK_ROOT, -p PDK_ROOT
+                        PDK_ROOT, points to pdk installation path.
   --output_directory OUTPUT_DIRECTORY, -o OUTPUT_DIRECTORY
                         Output Directory, defaults to /target_path/checks
   --waive_fuzzy_checks, -wfc
