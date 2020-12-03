@@ -37,4 +37,4 @@ done
 # Section End
 
 make open_pdks
-docker run -it -v $(pwd)/..:/usr/local/bin -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) $IMAGE_NAME bash -c "make build-pdk"
+docker run -it -v $(pwd)/..:/usr/local/bin -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) $IMAGE_NAME bash -c "cd /usr/local/bin/dependencies; make build-pdk"
