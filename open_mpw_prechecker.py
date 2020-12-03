@@ -145,7 +145,7 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
     if skip_drc:
         lc.print_control("{{WARNING}} Skipping DRC Checks...")
     else:
-        check, reason = gds_drc_checker.gds_drc_check(str(target_path) + '/gds/', 'caravel', output_directory, lc)
+        check, reason = gds_drc_checker.gds_drc_check(str(target_path) + '/mag/', 'caravel', output_directory, lc)
 
         if check:
             lc.print_control("{{PROGRESS}} DRC Checks on GDS-II Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")

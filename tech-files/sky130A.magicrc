@@ -8,8 +8,8 @@ if {[lindex $scalefac 1] < 2} {
     scalegrid 1 2
 }
 
-# drc off
-drc euclidean on
+drc off
+#drc euclidean on
 
 # Allow override of PDK path from environment variable PDKPATH
 if {[catch {set PDKPATH $env(PDKPATH)}]} {
@@ -37,7 +37,7 @@ set SUB VSUBS
 # from environment variable MAGTYPE
 
 if {[catch {set MAGTYPE $env(MAGTYPE)}]} {
-   set MAGTYPE mag
+   set MAGTYPE maglef
 }
 
 # add path to reference cells
