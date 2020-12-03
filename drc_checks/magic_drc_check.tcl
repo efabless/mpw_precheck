@@ -23,7 +23,7 @@ flush stdout
 load $cell_name
 select top cell
 expand
-drc on
+drc euclidean on
 drc style drc(full)
 drc check
 set drcresult [drc listall why]
