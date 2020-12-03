@@ -13,17 +13,17 @@ drc off
 
 # Allow override of PDK path from environment variable PDKPATH
 if {[catch {set PDKPATH $env(PDKPATH)}]} {
-    set PDKPATH "/usr/local/bin/tech-files"
+    set PDKPATH "$::env(PDK_ROOT)/sky130A"
 }
 
 # loading technology
-tech load $PDKPATH/sky130A.tech
+tech load $PDKPATH/libs.tech/magic/current/sky130A.tech
 
 # load device generator
-source $PDKPATH/sky130A.tcl
+source $PDKPATH/libs.tech/magic/current/sky130A.tcl
 
 # load bind keys (optional)
-# source $PDKPATH/sky130A-BindKeys
+# source $PDKPATH/libs.tech/magic/current/sky130A-BindKeys
 
 # set units to lambda grid 
 snap lambda

@@ -22,14 +22,15 @@ from utils.utils import *
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
-def mag_drc_check(target_path, design_name, output_directory, lc=logging_controller(default_logger_path,default_target_path), call_path='/usr/local/bin/drc_checks'):
+def mag_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path,default_target_path), call_path='/usr/local/bin/drc_checks'):
     path=Path(target_path+"/"+design_name+".mag")
     if not os.path.exists(path):
         return False,"MAG not found"
     call_path = os.path.abspath(call_path)
-    run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {output_directory} {call_path}".format(
+    run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {pdk_root} {output_directory} {call_path}".format(
         call_path=call_path,
         target_path=target_path,
+        pdk_root=pdk_root,
         design_name=design_name,
         output_directory=output_directory
     )

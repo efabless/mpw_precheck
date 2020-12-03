@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load $::env(TARGET_DIR)/$::env(DESIGN_NAME).mag
+load $::env(DESIGN_NAME) -dereference
 
 set fout [open $::env(OUT_DIR)/$::env(DESIGN_NAME).magic.drc w]
 set oscale [cif scale out]

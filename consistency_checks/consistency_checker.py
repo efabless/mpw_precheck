@@ -61,7 +61,7 @@ def checkMakefile(target_path):
         return False, "Makefile not found at top level"
 
 
-def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks", waive_docs=False,
+def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks", waive_docs=False,
                waive_makefile=False, waive_consistency_checks=False, lc=logging_controller(default_logger_path,default_target_path)):
     if waive_docs == False:
         check, reason = doc_utils.checkDocumentation(target_path)
@@ -141,7 +141,7 @@ def fuzzyCheck(target_path, spice_netlist, verilog_netlist, output_directory, ca
     else:
         return False, "Basic Hierarchy Checks Failed."
 
-    check, reason = check_source_gds_consitency(target_path+'/gds/', toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
+    check, reason = check_source_gds_consitency(target_path+'/gds/', pdk_root, toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
                                                 user_type_list, user_name_list, lc, call_path)
     if check:
         lc.print_control(reason + "\nGDS Checks Passed")
@@ -284,15 +284,16 @@ def clean_gds_list(cells):
     return cells.replace("\\", "")
 
 
-def check_source_gds_consitency(target_path, toplevel, user_module, user_module_name, output_directory, top_type_list, top_name_list, user_type_list,
+def check_source_gds_consitency(target_path, pdk_root, toplevel, user_module, user_module_name, output_directory, top_type_list, top_name_list, user_type_list,
                                 user_name_list, lc=logging_controller(default_logger_path,default_target_path), call_path="/usr/local/bin/consistency_checks"):
     path=Path(target_path+"/"+toplevel+".gds")
     if not os.path.exists(path):
         return False,"GDS not found"
     call_path = os.path.abspath(call_path)
-    run_instance_list_cmd = "sh {call_path}/run_instances_listing.sh {target_path} {design_name} {sub_design_name} {output_directory} {call_path}".format(
+    run_instance_list_cmd = "sh {call_path}/run_instances_listing.sh {target_path} {pdk_root} {design_name} {sub_design_name} {output_directory} {call_path}".format(
         call_path=call_path,
         target_path=target_path,
+        pdk_root=pdk_root,
         design_name=toplevel,
         sub_design_name=user_module_name,
         output_directory=output_directory

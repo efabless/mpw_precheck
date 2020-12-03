@@ -67,7 +67,9 @@ Mount the docker file:
 You should export `TARGET_PATH=/path/to/target/path` and add this argument `-v $TARGET_PATH:$TARGET_PATH` to the `docker run` command, if the target project directory is outside the cloned open_mpw_precheck directory.
 
 ```
+export PDK_ROOT=<The place where you want to install the pdk>
 docker run -it -v $(pwd):/usr/local/bin \
+    -v $PDK_ROOT:$PDK_ROOT
     -u $(id -u $USER):$(id -g $USER) \
     open_mpw_prechecker:latest
 ```
@@ -75,6 +77,7 @@ Run the following command:
 
 ```
 python3 open_mpw_prechecker.py [-h] --target_path TARGET_PATH
+                                --pdk_root PDK_ROOT
                                 [--output_directory OUTPUT_DIRECTORY]
                                 [--waive_fuzzy_checks] [--skip_drc]
                                 [--drc_only]
@@ -84,6 +87,8 @@ Runs the precheck tool by calling the various checks in order.
 optional arguments:
   --target_path TARGET_PATH, -t TARGET_PATH
                         Absolute Path to the project.
+  --pdk_root PDK_ROOT, -p PDK_ROOT
+                        PDK_ROOT, points to pdk installation path.
   --output_directory OUTPUT_DIRECTORY, -o OUTPUT_DIRECTORY
                         Output Directory, defaults to /target_path/checks
   --waive_fuzzy_checks, -wfc

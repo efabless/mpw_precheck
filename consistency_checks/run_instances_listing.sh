@@ -16,17 +16,17 @@
 # To call: ./run_instance_listing.sh <target_path> <design_name> <sub_design_name> <output_path>
 
 export TARGET_DIR=$1
-export DESIGN_NAME=$2
-export SUB_DESIGN_NAME=$3
-export OUT_DIR=$4
-export SCRIPTS_ROOT=${5:-$(pwd)}
+export PDK_ROOT=$2
+export DESIGN_NAME=$3
+export SUB_DESIGN_NAME=$4
+export OUT_DIR=$5
+export SCRIPTS_ROOT=${6:-$(pwd)}
 
 if ! [[ -d "$OUT_DIR" ]]
 then
     mkdir $OUT_DIR
 fi
 echo "Running Magic..."
-export PDKPATH=/usr/local/bin/tech-files/
 export MAGIC_MAGICRC=$PDKPATH/sky130A.magicrc
 
 magic \
