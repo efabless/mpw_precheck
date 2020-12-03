@@ -12,6 +12,13 @@ To setup the necessary docker file, run:
     sh build-docker.sh
 ```
 
+If you don't have the skywater-pdk installed, run:
+```bash 
+    export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
+    cd dependencies
+    sh build-pdk.sh
+```
+
 ## Before Using:
 
 - Before you run the precheck tool, make sure you go through https://opensource.google/docs/releasing/preparing/ and cover the requirements.
