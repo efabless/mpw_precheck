@@ -18,6 +18,8 @@ To setup the necessary docker file, run:
 
 - Make sure you have the top level GDS-II under a directory called `gds/`; thus containing `gds/caravel.gds`, this directory should be compressed and the script will use your Makefile to uncompress it.
 
+- Make sure you have the top level mag under a directory called `mag/`; thus containing `mag/caravel.mag`. This should be auto-generated with caravel's `make ship`.
+
 - Please create a file `./third_party/used_external_repos.csv` and add to it all `repository name,commit hash` for any external github repository that you are using to build this project.
 
 - Please include any useful statistics about your design, i.e. cell count, core utilization, etc. in a `.csv` file. If you're using OpenLANE then, this file should be created automatically in `<run path>/reports/final_summary_report.csv`.
@@ -51,7 +53,7 @@ The steps are as follows:
     - You are only using the allowed power connections with the pads.
     - The instance names and types match for `caravel` and the `user_project_wrapper` (a comparison between the netlist and the gds).
 - Step #4: TBA -- not for this shuttle.
-- Step #5: Runs DRC checks on the GDS-II.
+- Step #5: Runs DRC checks on the GDS-II by using `mag/caravel.mag` to abstract everthing but the user space.
 - Step #6: TBA -- not for this shuttle.
 - Step #7: TBA -- not for this shuttle.
 

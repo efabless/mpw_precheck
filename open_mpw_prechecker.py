@@ -139,7 +139,7 @@ def run_check_sequence(target_path, output_directory=None, waive_fuzzy_checks=Fa
 
         # NOTE: Step 4: Not Yet Implemented.
 
-    # NOTE: Step 5: Perform DRC checks on the GDS.
+    # NOTE: Step 5: Perform DRC checks on the MAG.
     # assumption that we'll always be using a caravel top module based on what's on step 3
     lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking DRC Violations.")
     if skip_drc:
