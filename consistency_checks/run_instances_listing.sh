@@ -27,7 +27,7 @@ then
     mkdir $OUT_DIR
 fi
 echo "Running Magic..."
-export MAGIC_MAGICRC=$PDKPATH/sky130A.magicrc
+export MAGIC_MAGICRC=/usr/local/bin/tech-files/sky130A.magicrc
 
 magic \
     -noconsole \

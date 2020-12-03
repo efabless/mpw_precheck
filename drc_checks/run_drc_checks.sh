@@ -26,7 +26,7 @@ then
     mkdir $OUT_DIR
 fi
 echo "Running Magic..."
-cp /usr/local/bin/.magicrc $TARGET_DIR/.magicrc
+cp /usr/local/bin/tech-files/sky130A.magicrc $TARGET_DIR/.magicrc
 export MAGTYPE=maglef
 cd $TARGET_DIR
 magic \
