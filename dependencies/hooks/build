@@ -1,0 +1,4 @@
+#!/bin/bash
+echo $DOCKERFILE_PATH
+echo $IMAGE_NAME
+docker build --rm -t $IMAGE_NAME .
