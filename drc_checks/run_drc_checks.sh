@@ -51,5 +51,12 @@ echo $Test_Magic_violations
 
 if [ 0 -ne $Test_Magic_violations ]; then echo "DRC Check FAILED"; exit -1; fi
 
+if [ 0 -ne $Test_Magic_violations ]; then
+    python3 $SCRIPTS_ROOT/magic_drc_to_rdb.py \
+        -magic_drc_in $OUT_DIR/$DESIGN_NAME.magic.drc \
+        -rdb_out $OUT_DIR/$DESIGN_NAME.magic.rdb
+fi
+echo "[Info] Converted errors in RDB format"
+
 echo "DRC Check Passed"
 exit 0
