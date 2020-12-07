@@ -89,7 +89,7 @@ export PDK_ROOT=<The place where you want to install the pdk>
 docker run -it -v $(pwd):/usr/local/bin \
     -v $PDK_ROOT:$PDK_ROOT
     -u $(id -u $USER):$(id -g $USER) \
-    efabless/open_mpw_prechecker:latest
+    efabless/open_mpw_precheck:latest
 ```
 Run the following command:
 
