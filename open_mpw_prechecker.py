@@ -19,6 +19,7 @@ import subprocess
 from utils.utils import *
 import base_checks.check_yaml as check_yaml
 import base_checks.check_license as check_license
+import base_checks.check_manifest as check_manifest
 import drc_checks.mag_drc_checker as mag_drc_checker
 import consistency_checks.consistency_checker as consistency_checker
 
@@ -129,6 +130,14 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
 
         # NOTE: Step 3: Check Fuzzy Consistency.
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
+        # Manifest Checks:
+        check, reason, fail_lines = check_manifest.chech_manifest(target_path=target_path,output_directory=output_directory+'/manifest_check.log')
+        if check:
+            lc.print_control(reason)
+        else:
+            lc.print_control("{{WARNING}} "+reason)
+            lc.print_control("\n".join(fail_lines))
+        # Fuzzy Checks:
         check, reason = consistency_checker.fuzzyCheck(target_path=target_path, pdk_root=pdk_root ,spice_netlist=spice_netlist, verilog_netlist=verilog_netlist,
                                                        output_directory=output_directory, waive_consistency_checks=waive_fuzzy_checks, lc=lc)
         if check:
