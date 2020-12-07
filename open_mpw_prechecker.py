@@ -133,7 +133,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
         # Manifest Checks:
         check, reason, fail_lines = check_manifest.check_manifest(target_path=target_path+"/verilog/rtl/",output_file=output_directory+'/manifest_check.log')
         if check:
-            lc.print_control("{{PROGRESS}}" + reason)
+            lc.print_control("{{PROGRESS}} " + reason)
         else:
             lc.print_control("{{WARNING}} " + reason)
             lc.print_control("\n".join(fail_lines))

@@ -15,11 +15,15 @@ import os
 import sys
 import subprocess
 from pathlib import Path
+from utils.utils import *
 
 manifest_file_name="manifest"
 manifest_git_url="https://github.com/efabless/caravel/blob/develop/verilog/rtl/manifest"
 
-def check_manifest(target_path, output_file,call_path='/usr/local/bin/base_checks'):
+default_logger_path = '/usr/local/bin/full_log.log'
+default_target_path = '/usr/local/bin/caravel/'
+
+def check_manifest(target_path, output_file,lc=logging_controller(default_logger_path,default_target_path),call_path='/usr/local/bin/base_checks'):
     path=Path(target_path)
     if not os.path.exists(path):
         return False,"./verilog/rtl/ not found"
@@ -40,7 +44,7 @@ def check_manifest(target_path, output_file,call_path='/usr/local/bin/base_check
             if not output:
                 break
             if output:
-                continue
+                lc.print_control(output.strip())
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         return False, str(error_msg)

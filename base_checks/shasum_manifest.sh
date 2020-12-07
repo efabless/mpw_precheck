@@ -16,9 +16,11 @@ TARGET_PATH=$1
 FILE_NAME=$2
 GIT_URL=$3
 OUT_FILE=$4
+echo "Going into $TARGET_PATH"
 cd $TARGET_PATH
+echo "Removing $FILE_NAME"
 rm -rf $FILE_NAME
+echo "Fetching $FILE_NAME"
 wget $GIT_URL
-
-
+echo "Running sha1sum checks"
 sha1sum -c $FILE_NAME > $OUT_FILE
