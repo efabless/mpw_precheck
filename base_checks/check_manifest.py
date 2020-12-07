@@ -18,7 +18,7 @@ from pathlib import Path
 from utils.utils import *
 
 manifest_file_name="manifest"
-manifest_git_url="https://github.com/efabless/caravel/blob/develop/verilog/rtl/manifest"
+manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/verilog/rtl/manifest"
 
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
@@ -54,14 +54,16 @@ def check_manifest(target_path, output_file,lc=logging_controller(default_logger
         if logFileOpener.mode == 'r':
             logContent = logFileOpener.read()
         logFileOpener.close()
-
-        pattern = '251212'
-        fail_lines= [line for line in logContent.split("\n") if pattern in line]
-        if len(fail_lines):
-            return False, "Manifest Checks Failed. Please Rebase your Repository to the latest Caravel master.", fail_lines
+        logLines = logContent.split("\n")
+        if len(logLines):
+            pattern = 'FAILED'
+            fail_lines= [line for line in logLines if pattern in line]
+            if len(fail_lines):
+                return False, "Manifest Checks Failed. Please Rebase your Repository to the latest Caravel master.", fail_lines
+            else:
+                return True, "Manifest Checks Passed. RTL Version Matches.", fail_lines
         else:
-            return True, "Manifest Checks Passed. RTL Version Matches.", fail_lines
-
+            return False, "Manifest Check Failed. Make sure you mounted the docker or you're using the docker version that has sha1sum installed.",list()
     except FileNotFoundError:
         return False, "Manifest Check Failed. Make sure you mounted the docker or you're using the docker version that has sha1sum installed.",list()
     except OSError:
