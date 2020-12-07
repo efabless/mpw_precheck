@@ -59,7 +59,7 @@ def check_manifest(target_path, output_file,lc=logging_controller(default_logger
             pattern = 'FAILED'
             fail_lines= [line for line in logLines if pattern in line]
             if len(fail_lines):
-                return False, "Manifest Checks Failed. Please Rebase your Repository to the latest Caravel master.", fail_lines
+                return False, "Manifest Checks Failed. Please rebase your Repository to the latest Caravel master.", fail_lines
             else:
                 return True, "Manifest Checks Passed. RTL Version Matches.", fail_lines
         else:
@@ -70,11 +70,3 @@ def check_manifest(target_path, output_file,lc=logging_controller(default_logger
         return False, "Manifest Check Failed. Make sure you mounted the docker or you're using the docker version that has sha1sum installed.", list()
 
 
-
-
-if __name__ == "__main__":
-    check, _, _ = check_manifest('.')
-    if check:
-        print("{{RESULT}} Manifest checks passed!")
-    else:
-        print("{{FAIL}} Manifest checks failed")
