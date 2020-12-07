@@ -23,7 +23,7 @@ def getListOfFiles(dirName):
     # create a list of file and sub directories
     # names in the given directory
     allFiles = list()
-    if dirName in IGNORED_DIRS:
+    if os.path.basename(dirName) in IGNORED_DIRS:
         return allFiles
     listOfFile = os.listdir(dirName)
     # Iterate over all the entries
