@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# To call: ./run_drc_checks.sh <target_path> <design_name> <output_path>
+# To call: ./run_drc_checks.sh <target_path> <design_name> <pdk_root> <output_path>
 
 export TARGET_DIR=$1
 export DESIGN_NAME=$2
@@ -52,8 +52,8 @@ echo $Test_Magic_violations
 if [ 0 -ne $Test_Magic_violations ]; then
     echo "[Info] Converting errors to RDB format..."
     python3 $SCRIPTS_ROOT/magic_drc_to_rdb.py \
-        -magic_drc_in $OUT_DIR/$DESIGN_NAME.magic.drc \
-        -rdb_out $OUT_DIR/$DESIGN_NAME.magic.rdb
+        --magic_drc_in $OUT_DIR/$DESIGN_NAME.magic.drc \
+        --rdb_out $OUT_DIR/$DESIGN_NAME.magic.rdb
     echo "[Info] Converted errors in RDB format"
 fi
 
