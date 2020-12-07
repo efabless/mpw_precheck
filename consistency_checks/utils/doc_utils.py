@@ -17,12 +17,15 @@ import os
 
 docExts = [".rst", ".html",".md",".doc",".docx",".odt"]
 bannedList = ["slave", "blacklist", "whitelist"]
+IGNORED_DIRS = ["third_party", ".git"]
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories
     # names in the given directory
-    listOfFile = os.listdir(dirName)
     allFiles = list()
+    if os.path.basename(dirName) in IGNORED_DIRS:
+        return allFiles
+    listOfFile = os.listdir(dirName)
     # Iterate over all the entries
     for entry in listOfFile:
         # Create full path
