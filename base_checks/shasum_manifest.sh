@@ -18,7 +18,7 @@ GIT_URL=$3
 OUT_FILE=$4
 cd $TARGET_PATH
 rm -rf $FILE_NAME
-wget $git_url
+wget $GIT_URL
 
 
 sha1sum -c $FILE_NAME > $OUT_FILE

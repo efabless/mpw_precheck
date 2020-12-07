@@ -13,15 +13,13 @@
 # limitations under the License.
 import os
 import sys
-import argparse
 import subprocess
 from pathlib import Path
-from utils.utils import *
 
 manifest_file_name="manifest"
 manifest_git_url="https://github.com/efabless/caravel/blob/develop/verilog/rtl/manifest"
 
-def check_manifest(target_path, output_file,call_path='/usr/local/bin/base_checks')
+def check_manifest(target_path, output_file,call_path='/usr/local/bin/base_checks'):
     path=Path(target_path)
     if not os.path.exists(path):
         return False,"./verilog/rtl/ not found"
@@ -36,7 +34,7 @@ def check_manifest(target_path, output_file,call_path='/usr/local/bin/base_check
     )
 
     try:
-        process = subprocess.Popen(run_drc_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        process = subprocess.Popen(run_manifest_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
         while True:
             output = process.stdout.readline()
             if not output:
