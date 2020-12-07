@@ -6,12 +6,23 @@
 
 ## Setup:
 
-To setup the necessary docker file, run:
+### Docker:
+
+You can either build the docker locally or fetch it from dockerhub.
+#### Build Docker Locally
+To build the necessary docker locally, run:
 ```bash
     cd dependencies
     sh build-docker.sh
 ```
 
+#### Pull Docker from Dockerhub
+To pull the necessary docker from [dockerhub](https://hub.docker.com/repository/docker/efabless/open_mpw_precheck/tags?page=1&ordering=last_updated), run:
+```bash
+    docker pull efabless/open_mpw_precheck:latest
+```
+
+### PDK
 If you don't have the skywater-pdk installed, run:
 ```bash 
     export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
@@ -78,7 +89,7 @@ export PDK_ROOT=<The place where you want to install the pdk>
 docker run -it -v $(pwd):/usr/local/bin \
     -v $PDK_ROOT:$PDK_ROOT
     -u $(id -u $USER):$(id -g $USER) \
-    open_mpw_prechecker:latest
+    efabless/open_mpw_prechecker:latest
 ```
 Run the following command:
 

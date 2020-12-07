@@ -15,7 +15,7 @@
 
 # exit when any command fails
 export RUN_ROOT=$(pwd)
-export IMAGE_NAME=open_mpw_prechecker:latest
+export IMAGE_NAME=efabless/open_mpw_prechecker:latest
 echo $PDK_ROOT
 echo $RUN_ROOT
 make skywater-pdk
