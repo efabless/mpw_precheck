@@ -19,8 +19,8 @@ from utils.utils import *
 
 manifest_file_name="manifest"
 rtl_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/verilog/rtl/manifest"
-maglef_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/mag/manifest"
-mag_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/maglef/manifest"
+maglef_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/maglef/manifest"
+mag_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/mag/manifest"
 
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
@@ -28,7 +28,7 @@ default_target_path = '/usr/local/bin/caravel/'
 def check_manifest(target_path, output_file, git_url, lc=logging_controller(default_logger_path,default_target_path),call_path='/usr/local/bin/base_checks'):
     path=Path(target_path)
     if not os.path.exists(path):
-        return False,str(target_path)+" not found"
+        return False,str(target_path)+" not found", list()
     call_path = os.path.abspath(call_path)
     
     run_manifest_check_cmd = "sh {call_path}/shasum_manifest.sh {target_path} {manifest_file_name} {git_url} {output_file}".format(
