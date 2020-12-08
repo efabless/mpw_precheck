@@ -131,7 +131,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
         # NOTE: Step 3: Check Fuzzy Consistency.
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
         # Manifest Checks:
-        check, reason, fail_lines = check_manifest.check_manifest(target_path=target_path+"/verilog/rtl/",output_file=output_directory+'/manifest_check.log', lc=lc)
+        check, reason, fail_lines = check_manifest.check_manifests(target_path=target_path,output_file=output_directory+'/manifest_check', lc=lc)
         if check:
             lc.print_control("{{PROGRESS}} " + reason)
         else:
