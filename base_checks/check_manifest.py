@@ -18,9 +18,9 @@ from pathlib import Path
 from utils.utils import *
 
 manifest_file_name="manifest"
-rtl_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/verilog/rtl/manifest"
-maglef_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/maglef/manifest"
-mag_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/mag/manifest"
+rtl_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/master/verilog/rtl/manifest"
+maglef_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/master/maglef/manifest"
+mag_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/master/mag/manifest"
 
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
