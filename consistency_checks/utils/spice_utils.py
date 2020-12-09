@@ -43,7 +43,7 @@ def confirm_complex_subckt(spice_netlist,subckt_name,minimum_devices_number):
             subckt = spiceContent[start_idx:end_idx]
             pattern2 = re.compile(r'\nX[\S+]+\s*')
             instances = re.findall(pattern2, subckt)
-            if len(instances) > minimum_devices_number:
+            if len(instances) >= minimum_devices_number:
                 return True, 'Design is complex and contains: '+str(len(instances))+' subckts'
             else:
                 return False, "The subckt "+subckt_name + " doesn't contain the minimum number of devices required"
