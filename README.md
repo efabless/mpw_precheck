@@ -34,6 +34,8 @@ If you don't have the skywater-pdk installed, run:
 
 - Before you run the precheck tool, make sure you go through https://opensource.google/docs/releasing/preparing/ and cover the requirements.
 
+- Overwrite `verilog/gl/user_project_wrapper.v` with your synthesized netlist. Otherwise, point to it properly in your `info.yaml`. You can alternatively use spice files for both `caravel` and `user_project_wrapper`. Keep on reading for this point to make more sense.
+
 - Make sure you have the top level GDS-II under a directory called `gds/`; thus containing `gds/caravel.gds`, this directory should be compressed and the script will use your Makefile to uncompress it.
 
 - Make sure you have the top level mag under a directory called `mag/`; thus containing `mag/caravel.mag`. This should be auto-generated with caravel's `make ship`.
@@ -56,15 +58,16 @@ The steps are as follows:
   - YAML file should follow [this](https://github.com/efabless/caravel/blob/release/info.yaml) yaml file as list of requirements: all fields in the linked example are mandatory. It must be named `info.yaml` and must exist in the project root.
     - Make sure that you're pointing to gate level netlists or spice models with blackboxed macros when setting `top_level_netlist` and `user_level_netlist`.
 - Step #3: Fuzzy Consistency checks
-  - Step #3.1: The existence of documentation.
+  - Step #3.1: Manifest Checks. Verify that the user is using the current caravel master.
+  - Step #3.2: The existence of documentation.
     - There is a README text file at the project root.
     - The README doesn't contain any non-inclusive language. Read [this](https://opensource.google/docs/releasing/preparing/#inclusive) for more.
-  - Step #3.2: The existence of a Makefile in the project root that at least has the following targets:
+  - Step #3.3: The existence of a Makefile in the project root that at least has the following targets:
     - verify: Runs simulations and testbench verifications.
     - clean: Removes all simulation and verification outputs.
     - compress: compresses the large items in the project directory and cleanup decompressed items.
     - uncompress: decompresses the large items in the project directory and cleanup compressed items.
-  - Step #3.3: Consistency Checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
+  - Step #3.4: Consistency Checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
     - The top level module is `caravel` and there is a `user_project_wrapper` under it.
     - `caravel` and `user_project_wrapper` exist and are non-trivial.
     - You have not changed the pin list of the `user_project_wrapper`.
@@ -82,11 +85,11 @@ The steps are as follows:
 ## How To Run:
 Mount the docker file:
 
-You should export `TARGET_PATH=/path/to/target/path` and add this argument `-v $TARGET_PATH:$TARGET_PATH` to the `docker run` command, if the target project directory is outside the cloned open_mpw_precheck directory.
-
-```
-export PDK_ROOT=<The place where you want to install the pdk>
+```bash
+export PDK_ROOT=<Absolute path to parent of sky130A. Installed PDK root.>
+export TARGET_PATH=<Absolute path to the target caravel path>
 docker run -it -v $(pwd):/usr/local/bin \
+    -v $TARGET_PATH:$TARGET_PATH
     -v $PDK_ROOT:$PDK_ROOT
     -u $(id -u $USER):$(id -g $USER) \
     efabless/open_mpw_precheck:latest
