@@ -30,7 +30,7 @@ def check_manifest(target_path, output_file, git_url, lc=logging_controller(defa
     if not os.path.exists(path):
         return False,str(target_path)+" not found", list()
     call_path = os.path.abspath(call_path)
-    
+
     run_manifest_check_cmd = "sh {call_path}/shasum_manifest.sh {target_path} {manifest_file_name} {git_url} {output_file}".format(
         call_path=call_path,
         target_path=target_path,
@@ -50,7 +50,7 @@ def check_manifest(target_path, output_file, git_url, lc=logging_controller(defa
     except subprocess.CalledProcessError as e:
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         return False, str(error_msg)
-    
+
     try:
         logFileOpener = open(output_file)
         if logFileOpener.mode == 'r':
@@ -77,6 +77,6 @@ def check_manifests(target_path, output_file,lc=logging_controller(default_logge
     if check:
         check, reason, fail_lines = check_manifest(target_path+'/maglef', str(output_file)+'.maglef.log', maglef_manifest_git_url, lc, call_path)
         if check:
-            check, reason, fail_lines = check_manifest(target_path+'/mag', str(output_file)+'.mag.log', mag_manifest_git_url, lc, call_path)    
+            check, reason, fail_lines = check_manifest(target_path+'/mag', str(output_file)+'.mag.log', mag_manifest_git_url, lc, call_path)
     return check, reason, fail_lines
 
