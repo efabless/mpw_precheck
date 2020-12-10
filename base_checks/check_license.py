@@ -34,7 +34,7 @@ IGNORED_FILES = ['LICENSE', 'manifest', '.gitignore', 'info.yaml']
 # File extensions to be ignored for license check
 IGNORED_EXTS = ['.cfg', '.csv', '.def', '.gds', '.lef', '.mag',
                 '.pdf', '.png', '.pyc', '.log', '.drc', '.rdb',
-                '.out']
+                '.out', '.hex']
 
 
 def check_license(user_license_path, licenses_path):
@@ -127,9 +127,8 @@ def check_file_spdx_compliance(file_path, license_key):
         f.close()
 
         if lines and list(filter(None, lines)):
-            header_char = list(filter(None, lines))[0][0]
             for line in lines:
-                if line and line[0] == header_char:
+                if line:
                     if _spdx_copyright_header in line:
                         spdx_cp_compliant = True
                     if _spdx_license_header in line:
