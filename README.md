@@ -38,7 +38,7 @@ If you don't have the skywater-pdk installed, run:
 
 - Make sure you have the top level GDS-II under a directory called `gds/`; thus containing `gds/caravel.gds`, this directory should be compressed and the script will use your Makefile to uncompress it.
 
-- Make sure you have the top level mag under a directory called `mag/`; thus containing `mag/caravel.mag`. This should be auto-generated with caravel's `make ship`.
+- Make sure you have the top level mag under a directory called `mag/`; thus containing `mag/caravel.mag`. This should be auto-generated with caravel's `make`.
 
 - Please create a file `./third_party/used_external_repos.csv` and add to it all `repository name,commit hash` for any external github repository that you are using to build this project.
 
