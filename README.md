@@ -89,8 +89,8 @@ Mount the docker file:
 export PDK_ROOT=<Absolute path to parent of sky130A. Installed PDK root.>
 export TARGET_PATH=<Absolute path to the target caravel path>
 docker run -it -v $(pwd):/usr/local/bin \
-    -v $TARGET_PATH:$TARGET_PATH
-    -v $PDK_ROOT:$PDK_ROOT
+    -v $TARGET_PATH:$TARGET_PATH \
+    -v $PDK_ROOT:$PDK_ROOT \
     -u $(id -u $USER):$(id -g $USER) \
     efabless/open_mpw_precheck:latest
 ```
