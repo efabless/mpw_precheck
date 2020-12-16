@@ -34,7 +34,7 @@ If you don't have the skywater-pdk installed, run:
 
 - Before you run the precheck tool, make sure you go through https://opensource.google/docs/releasing/preparing/ and cover the requirements.
 
-- Overwrite `verilog/gl/user_project_wrapper.v` with your synthesized netlist. Otherwise, point to it properly in your `info.yaml`. You can alternatively use spice files for both `caravel` and `user_project_wrapper`. Keep on reading for this point to make more sense.
+- Overwrite `verilog/gl/user_project_wrapper.v` with your synthesized netlist **make sure the netlist includes power information**. Otherwise, point to it properly in your `info.yaml`. You can alternatively use spice files for both `caravel` and `user_project_wrapper`. Keep on reading for this point to make more sense.
 
 - Make sure you have the top level GDS-II under a directory called `gds/`; thus containing `gds/caravel.gds`, this directory should be compressed and the script will use your Makefile to uncompress it.
 
@@ -71,12 +71,12 @@ The steps are as follows:
     - The top level module is `caravel` and there is a `user_project_wrapper` under it.
     - `caravel` and `user_project_wrapper` exist and are non-trivial.
     - You have not changed the pin list of the `user_project_wrapper`.
-    - You are only using the allowed power connections with the pads.
     - The instance names and types match for `caravel` and the `user_project_wrapper` (a comparison between the netlist and the gds).
+    - You have internal power connections in the `user_project_wrapper` netlist.
+    - You are only using the allowed power connections with the pads. Since the power info is not connected in caravel toplevel yet, this sub-check is expected to fail. So, don't worry about that.
 - Step #4: TBA -- not for this shuttle.
 - Step #5: Runs DRC checks on the GDS-II by using `mag/caravel.mag` to abstract everthing but the user space.
 - Step #6: TBA -- not for this shuttle.
-- Step #7: TBA -- not for this shuttle.
 
 ## Current Assumptions:
 - The top module name is `caravel`.
