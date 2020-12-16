@@ -180,7 +180,7 @@ def internal_power_checks(user_module,user_type_list,user_power_list, spice_netl
                     if connections_map[key] in user_power_list:
                         flag = True
                         break
-                if flag:
+                if not flag:
                     return False, "Instance "+inst+" was not connected to any power in "+str(spice_netlist)
         elif verilog_netlist is not None:
             check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist, user_module, inst)
@@ -192,8 +192,8 @@ def internal_power_checks(user_module,user_type_list,user_power_list, spice_netl
                     if connections_map[key] in user_power_list:
                         flag = True
                         break
-                if flag:
-                    return False, "Instance "+inst+" was not connected to any power in "+str(spice_netlist)
+                if not flag:
+                    return False, "Instance "+inst+" was not connected to any power in "+str(verilog_netlist)
         else:
             return False, "No netlist was passed to internal power checks!"
         cnt+=1
