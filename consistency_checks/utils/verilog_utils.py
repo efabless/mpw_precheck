@@ -116,7 +116,7 @@ def extract_connections_from_inst(verilog_netlist, toplevel,user_module):
             module = verilogContent[start_idx:end_idx]
             pattern = re.compile(r'\s*\b%s\s*\S+\s*\#?\(' % user_module)
             instances = re.findall(pattern, module)
-            if len(instances) == 1:
+            if len(instances) >= 1:
                 start_idx = module.find(instances[0])
                 end_idx = module.find(');',start_idx)
                 inst = module[start_idx+len(instances[0]):end_idx]
