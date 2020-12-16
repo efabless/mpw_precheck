@@ -18,6 +18,7 @@ import re
 import sys
 import argparse
 import subprocess
+import random
 from pathlib import Path
 from utils.utils import *
 
@@ -35,8 +36,9 @@ makefileTargets = ["verify", "clean", "compress", "uncompress"]
 user_project_wrapper_lef = "user_project_wrapper_empty.lef"
 ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
 "vdda2", "vssa1"]
-user_power_list = ["vdda1", "vssa1", "vccd1", "vssd1"]  # To be changed when we have a final caravel netlist with power
-reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]  # To be changed when we have a final caravel netlist with power
+user_power_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2", "vssa1"]
+
+reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]
 
 toplevel = "caravel"
 user_module = "user_project_wrapper"
@@ -121,23 +123,6 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
                 return False, reason
 
     if basic_hierarchy_checks:
-        check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path) + "/" + user_project_wrapper_lef))
-        if check == False:
-            return False, user_project_wrapper_pin_list
-        user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
-        pin_name_diffs = diff_lists(user_pin_list, user_project_wrapper_pin_list)
-        pin_name_diffs = diff_lists(pin_name_diffs, ignore_list)
-        if len(pin_name_diffs):
-            return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
-        else:
-            lc.print_control("Pins check passed")
-            """
-            check, reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
-            if check:
-                lc.print_control(reason)
-            else:
-                return False, reason
-            """
         lc.print_control("{{PROGRESS}} Basic Hierarchy Checks Passed.")
     else:
         return False, "Basic Hierarchy Checks Failed."
@@ -148,8 +133,70 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         lc.print_control(reason + "\nGDS Checks Passed")
     else:
         return False, "GDS Checks Failed: " + reason
+
+    lc.print_control("{PROGRESS} Running Pins and Power Checks...")
+    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path) + "/" + user_project_wrapper_lef))
+    if check == False:
+        return False, user_project_wrapper_pin_list
+    user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
+    pin_name_diffs = diff_lists(user_pin_list, user_project_wrapper_pin_list)
+    pin_name_diffs = diff_lists(pin_name_diffs, ignore_list)
+    if len(pin_name_diffs):
+        return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
+    else:
+        lc.print_control("Pins check passed")
+        check, reason = internal_power_checks(user_module,user_name_list, user_power_list, spice_netlist, verilog_netlist)
+        if check:
+            lc.print_control(reason)
+            check, reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
+            if check:
+                lc.print_control(reason)
+            else:
+                return False, reason
+        else:
+            return False, reason
     return True, "Fuzzy Checks Passed!"
 
+def internal_power_checks(user_module,user_name_list,user_power_list, spice_netlists, verilog_netlists):
+    spice_netlist = None
+    verilog_netlist = None
+    if len(spice_netlists) == 2:
+        spice_netlist = spice_netlists[1]
+
+    if len(verilog_netlists) == 2:
+        verilog_netlist = verilog_netlists[1]
+
+    cnt = 0
+    while cnt < 20 and cnt < len(user_name_list):
+        inst =  str(random.choice(user_name_list))
+        if spice_netlist is not None:
+            check, connections_map = spice_utils.extract_connections_from_inst(spice_netlist, user_module, inst)
+            if check == False:
+                return False, connections_map
+            else:
+                flag = False
+                for key in connections_map.keys():
+                    if connections_map[key] in user_power_list:
+                        flag = True
+                        break
+                if flag:
+                    return False, "Instance "+inst+" was not connected to any power in "+str(spice_netlist)
+        elif verilog_netlist is not None:
+            check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist, user_module, inst)
+            if check == False:
+                return False, connections_map
+            else:
+                flag = False
+                for key in connections_map.keys():
+                    if connections_map[key] in user_power_list:
+                        flag = True
+                        break
+                if flag:
+                    return False, "Instance "+inst+" was not connected to any power in "+str(spice_netlist)
+        else:
+            return False, "No netlist was passed to internal power checks!"
+        cnt+=1
+    return True, "Internal Power Checks Passed!"
 
 def extract_user_project_wrapper_pin_list(lef):
     try:
