@@ -146,7 +146,7 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
     else:
         lc.print_control("Pins check passed")
-        check, power_reason = internal_power_checks(user_module,user_name_list, user_power_list, spice_netlist, verilog_netlist)
+        check, power_reason = internal_power_checks(user_module,user_type_list, user_power_list, spice_netlist, verilog_netlist)
         if check:
             lc.print_control(power_reason)
             check, power_reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
@@ -158,7 +158,7 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
             return False, power_reason
     return True, "Fuzzy Checks Passed!"
 
-def internal_power_checks(user_module,user_name_list,user_power_list, spice_netlists, verilog_netlists):
+def internal_power_checks(user_module,user_type_list,user_power_list, spice_netlists, verilog_netlists):
     spice_netlist = None
     verilog_netlist = None
     if len(spice_netlists) == 2:
@@ -168,8 +168,8 @@ def internal_power_checks(user_module,user_name_list,user_power_list, spice_netl
         verilog_netlist = verilog_netlists[1]
 
     cnt = 0
-    while cnt < 20 and cnt < len(user_name_list):
-        inst =  str(random.choice(user_name_list))
+    while cnt < 20 and cnt < len(user_type_list):
+        inst =  str(random.choice(user_type_list))
         if spice_netlist is not None:
             check, connections_map = spice_utils.extract_connections_from_inst(spice_netlist, user_module, inst)
             if check == False:
