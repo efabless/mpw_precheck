@@ -19,6 +19,7 @@ import sys
 import argparse
 import subprocess
 import random
+import copy
 from pathlib import Path
 from utils.utils import *
 
@@ -145,16 +146,16 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
     else:
         lc.print_control("Pins check passed")
-        check, reason = internal_power_checks(user_module,user_name_list, user_power_list, spice_netlist, verilog_netlist)
+        check, power_reason = internal_power_checks(user_module,user_name_list, user_power_list, spice_netlist, verilog_netlist)
         if check:
-            lc.print_control(reason)
-            check, reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
+            lc.print_control(power_reason)
+            check, power_reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
             if check:
-                lc.print_control(reason)
+                lc.print_control(power_reason)
             else:
-                return False, reason
+                return False, power_reason
         else:
-            return False, reason
+            return False, power_reason
     return True, "Fuzzy Checks Passed!"
 
 def internal_power_checks(user_module,user_name_list,user_power_list, spice_netlists, verilog_netlists):
@@ -310,14 +311,15 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=lo
 
 
 def check_power_pins(connections_map, forbidden_list, check_list):
+    check_list_copy = copy.deepcopy(check_list)
     for key in connections_map:
         con = connections_map[key]
-        if con in check_list:
+        if con in check_list_copy:
             check_list.remove(con)
         if con in forbidden_list:
             return False, "The user is using a management area power/ground net: " + con
-    if len(check_list):
-        return False, "The user didn't use the following power/ground nets: " + " ".join(check_list)
+    if len(check_list_copy):
+        return False, "The user didn't use the following power/ground nets: " + " ".join(check_list_copy)
     else:
         return True, "Power Checks Passed"
 
