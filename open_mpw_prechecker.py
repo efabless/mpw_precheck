@@ -155,13 +155,17 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
     if skip_drc:
         lc.print_control("{{WARNING}} Skipping DRC Checks...")
     else:
-        check, reason = mag_drc_checker.mag_drc_check(str(target_path) + '/mag/', 'caravel', pdk_root, output_directory, lc)
-
-        if check:
-            lc.print_control("{{PROGRESS}} DRC Checks on MAG Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
-        else:
-            lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+        user_wrapper_path=Path(str(target_path)+"/gds/user_project_wrapper.gds")
+        if not os.path.exists(user_wrapper_path):
+            lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
+        else:
+            check, reason = mag_drc_checker.mag_drc_check(str(target_path) + '/mag/', 'caravel', pdk_root, output_directory, lc)
+            if check:
+                lc.print_control("{{PROGRESS}} DRC Checks on MAG Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+            else:
+                lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+                lc.exit_control(2)
     stp_cnt += 1
 
     # NOTE: Step 6: Not Yet Implemented.
