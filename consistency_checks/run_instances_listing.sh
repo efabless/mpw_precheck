@@ -30,6 +30,7 @@ fi
 echo "Running Magic..."
 export MAGIC_MAGICRC=/usr/local/bin/tech-files/sky130A.magicrc
 
+ulimit -c unlimited
 magic \
     -noconsole \
     -dnull \
