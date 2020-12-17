@@ -149,11 +149,13 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         check, power_reason = internal_power_checks(user_module,user_type_list, user_power_list, spice_netlist, verilog_netlist)
         if check:
             lc.print_control(power_reason)
+            """
             check, power_reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
             if check:
                 lc.print_control(power_reason)
             else:
                 return False, power_reason
+            """
         else:
             return False, power_reason
     return True, "Fuzzy Checks Passed!"
