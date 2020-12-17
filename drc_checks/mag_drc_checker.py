@@ -58,6 +58,9 @@ def mag_drc_check(target_path, design_name, pdk_root, output_directory, lc=loggi
 
         if logContent.find("was used but not defined.") != -1:
             return False, "The MAG is not valid/corrupt contains cells that are used but not defined. Please check `"+str(output_directory)+"/magic_drc.log` in the output directory for more details."
+        
+        if logContent.find("Unrecognized layer (type) name \"<<<<<\"") != -1:
+            return False, "The MAG is not valid/corrupt contains cells. Please check `"+str(output_directory)+"/magic_drc.log` in the output directory for more details."
 
         drcFileOpener = open(output_directory + '/' + design_name + '.magic.drc')
         if drcFileOpener.mode == 'r':
@@ -81,7 +84,7 @@ def mag_drc_check(target_path, design_name, pdk_root, output_directory, lc=loggi
             else:
                 vioDict = dict()
                 for i in range(1, len(drcSections) - 1, 2):
-                    vioDict[drcSections[i]] = len(drcSections[i + 1].split("\n"))
+                    vioDict[drcSections[i]] = len(drcSections[i + 1].split("\n")) - 2
                 cnt = 0
                 for key in vioDict:
                     val = vioDict[key]
