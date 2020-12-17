@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
+
 import os
 import sys
 import subprocess
@@ -64,7 +65,7 @@ def check_manifest(target_path, output_file, git_url, lc=logging_controller(defa
             if len(fail_lines):
                 return False, "Manifest Checks Failed. Please rebase your Repository to the latest Caravel master.", fail_lines
             else:
-                return True, "Manifest Checks Passed. RTL Version Matches.", fail_lines
+                return True, "Manifest Checks Passed. Version Matches.", fail_lines
         else:
             return False, "Manifest Check Failed. Make sure you mounted the docker or you're using the docker version that has sha1sum installed. Also, The manifest file might be deleted from caravel master at the moment.",list()
     except FileNotFoundError:
@@ -76,7 +77,7 @@ def check_manifest(target_path, output_file, git_url, lc=logging_controller(defa
 def check_manifests(target_path, output_file,lc=logging_controller(default_logger_path,default_target_path),call_path='/usr/local/bin/base_checks'):
     total_check = True
     total_lines = []
-    real_reason = "Nothing Happened"
+    real_reason = "Manifest Checks Passed. Caravel Version Matches."
     check, reason, fail_lines = check_manifest(target_path+'/verilog/rtl', str(output_file)+'.rtl.log', rtl_manifest_git_url, lc, call_path)
     if not check:
         total_check = False
