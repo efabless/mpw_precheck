@@ -27,6 +27,10 @@ def mag_drc_check(target_path, design_name, pdk_root, output_directory, lc=loggi
     path=Path(target_path+"/"+design_name+".mag")
     if not os.path.exists(path):
         return False,"MAG not found"
+
+    path_user=Path(target_path+"../maglef/user_project_wrapper.mag")
+    if os.path.exists(path_user):
+        os.remove(path_user)
     call_path = os.path.abspath(call_path)
     run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {pdk_root} {output_directory} {call_path}".format(
         call_path=call_path,
