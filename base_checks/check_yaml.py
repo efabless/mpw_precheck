@@ -49,7 +49,7 @@ sample = YamlStructure(description='A template SoC for Google sponsored Open MPW
 
 
 def diff_lists(li1, li2):
-    return (list(list(set(li1) - set(li2)) + list(set(li2) - set(li1))))
+    return (list(set(li2) - set(li1)))
 
 
 def check_yaml(path):
