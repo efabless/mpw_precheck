@@ -44,11 +44,11 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
     return verilog_netlist, spice_netlist
 
 
-def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy_checks=False, skip_drc=False, drc_only=False):
+def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False):
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
-    lc = logging_controller(str(output_directory) + '/full_log.log', target_path)
+    lc = logging_controller(str(output_directory) + '/full_log.log', target_path, dont_compress)
     lc.create_full_log()
 
     steps = 4
@@ -196,11 +196,15 @@ if __name__ == "__main__":
     parser.add_argument('--drc_only', '-do', action='store_true', default=False,
                         help="Specifies whether or not to only run DRC checks.")
 
+    parser.add_argument('--dont_compress', '-dc', action='store_true', default=False,
+                        help="If enabled, compression won't happen at the end of the run.")
+
     args = parser.parse_args()
     target_path = args.target_path
     pdk_root = args.pdk_root
     skip_drc = args.skip_drc
     waive_fuzzy_checks = args.waive_fuzzy_checks
     drc_only = args.drc_only
+    dont_compress = args.dont_compress
 
-    run_check_sequence(target_path, pdk_root, args.output_directory, waive_fuzzy_checks, skip_drc, drc_only)
+    run_check_sequence(target_path, pdk_root, args.output_directory, waive_fuzzy_checks, skip_drc, drc_only, dont_compress)
