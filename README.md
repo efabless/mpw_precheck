@@ -91,6 +91,8 @@ export TARGET_PATH=<Absolute path to the target caravel path>
 docker run -it -v $(pwd):/usr/local/bin \
     -v $TARGET_PATH:$TARGET_PATH \
     -v $PDK_ROOT:$PDK_ROOT \
+    -e TARGET_PATH=$TARGET_PATH \
+    -e PDK_ROOT=$PDK_ROOT \
     -u $(id -u $USER):$(id -g $USER) \
     efabless/open_mpw_precheck:latest
 ```
