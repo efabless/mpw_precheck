@@ -19,9 +19,10 @@ import subprocess
 from pathlib import Path
 
 class logging_controller:
-    def __init__(self, log, target_path):
+    def __init__(self, log, target_path, dont_compress=False):
         self.log = log
         self.target_path = target_path
+        self.dont_compress = dont_compress
 
     def switch_log(self,log):
         self.log = log
@@ -57,12 +58,15 @@ class logging_controller:
 
     def exit_control(self,code):
         self.dump_full_log()
-        print("{{PROGRESS}} Compressing the gds files")
-        # Compress project items.
-        run_prep_cmd = "cd {target_path}; make compress;".format(
-            target_path=self.target_path
-        )
+        if not self.dont_compress:
+            print("{{PROGRESS}} Compressing the gds files")
+            # Compress project items.
+            run_prep_cmd = "cd {target_path}; make compress;".format(
+                target_path=self.target_path
+            )
+            process = subprocess.Popen(run_prep_cmd, stdout=subprocess.PIPE, shell=True)
+            process.communicate()[0].strip()
+        else:
+            print("{{WARNING}} Compression Skipped!")
 
-        process = subprocess.Popen(run_prep_cmd, stdout=subprocess.PIPE, shell=True)
-        process.communicate()[0].strip()
         exit(code)
