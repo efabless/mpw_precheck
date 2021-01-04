@@ -20,9 +20,6 @@ from pathlib import Path
 from utils.utils import *
 
 manifest_file_name="manifest"
-rtl_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/master/verilog/rtl/manifest"
-maglef_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/master/maglef/manifest"
-mag_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/master/mag/manifest"
 
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
@@ -74,7 +71,10 @@ def check_manifest(target_path, output_file, git_url, lc=logging_controller(defa
         return False, "Manifest Check Failed. Make sure you mounted the docker or you're using the docker version that has sha1sum installed. Also, The manifest file might be deleted from caravel master at the moment.", list()
 
 
-def check_manifests(target_path, output_file,lc=logging_controller(default_logger_path,default_target_path),call_path='/usr/local/bin/base_checks'):
+def check_manifests(target_path, output_file,manifest_source="master",lc=logging_controller(default_logger_path,default_target_path),call_path='/usr/local/bin/base_checks'):
+    rtl_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/" + str(manifest_source) + "/verilog/rtl/manifest"
+    maglef_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/" + str(manifest_source) + "/maglef/manifest"
+    mag_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/" + str(manifest_source) + "/mag/manifest"
     total_check = True
     total_lines = []
     real_reason = "Manifest Checks Passed. Caravel Version Matches."

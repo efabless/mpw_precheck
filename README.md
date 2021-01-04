@@ -104,6 +104,7 @@ python3 open_mpw_prechecker.py [-h] --target_path TARGET_PATH
                                 [--output_directory OUTPUT_DIRECTORY]
                                 [--waive_fuzzy_checks] [--skip_drc]
                                 [--drc_only] [--dont_compress]
+                                [--manifest_source BRANCH_NAME]
 
 Runs the precheck tool by calling the various checks in order.
 
@@ -121,5 +122,6 @@ optional arguments:
   --drc_only, -do       Specifies whether or not to only run DRC checks.
   --dont_compress, -dc  If enabled, compression won't happen at the end of the
                         run.
+  --manifest_source, -ms The manifest files source branch: master or develop, defaults to master.
 
 ```

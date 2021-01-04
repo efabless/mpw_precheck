@@ -44,7 +44,7 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
     return verilog_netlist, spice_netlist
 
 
-def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False):
+def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master"):
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
@@ -67,7 +67,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
     lc.print_control("Step " + str(stp_cnt) + " done without fatal errors.")
     stp_cnt += 1
 
-    if drc_only == False:
+    if not drc_only:
         # NOTE: Step 1: Check LICENSE.
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking License files.")
         lcr = check_license.check_main_license(target_path)
@@ -132,7 +132,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
         # NOTE: Step 3: Check Fuzzy Consistency.
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
         # Manifest Checks:
-        check, reason, fail_lines = check_manifest.check_manifests(target_path=target_path,output_file=output_directory+'/manifest_check', lc=lc)
+        check, reason, fail_lines = check_manifest.check_manifests(target_path=target_path,output_file=output_directory+'/manifest_check', manifest_source=manifest_source,lc=lc)
         if check:
             lc.print_control("{{PROGRESS}} " + reason)
         else:
@@ -187,6 +187,9 @@ if __name__ == "__main__":
     parser.add_argument('--pdk_root', '-p', required=True,
                         help='PDK_ROOT, points to pdk installation path')
 
+    parser.add_argument('--manifest_source', '-ms', default="master",
+                        help='The manifest files source branch: master or develop')
+
     parser.add_argument('--waive_fuzzy_checks', '-wfc', action='store_true', default=False,
                         help="Specifies whether or not to waive fuzzy consistency checks.")
 
@@ -202,9 +205,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     target_path = args.target_path
     pdk_root = args.pdk_root
+    manifest_source = args.manifest_source
     skip_drc = args.skip_drc
     waive_fuzzy_checks = args.waive_fuzzy_checks
     drc_only = args.drc_only
     dont_compress = args.dont_compress
 
-    run_check_sequence(target_path, pdk_root, args.output_directory, waive_fuzzy_checks, skip_drc, drc_only, dont_compress)
+    run_check_sequence(target_path, pdk_root, args.output_directory, waive_fuzzy_checks, skip_drc, drc_only, dont_compress, manifest_source)
