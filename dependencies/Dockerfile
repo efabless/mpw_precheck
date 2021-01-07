@@ -43,11 +43,11 @@ RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi
 
 RUN yum install gcc-c++ -y
 
-RUN git clone git://opencircuitdesign.com/magic magic_17122020
+RUN git clone git://opencircuitdesign.com/magic magic_06012020
 
-WORKDIR magic_17122020
+WORKDIR magic_06012020
 
-RUN git checkout ba77257afab5392547675de65707fce625ef2324
+RUN git checkout 2bbe1be790df66f605ced0a2de0f1d4cad47d699
 
 # build
 RUN ./configure --prefix=/build && \
