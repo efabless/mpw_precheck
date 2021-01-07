@@ -141,7 +141,7 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         return False, user_project_wrapper_pin_list
     user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
     pin_name_diffs = diff_lists(user_pin_list, user_project_wrapper_pin_list)
-    pin_name_diffs = diff_lists(pin_name_diffs, ignore_list)
+    pin_name_diffs = one_side_diff_lists(pin_name_diffs, ignore_list)
     if len(pin_name_diffs):
         return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
     else:
@@ -149,13 +149,11 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         check, power_reason = internal_power_checks(user_module,user_type_list, user_power_list, spice_netlist, verilog_netlist)
         if check:
             lc.print_control(power_reason)
-            """
             check, power_reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
             if check:
                 lc.print_control(power_reason)
             else:
                 return False, power_reason
-            """
         else:
             return False, power_reason
     return True, "Fuzzy Checks Passed!"
@@ -317,7 +315,7 @@ def check_power_pins(connections_map, forbidden_list, check_list):
     for key in connections_map:
         con = connections_map[key]
         if con in check_list_copy:
-            check_list.remove(con)
+            check_list_copy.remove(con)
         if con in forbidden_list:
             return False, "The user is using a management area power/ground net: " + con
     if len(check_list_copy):
@@ -328,6 +326,9 @@ def check_power_pins(connections_map, forbidden_list, check_list):
 
 def diff_lists(li1, li2):
     return (list(list(set(li1) - set(li2)) + list(set(li2) - set(li1))))
+
+def one_side_diff_lists(li1, li2):
+    return (list(set(li1) - set(li2)))
 
 
 def clean_gds_list(cells):
