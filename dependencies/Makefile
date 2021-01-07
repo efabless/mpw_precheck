@@ -19,7 +19,7 @@ SPECIAL_VOLTAGE_LIBRARY ?= sky130_fd_sc_hvl
 IO_LIBRARY ?= sky130_fd_io
 
 SKYWATER_COMMIT ?= 3d7617a1acb92ea883539bcf22a632d6361a5de4
-OPEN_PDKS_COMMIT ?= ebc20a2a71c94f022d6d8135ac3db96fe66dc5df
+OPEN_PDKS_COMMIT ?= acba4077ca068ef09cedafe7fc466ade51256a25
 
 ifndef PDK_ROOT
 $(error PDK_ROOT is undefined, please export it before running make)
