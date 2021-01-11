@@ -41,6 +41,9 @@ user_power_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2"
 
 reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]
 
+toplevel_name_ignore = ["copyright_block_0", "user_id_textblock_0", "open_source_0"]
+toplevel_type_ignore = ["copyright_block", "user_id_textblock", "open_source"]
+
 toplevel = "caravel"
 user_module = "user_project_wrapper"
 default_logger_path = '/usr/local/bin/full_log.log'
@@ -402,6 +405,8 @@ def check_source_gds_consitency(target_path, pdk_root, toplevel, user_module, us
 
             top_name_diff = diff_lists(toplvlInsts, top_name_list)
             top_type_diff = diff_lists(toplvlCells, top_type_list)
+            top_name_diff = one_side_diff_lists(top_name_diff, toplevel_name_ignore)
+            top_type_diff = one_side_diff_lists(top_type_diff, toplevel_type_ignore)
 
             lc.print_control("user wrapper cell names differences: ")
             lc.print_control(user_name_diff)
