@@ -72,35 +72,11 @@ def check_manifest(target_path, output_file, git_url, lc=logging_controller(defa
 
 
 def check_manifests(target_path, output_file,manifest_source="master",lc=logging_controller(default_logger_path,default_target_path),call_path='/usr/local/bin/base_checks'):
-    if str(manifest_source) == "develop":
         manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/manifest"
         total_check = True
         total_lines = []
         real_reason = "Manifest Checks Passed. Caravel Version Matches."
         check, reason, fail_lines = check_manifest(target_path, str(output_file)+'.log', manifest_git_url, lc, call_path)
-        if not check:
-            total_check = False
-            total_lines = total_lines + fail_lines
-            real_reason = reason
-        return total_check, real_reason, total_lines
-    else:
-        rtl_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/" + str(manifest_source) + "/verilog/rtl/manifest"
-        maglef_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/" + str(manifest_source) + "/maglef/manifest"
-        mag_manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/" + str(manifest_source) + "/mag/manifest"
-        total_check = True
-        total_lines = []
-        real_reason = "Manifest Checks Passed. Caravel Version Matches."
-        check, reason, fail_lines = check_manifest(target_path+'/verilog/rtl', str(output_file)+'.rtl.log', rtl_manifest_git_url, lc, call_path)
-        if not check:
-            total_check = False
-            total_lines = total_lines + fail_lines
-            real_reason = reason
-        check, reason, fail_lines = check_manifest(target_path+'/maglef', str(output_file)+'.maglef.log', maglef_manifest_git_url, lc, call_path)
-        if not check:
-            total_check = False
-            total_lines = total_lines + fail_lines
-            real_reason = reason
-        check, reason, fail_lines = check_manifest(target_path+'/mag', str(output_file)+'.mag.log', mag_manifest_git_url, lc, call_path)
         if not check:
             total_check = False
             total_lines = total_lines + fail_lines
