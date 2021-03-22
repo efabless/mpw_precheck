@@ -23,14 +23,11 @@ from utils.utils import *
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
-def mag_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path,default_target_path), call_path='/usr/local/bin/drc_checks'):
-    path=Path(target_path+"/"+design_name+".mag")
+def gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path,default_target_path), call_path='/usr/local/bin/drc_checks'):
+    path=Path(target_path+"/"+design_name+".gds")
     if not os.path.exists(path):
-        return False,"MAG not found"
+        return False,"GDS not found"
 
-    path_user=Path(target_path+"../maglef/user_project_wrapper.mag")
-    if os.path.exists(path_user):
-        os.remove(path_user)
     call_path = os.path.abspath(call_path)
     run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {pdk_root} {output_directory} {call_path}".format(
         call_path=call_path,
@@ -61,10 +58,10 @@ def mag_drc_check(target_path, design_name, pdk_root, output_directory, lc=loggi
         logFileOpener.close()
 
         if logContent.find("was used but not defined.") != -1:
-            return False, "The MAG is not valid/corrupt contains cells that are used but not defined. Please check `"+str(output_directory)+"/magic_drc.log` in the output directory for more details."
-        
+            return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `"+str(output_directory)+"/magic_drc.log` in the output directory for more details."
+
         if logContent.find("Unrecognized layer (type) name \"<<<<<\"") != -1:
-            return False, "The MAG is not valid/corrupt contains cells. Please check `"+str(output_directory)+"/magic_drc.log` in the output directory for more details."
+            return False, "The GDS is not valid/corrupt contains cells. Please check `"+str(output_directory)+"/magic_drc.log` in the output directory for more details."
 
         drcFileOpener = open(output_directory + '/' + design_name + '.magic.drc')
         if drcFileOpener.mode == 'r':
@@ -102,7 +99,7 @@ def mag_drc_check(target_path, design_name, pdk_root, output_directory, lc=loggi
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='Runs a magic drc check on a given MAG.')
+        description='Runs a magic drc check on a given GDS.')
 
     parser.add_argument('--target_path', '-t', required=True,
                         help='Design Path')
@@ -121,4 +118,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    print("{{RESULT}} ", mag_drc_check(target_path, design_name, output_directory, logging_controller(str(output_directory) + '/full_log.log',target_path), '.'))
+    print("{{RESULT}} ", gds_drc_check(target_path, design_name, output_directory, logging_controller(str(output_directory) + '/full_log.log',target_path), '.'))

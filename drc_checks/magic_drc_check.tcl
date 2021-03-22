@@ -13,7 +13,7 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-load $::env(DESIGN_NAME) -dereference
+gds read $::env(DESIGN_NAME).gds
 
 set fout [open $::env(OUT_DIR)/$::env(DESIGN_NAME).magic.drc w]
 set oscale [cif scale out]
@@ -21,9 +21,6 @@ set cell_name $::env(DESIGN_NAME)
 magic::suspendall
 puts stdout "\[INFO\]: Loading $cell_name\n"
 flush stdout
-load ../maglef/sram_1rw1r_32_256_8_sky130.mag
-gds noduplicates true
-gds read ../gds/user_project_wrapper.gds
 load $cell_name
 select top cell
 expand

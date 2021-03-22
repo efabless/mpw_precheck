@@ -21,7 +21,7 @@ from utils.utils import *
 import base_checks.check_yaml as check_yaml
 import base_checks.check_license as check_license
 import base_checks.check_manifest as check_manifest
-import drc_checks.mag_drc_checker as mag_drc_checker
+import drc_checks.gds_drc_checker as gds_drc_checker
 import consistency_checks.consistency_checker as consistency_checker
 
 default_logger_path = '/usr/local/bin/full_log.log'
@@ -160,11 +160,11 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
             lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
         else:
-            check, reason = mag_drc_checker.mag_drc_check(str(target_path) + '/mag/', 'caravel', pdk_root, output_directory, lc)
+            check, reason = gds_drc_checker.gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
             if check:
-                lc.print_control("{{PROGRESS}} DRC Checks on MAG Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+                lc.print_control("{{PROGRESS}} DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
-                lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+                lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
                 lc.exit_control(2)
     stp_cnt += 1
 

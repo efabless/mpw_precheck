@@ -28,7 +28,7 @@ then
 fi
 echo "Running Magic..."
 cp /usr/local/bin/tech-files/sky130A.magicrc $TARGET_DIR/.magicrc
-export MAGTYPE=maglef
+export MAGTYPE=mag
 cd $TARGET_DIR
 ulimit -c unlimited
 magic \
