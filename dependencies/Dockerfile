@@ -18,11 +18,17 @@ FROM centos:centos7 as build
 
 # Common development tools and libraries (kitchen sink approach)
 RUN yum -y install centos-release-scl && \
-    yum -y install devtoolset-8 devtoolset-8-libatomic-devel
+    	yum -y install devtoolset-8 devtoolset-8-libatomic-devel && \
+        yum clean all && \
+        rm -rf /var/cache/yum
 
 # python 3.6
-RUN yum install -y https://repo.ius.io/ius-release-el7.rpm
-RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-tkinter
+RUN yum install -y https://repo.ius.io/ius-release-el7.rpm && \
+        yum clean all && \
+        rm -rf /var/cache/yum
+RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-tkinter && \
+        yum clean all && \
+        rm -rf /var/cache/yum
 RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
 
 RUN pip3.6 install --no-cache-dir --upgrade pip && \
@@ -37,11 +43,9 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
 RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
 
 #General utils
-RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb  && \
+RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ && \
 	yum clean all && \
 	rm -rf /var/cache/yum
-
-RUN yum install gcc-c++ -y
 
 RUN git clone git://opencircuitdesign.com/magic magic_06012020
 
@@ -69,4 +73,9 @@ RUN date +"Build Timestamp: %Y-%m-%d_%H-%M-%S" > /build/version/magic.version
 RUN git rev-parse HEAD >> /build/version/magic.version
 RUN tar -czf /build.tar.gz /build
 
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x86_64.rpm && \
+        yum clean all && \
+        rm -rf /var/cache/yum
+
 WORKDIR $PRECHECKER_ROOT
+
