@@ -22,6 +22,7 @@ import base_checks.check_yaml as check_yaml
 import base_checks.check_license as check_license
 import base_checks.check_manifest as check_manifest
 import drc_checks.gds_drc_checker as gds_drc_checker
+import xor_checks.xor_checker as xor_checker
 import consistency_checks.consistency_checker as consistency_checker
 
 default_logger_path = '/usr/local/bin/full_log.log'
@@ -51,7 +52,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
     lc = logging_controller(str(output_directory) + '/full_log.log', target_path, dont_compress)
     lc.create_full_log()
 
-    steps = 4
+    steps = 5
     if drc_only:
         steps = 1
     stp_cnt = 0
@@ -147,9 +148,19 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
             lc.print_control("{{WARNING}} Consistency Checks Failed+ Reason: " + reason)
         stp_cnt += 1
 
-        # NOTE: Step 4: Not Yet Implemented.
+        # NOTE: Step 4: Perform XOR checks on the GDS.
+        lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing XOR Consistency Checks.")
+        # Manifest Checks:
+        check, reason = xor_checker.gds_xor_check(str(target_path) + '/gds/', pdk_root, output_directory, lc)
+        if check:
+            lc.print_control("{{PROGRESS}} XOR Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+        else:
+            lc.print_control("{{FAIL}} XOR Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.exit_control(2)
+        stp_cnt += 1
 
-    # NOTE: Step 5: Perform DRC checks on the MAG.
+
+    # NOTE: Step 5: Perform DRC checks on the GDS.
     # assumption that we'll always be using a caravel top module based on what's on step 3
     lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking DRC Violations.")
     if skip_drc:
