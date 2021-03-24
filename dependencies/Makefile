@@ -17,9 +17,10 @@ THREADS ?= $(shell nproc)
 STD_CELL_LIBRARY ?= sky130_fd_sc_hd
 SPECIAL_VOLTAGE_LIBRARY ?= sky130_fd_sc_hvl
 IO_LIBRARY ?= sky130_fd_io
+INSTALL_SRAM ?= disabled
 
-SKYWATER_COMMIT ?= 3d7617a1acb92ea883539bcf22a632d6361a5de4
-OPEN_PDKS_COMMIT ?= acba4077ca068ef09cedafe7fc466ade51256a25
+SKYWATER_COMMIT ?= db2e06709dc3d876aa6b74a5f3893fa5f1bc2a6e
+OPEN_PDKS_COMMIT ?= b9ffc1fd1cfc26cbca85a61c287ac799721f6e6a
 
 ifndef PDK_ROOT
 $(error PDK_ROOT is undefined, please export it before running make)
@@ -36,7 +37,7 @@ $(PDK_ROOT)/skywater-pdk:
 .PHONY: skywater-pdk
 skywater-pdk: $(PDK_ROOT)/skywater-pdk
 	cd $(PDK_ROOT)/skywater-pdk && \
-		git checkout master && git pull && \
+		git checkout master && git submodule init && git pull --no-recurse-submodules && \
 		git checkout -qf $(SKYWATER_COMMIT)
 
 .PHONY: skywater-library
@@ -45,7 +46,7 @@ skywater-library: $(PDK_ROOT)/skywater-pdk
 		git submodule update --init libraries/$(STD_CELL_LIBRARY)/latest && \
 		git submodule update --init libraries/$(IO_LIBRARY)/latest && \
 		git submodule update --init libraries/$(SPECIAL_VOLTAGE_LIBRARY)/latest && \
-		$(MAKE) -j$(THREADS) timing
+		$(MAKE) timing
 
 .PHONY: all-skywater-libraries
 all-skywater-libraries: skywater-pdk
@@ -57,7 +58,7 @@ all-skywater-libraries: skywater-pdk
 		git submodule update --init libraries/sky130_fd_sc_ls/latest && \
 		git submodule update --init libraries/sky130_fd_sc_hvl/latest && \
 		git submodule update --init libraries/sky130_fd_io/latest && \
-		$(MAKE) -j$(THREADS) timing
+		$(MAKE) timing
 
 ### OPEN_PDKS
 $(PDK_ROOT)/open_pdks:
@@ -77,8 +78,9 @@ build-pdk: $(PDK_ROOT)/open_pdks $(PDK_ROOT)/skywater-pdk
 		rm -rf $(PDK_ROOT)/sky130A) || \
 		true
 	cd $(PDK_ROOT)/open_pdks && \
-		./configure --enable-sky130-pdk=$(PDK_ROOT)/skywater-pdk/libraries --with-sky130-local-path=$(PDK_ROOT) && \
+		./configure --enable-sky130-pdk=$(PDK_ROOT)/skywater-pdk/libraries --with-sky130-local-path=$(PDK_ROOT) --enable-sram-sky130=$(INSTALL_SRAM) && \
 		cd sky130 && \
-		$(MAKE) veryclean && \
-		$(MAKE) && \
-		$(MAKE) install-local
+		make veryclean && \
+		make && \
+		make install-local && \
+		make clean

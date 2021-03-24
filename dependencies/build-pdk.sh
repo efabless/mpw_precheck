@@ -20,18 +20,6 @@ export IMAGE_NAME=efabless/open_mpw_precheck:latest
 echo $PDK_ROOT
 echo $RUN_ROOT
 make skywater-pdk
-
-# Section Begin
-cnt=0
-until make skywater-library; do
-cnt=$((cnt+1))
-if [ $cnt -eq 5 ]; then
-	exit 2
-fi
-rm -rf $PDK_ROOT/skywater-pdk
-make skywater-pdk
-done
-# Section End
-
+make skywater-library;
 make open_pdks
 docker run -it -v $(pwd)/..:/usr/local/bin -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) $IMAGE_NAME bash -c "cd /usr/local/bin/dependencies; make build-pdk"
