@@ -64,7 +64,14 @@ def gds_xor_check(target_path, pdk_root, output_directory, lc=logging_controller
             xorContent = xorFileOpener.read()
         xorFileOpener.close()
         lc.print_control(xorContent)
-        return True, "XOR Checks Passed"
+        if len(xorContent):
+            xor_cnt = xorContent.split('=')[1].strip()
+            if xor_cnt == '0':
+                return True, "XOR Checks Passed"
+            else:
+                return False, "XOR Differences count is {0}. Please view {1}/*.xor.* for more details.".format(xor_cnt, output_directory)
+        else:
+            return False, "No xor Result retreived. Please view the full_log.log and xor.log for more details."
     except FileNotFoundError:
         return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"/magic_xor.log"
     except OSError:

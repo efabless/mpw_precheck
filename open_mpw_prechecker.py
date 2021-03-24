@@ -155,8 +155,8 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
         if check:
             lc.print_control("{{PROGRESS}} XOR Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
-            lc.print_control("{{FAIL}} XOR Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
-            lc.exit_control(2)
+            lc.print_control("{{WARNING}} XOR Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+            #lc.exit_control(2); # Removing the first `#` from this line will make the XOR test a fail/success condition
         stp_cnt += 1
 
 
