@@ -47,11 +47,11 @@ RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi
 	yum clean all && \
 	rm -rf /var/cache/yum
 
-RUN git clone git://opencircuitdesign.com/magic magic_06012020
+RUN git clone git://opencircuitdesign.com/magic magic_24032021
 
-WORKDIR magic_06012020
+WORKDIR magic_24032021
 
-RUN git checkout 2bbe1be790df66f605ced0a2de0f1d4cad47d699
+RUN git checkout e152deb97bb963684dee5fd053724e976971d861
 
 # build
 RUN ./configure --prefix=/build && \
