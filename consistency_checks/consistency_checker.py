@@ -27,11 +27,9 @@ from utils.utils import *
 try:
     import utils.spice_utils as spice_utils
     import utils.verilog_utils as verilog_utils
-    import utils.doc_utils as doc_utils
 except ImportError:
     import consistency_checks.utils.spice_utils as spice_utils
     import consistency_checks.utils.verilog_utils as verilog_utils
-    import consistency_checks.utils.doc_utils as doc_utils
 
 ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
 "vdda2", "vssa1"]

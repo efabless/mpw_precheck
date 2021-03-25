@@ -57,7 +57,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_c
     steps = 5
     if drc_only:
         steps = 1
-    elif run_check_sequence:
+    elif run_fuzzy_checks:
         steps += 1
     stp_cnt = 0
 
@@ -163,7 +163,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_c
             lc.exit_control(2)
 
         # NOTE: Step 4: Check Fuzzy Consistency.
-        if run_check_sequence:
+        if run_fuzzy_checks:
             lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
 
             # Fuzzy Checks:
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     parser.add_argument('--manifest_source', '-ms', default="master",
                         help='The manifest files source branch: master or develop')
 
-    parser.add_argument('--run_fuzzy_checks', '-wfc', action='store_true', default=False,
+    parser.add_argument('--run_fuzzy_checks', '-rfc', action='store_true', default=False,
                         help="Specifies whether or not to run fuzzy consistency checks.")
 
     parser.add_argument('--skip_drc', '-sd', action='store_true', default=False,
