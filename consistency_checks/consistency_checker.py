@@ -20,6 +20,7 @@ import argparse
 import subprocess
 import random
 import copy
+import urllib3
 from pathlib import Path
 from utils.utils import *
 
@@ -32,7 +33,6 @@ except ImportError:
     import consistency_checks.utils.verilog_utils as verilog_utils
     import consistency_checks.utils.doc_utils as doc_utils
 
-user_project_wrapper_lef = "user_project_wrapper_empty.lef"
 ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
 "vdda2", "vssa1"]
 user_power_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2", "vssa1"]
@@ -47,6 +47,8 @@ user_module = "user_project_wrapper"
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
+golden_wrapper = 'user_project_wrapper_empty.lef'
+link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/master/lef/'
 
 
 def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_directory,
@@ -100,7 +102,7 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         return False, "GDS Checks Failed: " + reason
 
     lc.print_control("{PROGRESS} Running Pins and Power Checks...")
-    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path) + "/" + user_project_wrapper_lef))
+    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(link_prefix+golden_wrapper)
     if check == False:
         return False, user_project_wrapper_pin_list
     user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
@@ -163,12 +165,13 @@ def internal_power_checks(user_module,user_type_list,user_power_list, spice_netl
         cnt+=1
     return True, "Internal Power Checks Passed!"
 
-def extract_user_project_wrapper_pin_list(lef):
+def extract_user_project_wrapper_pin_list(lef_url):
     try:
-        lefOpener = open(lef)
-        if lefOpener.mode == "r":
-            lefContent = lefOpener.read()
-        lefOpener.close()
+        http = urllib3.PoolManager()
+        lef_request = http.request('GET', lef_url)
+        if lef_request.status != 200:
+            return False, 'Unable to fetch {0}. Make sure you have an internet connection...'.format(lef_url)
+        lefContent = lef_request.data.decode('utf-8')
         pattern = re.compile(r"\s*\bPIN\b\s*\b[\S+]+\s*")
         pins = re.findall(pattern, lefContent)
         if len(pins):
