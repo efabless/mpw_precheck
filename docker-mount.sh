@@ -1,3 +1,4 @@
+#!/bin/bash
 # SPDX-FileCopyrightText: 2020 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +14,6 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-export PDK_ROOT=$1
-export TARGET_PATH=$2
 docker run -it -v $(pwd):/usr/local/bin \
 	-v $TARGET_PATH:$TARGET_PATH \
 	-v $PDK_ROOT:$PDK_ROOT \

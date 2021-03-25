@@ -161,6 +161,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_c
         else:
             lc.print_control("{{FAIL}} Documentation checks failed because: " + reason)
             lc.exit_control(2)
+        stp_cnt += 1
 
         # NOTE: Step 4: Check Fuzzy Consistency.
         if run_fuzzy_checks:
@@ -225,19 +226,19 @@ if __name__ == "__main__":
                         help='PDK_ROOT, points to pdk installation path')
 
     parser.add_argument('--manifest_source', '-ms', default="master",
-                        help='The manifest files source branch: master or develop')
+                        help='The manifest files source branch: master or develop. Defaults to master')
 
     parser.add_argument('--run_fuzzy_checks', '-rfc', action='store_true', default=False,
-                        help="Specifies whether or not to run fuzzy consistency checks.")
+                        help="Specifies whether or not to run fuzzy consistency checks. Default: False")
 
     parser.add_argument('--skip_drc', '-sd', action='store_true', default=False,
-                        help="Specifies whether or not to skip DRC checks.")
+                        help="Specifies whether or not to skip DRC checks. Default: False")
 
     parser.add_argument('--drc_only', '-do', action='store_true', default=False,
-                        help="Specifies whether or not to only run DRC checks.")
+                        help="Specifies whether or not to only run DRC checks. Default: False")
 
     parser.add_argument('--dont_compress', '-dc', action='store_true', default=False,
-                        help="If enabled, compression won't happen at the end of the run.")
+                        help="If enabled, compression won't happen at the end of the run. Default: False")
 
     args = parser.parse_args()
     target_path = args.target_path
