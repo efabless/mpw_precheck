@@ -32,8 +32,6 @@ except ImportError:
     import consistency_checks.utils.verilog_utils as verilog_utils
     import consistency_checks.utils.doc_utils as doc_utils
 
-makefileTargets = ["verify", "clean", "compress", "uncompress"]
-
 user_project_wrapper_lef = "user_project_wrapper_empty.lef"
 ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
 "vdda2", "vssa1"]
@@ -49,47 +47,10 @@ user_module = "user_project_wrapper"
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
-def checkMakefile(target_path):
-    try:
-        makefileOpener = open(target_path + "/Makefile")
-        if makefileOpener.mode == "r":
-            makefileContent = makefileOpener.read()
-        makefileOpener.close()
-
-        for target in makefileTargets:
-            if makefileContent.count(target + ":") == 0:
-                return False, "Makfile missing target: " + target + ":"
-            if target == "compress":
-                if makefileContent.count(target + ":") < 2:
-                    return False, "Makfile missing target: " + target + ":"
-
-        return True, ""
-    except OSError:
-        return False, "Makefile not found at top level"
 
 
-def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks", waive_docs=False,
-               waive_makefile=False, waive_consistency_checks=False, lc=logging_controller(default_logger_path,default_target_path)):
-    if waive_docs == False:
-        check, reason = doc_utils.checkDocumentation(target_path)
-        if check:
-            lc.print_control("{{PROGRESS}} Documentation Checks Passed.")
-        else:
-            return False, reason
-    else:
-        lc.print_control("{{WARNING}} Documentation Check Skipped.")
-
-    if waive_makefile == False:
-        makefileCheck, makefileReason = checkMakefile(target_path)
-        if makefileCheck:
-            lc.print_control("{{PROGRESS}} Makefile Checks Passed.")
-        else:
-            return False, "Makefile checks failed because: " + makefileReason
-    else:
-        lc.print_control("{{WARNING}} Makefile Checks Skipped.")
-
-    if waive_consistency_checks == True:
-        return True, "Consistency Checks Skipped."
+def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_directory,
+               call_path="/usr/local/bin/consistency_checks", lc=logging_controller(default_logger_path,default_target_path)):
 
     basic_hierarchy_checks = False
     connections_map = dict()
