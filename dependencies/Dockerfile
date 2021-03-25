@@ -42,11 +42,17 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
 # magic dependencies
 RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
 
-#General utils
-RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ && \
+# General utils
+RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch && \
 	yum clean all && \
 	rm -rf /var/cache/yum
 
+# Install Klayout
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x86_64.rpm && \
+        yum clean all && \
+        rm -rf /var/cache/yum
+
+# Install Magic
 RUN git clone git://opencircuitdesign.com/magic magic_24032021
 
 WORKDIR magic_24032021
@@ -72,10 +78,6 @@ RUN mkdir -p /build/version/
 RUN date +"Build Timestamp: %Y-%m-%d_%H-%M-%S" > /build/version/magic.version
 RUN git rev-parse HEAD >> /build/version/magic.version
 RUN tar -czf /build.tar.gz /build
-
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x86_64.rpm && \
-        yum clean all && \
-        rm -rf /var/cache/yum
 
 WORKDIR $PRECHECKER_ROOT
 
