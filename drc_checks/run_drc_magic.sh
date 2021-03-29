@@ -14,7 +14,7 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-# To call: ./run_drc_checks.sh <target_path> <design_name> <pdk_root> <output_path>
+# To call: ./run_drc_magic.sh <target_path> <design_name> <pdk_root> <output_path>
 
 export TARGET_DIR=$1
 export DESIGN_NAME=$2

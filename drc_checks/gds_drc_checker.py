@@ -23,13 +23,13 @@ from utils.utils import *
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
-def gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path,default_target_path), call_path='/usr/local/bin/drc_checks'):
+def magic_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path,default_target_path), call_path='/usr/local/bin/drc_checks'):
     path=Path(target_path+"/"+design_name+".gds")
     if not os.path.exists(path):
         return False,"GDS not found"
 
     call_path = os.path.abspath(call_path)
-    run_drc_check_cmd = "sh {call_path}/run_drc_checks.sh {target_path} {design_name} {pdk_root} {output_directory} {call_path}".format(
+    run_drc_check_cmd = "sh {call_path}/run_drc_magic.sh {target_path} {design_name} {pdk_root} {output_directory} {call_path}".format(
         call_path=call_path,
         target_path=target_path,
         pdk_root=pdk_root,
@@ -37,7 +37,7 @@ def gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=loggi
         output_directory=output_directory
     )
 
-    lc.print_control("{{PROGRESS}} Running DRC Checks...")
+    lc.print_control("{{PROGRESS}} Running Magic DRC Checks...")
 
     process = subprocess.Popen(run_drc_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:
@@ -97,6 +97,58 @@ def gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=loggi
     except OSError:
         return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"/magic_drc.log"
 
+
+def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path,default_target_path), call_path='/usr/local/bin/drc_checks'):
+    path=Path(target_path+"/"+design_name+".gds")
+    if not os.path.exists(path):
+        return False,"GDS not found"
+
+    call_path = os.path.abspath(call_path)
+    output_file = "{output_directory}/{design_name}_klayout.lydrc".format(
+        design_name=design_name,
+        output_directory=output_directory
+    )
+    run_drc_check_cmd = "sh {call_path}/run_drc_klayout.sh {pdk_root}/sky130A/libs.tech/klayout/sky130A.drc {target_path}/{design_name}.gds {output_file} > {output_file}.log".format(
+        call_path=call_path,
+        target_path=target_path,
+        pdk_root=pdk_root,
+        design_name=design_name,
+        output_file=output_file
+    )
+
+    lc.print_control("{{PROGRESS}} Running Klayout DRC Checks...")
+
+    process = subprocess.Popen(run_drc_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    try:
+        while True:
+            output = process.stdout.readline()
+            if not output:
+                break
+            if output:
+                continue
+    except subprocess.CalledProcessError as e:
+        error_msg = e.stderr.decode(sys.getfilesystemencoding())
+        return False, str(error_msg)
+
+    try:
+        drcFileOpener = open(output_file)
+        if drcFileOpener.mode == 'r':
+            drcContent = drcFileOpener.read()
+        drcFileOpener.close()
+        if drcContent is None:
+            return False, "No DRC report generated..."
+        else:
+            drc_count = drcContent.count('<item>')
+            drcSections = drcContent.split(splitLine)
+            if drc_count == 0:
+                return True, "0 DRC Violations"
+            else:
+                return False, "Total # of DRC violations is " + str(drc_count) + " Please check " + output_file + "For more details"
+    except FileNotFoundError:
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, klayout is broken and it segfaulted. Please check: "+str(output_file)+".log"
+    except OSError:
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, klayout is broken and it segfaulted. Please check: "+str(output_file)+".log"
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Runs a magic drc check on a given GDS.')
@@ -118,4 +170,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    print("{{RESULT}} ", gds_drc_check(target_path, design_name, output_directory, logging_controller(str(output_directory) + '/full_log.log',target_path), '.'))
+    print("{{RESULT}} ", magic_gds_drc_check(target_path, design_name, output_directory, logging_controller(str(output_directory) + '/full_log.log',target_path), '.'))

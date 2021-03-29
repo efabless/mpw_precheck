@@ -47,7 +47,7 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
     return verilog_netlist, spice_netlist
 
 
-def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master"):
+def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
@@ -57,8 +57,8 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_c
     steps = 5
     if drc_only:
         steps = 1
-    elif run_fuzzy_checks:
-        steps += 1
+    elif run_fuzzy_checks or run_klayout_drc:
+        steps += int(run_fuzzy_checks) + int(run_klayout_drc)
     stp_cnt = 0
 
     lc.print_control("{{PROGRESS}} Uncompressing the gds files")
@@ -196,16 +196,29 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_c
     else:
         user_wrapper_path=Path(str(target_path)+"/gds/user_project_wrapper.gds")
         if not os.path.exists(user_wrapper_path):
-            lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
         else:
-            check, reason = gds_drc_checker.gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
+            check, reason = gds_drc_checker.magic_gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
             if check:
                 lc.print_control("{{PROGRESS}} DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
                 lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
                 lc.exit_control(2)
-    stp_cnt += 1
+        stp_cnt += 1
+        if run_klayout_drc:
+            lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout DRC Violations.")
+            if not os.path.exists(user_wrapper_path):
+                lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
+                lc.exit_control(2)
+            else:
+                check, reason = gds_drc_checker.klayout_gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
+                if check:
+                    lc.print_control("{{PROGRESS}} Klayout DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+                else:
+                    lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+                    lc.exit_control(2)
+            stp_cnt += 1
 
     # NOTE: Step 7: Not Yet Implemented.
     lc.print_control("{{SUCCESS}} All Checks PASSED!")
@@ -240,6 +253,9 @@ if __name__ == "__main__":
     parser.add_argument('--dont_compress', '-dc', action='store_true', default=False,
                         help="If enabled, compression won't happen at the end of the run. Default: False")
 
+    parser.add_argument('--run_klayout_drc', '-rkd', action='store_true', default=False,
+                        help="Specifies whether or not to run Klayout DRC checks after Magic. Default: False")
+
     args = parser.parse_args()
     target_path = args.target_path
     pdk_root = args.pdk_root
@@ -248,5 +264,6 @@ if __name__ == "__main__":
     run_fuzzy_checks = args.run_fuzzy_checks
     drc_only = args.drc_only
     dont_compress = args.dont_compress
+    run_klayout_drc = args.run_klayout_drc
 
-    run_check_sequence(target_path, pdk_root, args.output_directory, run_fuzzy_checks, skip_drc, drc_only, dont_compress, manifest_source)
+    run_check_sequence(target_path, pdk_root, args.output_directory, run_fuzzy_checks, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)
