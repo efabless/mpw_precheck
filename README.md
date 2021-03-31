@@ -67,7 +67,7 @@ The steps are as follows:
     - uncompress: decompresses the large items in the project directory and cleanup compressed items.
 - Step #4: Optional. Check [this section](#extra-optional-checks).
 - Step #5: XORs the border of your user_project_wrapper with the golden empty user_project_wrapper to make sure that when your project is integrated into caravel, the integration will go smoothly and without causing LVS/DRC issues.
-- Step #6: Runs DRC checks on the GDS-II by using `gds/user_project_wrapper.gds`.
+- Step #6: Runs Magic DRC checks on the GDS-II by using `gds/user_project_wrapper.gds`.
 
 ## Extra Optional Checks
 
@@ -80,6 +80,8 @@ If you have already integrated your design into caravel, then you can enable the
     - The instance names and types match for `caravel` and the `user_project_wrapper` (a comparison between the netlist and the gds).
     - You have internal power connections in the `user_project_wrapper` netlist.
     - You are only using the allowed power connections with the pads. Since the power info is not connected in caravel toplevel yet, this sub-check is expected to fail. So, don't worry about that.
+
+- Step #7: Runs Klayout DRC checks on the GDS-II by using `gds/user_project_wrapper.gds`.
 
 ## Current Assumptions
 
@@ -103,7 +105,7 @@ python3 open_mpw_prechecker.py [-h] --target_path TARGET_PATH
                               [--output_directory OUTPUT_DIRECTORY] --pdk_root
                               PDK_ROOT [--manifest_source MANIFEST_SOURCE]
                               [--run_fuzzy_checks] [--skip_drc] [--drc_only]
-                              [--dont_compress]
+                              [--dont_compress] [--run_klayout_drc]
 
 Runs the precheck tool by calling the various checks in order.
 
@@ -124,4 +126,6 @@ optional arguments:
   --drc_only, -do       Specifies whether or not to only run DRC checks. Default: False
   --dont_compress, -dc  If enabled, compression won't happen at the end of the
                         run. Default: False
+  --run_klayout_drc, -rkd
+                        Specifies whether or not to run Klayout DRC checks. Default: False
 ```

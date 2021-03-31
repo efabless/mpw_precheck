@@ -131,7 +131,7 @@ def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, 
         return False, str(error_msg)
 
     try:
-        drcFileOpener = open(output_file)
+        drcFileOpener = open(output_file,encoding="utf-8")
         if drcFileOpener.mode == 'r':
             drcContent = drcFileOpener.read()
         drcFileOpener.close()
@@ -139,7 +139,6 @@ def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, 
             return False, "No DRC report generated..."
         else:
             drc_count = drcContent.count('<item>')
-            drcSections = drcContent.split(splitLine)
             if drc_count == 0:
                 return True, "0 DRC Violations"
             else:
