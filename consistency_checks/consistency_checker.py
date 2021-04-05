@@ -20,21 +20,17 @@ import argparse
 import subprocess
 import random
 import copy
+import urllib3
 from pathlib import Path
 from utils.utils import *
 
 try:
     import utils.spice_utils as spice_utils
     import utils.verilog_utils as verilog_utils
-    import utils.doc_utils as doc_utils
 except ImportError:
     import consistency_checks.utils.spice_utils as spice_utils
     import consistency_checks.utils.verilog_utils as verilog_utils
-    import consistency_checks.utils.doc_utils as doc_utils
 
-makefileTargets = ["verify", "clean", "compress", "uncompress"]
-
-user_project_wrapper_lef = "user_project_wrapper_empty.lef"
 ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
 "vdda2", "vssa1"]
 user_power_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2", "vssa1"]
@@ -49,47 +45,12 @@ user_module = "user_project_wrapper"
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
-def checkMakefile(target_path):
-    try:
-        makefileOpener = open(target_path + "/Makefile")
-        if makefileOpener.mode == "r":
-            makefileContent = makefileOpener.read()
-        makefileOpener.close()
-
-        for target in makefileTargets:
-            if makefileContent.count(target + ":") == 0:
-                return False, "Makfile missing target: " + target + ":"
-            if target == "compress":
-                if makefileContent.count(target + ":") < 2:
-                    return False, "Makfile missing target: " + target + ":"
-
-        return True, ""
-    except OSError:
-        return False, "Makefile not found at top level"
+golden_wrapper = 'user_project_wrapper_empty.lef'
+link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/master/lef/'
 
 
-def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_directory, call_path="/usr/local/bin/consistency_checks", waive_docs=False,
-               waive_makefile=False, waive_consistency_checks=False, lc=logging_controller(default_logger_path,default_target_path)):
-    if waive_docs == False:
-        check, reason = doc_utils.checkDocumentation(target_path)
-        if check:
-            lc.print_control("{{PROGRESS}} Documentation Checks Passed.")
-        else:
-            return False, reason
-    else:
-        lc.print_control("{{WARNING}} Documentation Check Skipped.")
-
-    if waive_makefile == False:
-        makefileCheck, makefileReason = checkMakefile(target_path)
-        if makefileCheck:
-            lc.print_control("{{PROGRESS}} Makefile Checks Passed.")
-        else:
-            return False, "Makefile checks failed because: " + makefileReason
-    else:
-        lc.print_control("{{WARNING}} Makefile Checks Skipped.")
-
-    if waive_consistency_checks == True:
-        return True, "Consistency Checks Skipped."
+def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_directory,
+               call_path="/usr/local/bin/consistency_checks", lc=logging_controller(default_logger_path,default_target_path)):
 
     basic_hierarchy_checks = False
     connections_map = dict()
@@ -139,7 +100,7 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         return False, "GDS Checks Failed: " + reason
 
     lc.print_control("{PROGRESS} Running Pins and Power Checks...")
-    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(os.path.abspath(str(call_path) + "/" + user_project_wrapper_lef))
+    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(link_prefix+golden_wrapper)
     if check == False:
         return False, user_project_wrapper_pin_list
     user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
@@ -202,12 +163,13 @@ def internal_power_checks(user_module,user_type_list,user_power_list, spice_netl
         cnt+=1
     return True, "Internal Power Checks Passed!"
 
-def extract_user_project_wrapper_pin_list(lef):
+def extract_user_project_wrapper_pin_list(lef_url):
     try:
-        lefOpener = open(lef)
-        if lefOpener.mode == "r":
-            lefContent = lefOpener.read()
-        lefOpener.close()
+        http = urllib3.PoolManager()
+        lef_request = http.request('GET', lef_url)
+        if lef_request.status != 200:
+            return False, 'Unable to fetch {0}. Make sure you have an internet connection...'.format(lef_url)
+        lefContent = lef_request.data.decode('utf-8')
         pattern = re.compile(r"\s*\bPIN\b\s*\b[\S+]+\s*")
         pins = re.findall(pattern, lefContent)
         if len(pins):

@@ -21,7 +21,10 @@ from utils.utils import *
 import base_checks.check_yaml as check_yaml
 import base_checks.check_license as check_license
 import base_checks.check_manifest as check_manifest
-import drc_checks.mag_drc_checker as mag_drc_checker
+import base_checks.check_makefile as check_makefile
+import base_checks.check_documentation as check_documentation
+import drc_checks.gds_drc_checker as gds_drc_checker
+import xor_checks.xor_checker as xor_checker
 import consistency_checks.consistency_checker as consistency_checker
 
 default_logger_path = '/usr/local/bin/full_log.log'
@@ -44,16 +47,18 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
     return verilog_netlist, spice_netlist
 
 
-def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master"):
+def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
     lc = logging_controller(str(output_directory) + '/full_log.log', target_path, dont_compress)
     lc.create_full_log()
 
-    steps = 4
+    steps = 5
     if drc_only:
         steps = 1
+    elif run_fuzzy_checks or run_klayout_drc:
+        steps += int(run_fuzzy_checks) + int(run_klayout_drc)
     stp_cnt = 0
 
     lc.print_control("{{PROGRESS}} Uncompressing the gds files")
@@ -129,27 +134,61 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
 
         verilog_netlist, spice_netlist = parse_netlists(target_path, top_level_netlist, user_level_netlist, lc)
 
-        # NOTE: Step 3: Check Fuzzy Consistency.
-        lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
+        # NOTE: Step 3: Check Complaince.
+        lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Complaince Checks.")
+
         # Manifest Checks:
         check, reason, fail_lines = check_manifest.check_manifests(target_path=target_path,output_file=output_directory+'/manifest_check', manifest_source=manifest_source,lc=lc)
         if check:
             lc.print_control("{{PROGRESS}} " + reason)
         else:
-            lc.print_control("{{WARNING}} " + reason)
+            lc.print_control("{{FAIL}} " + reason)
             lc.print_control("\n".join(fail_lines))
-        # Fuzzy Checks:
-        check, reason = consistency_checker.fuzzyCheck(target_path=target_path, pdk_root=pdk_root ,spice_netlist=spice_netlist, verilog_netlist=verilog_netlist,
-                                                       output_directory=output_directory, waive_consistency_checks=waive_fuzzy_checks, lc=lc)
-        if check:
-            lc.print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+            lc.exit_control(2)
+
+        # Makefile Checks:
+        makefileCheck, makefileReason = check_makefile.checkMakefile(target_path)
+        if makefileCheck:
+            lc.print_control("{{PROGRESS}} Makefile Checks Passed.")
         else:
-            lc.print_control("{{WARNING}} Consistency Checks Failed+ Reason: " + reason)
+           lc.print_control("{{FAIL}} Makefile checks failed because: " + makefileReason)
+           lc.exit_control(2)
+
+        # Documentation Checks:
+        documentationCheck, reason = check_documentation.checkDocumentation(target_path)
+        if documentationCheck:
+            lc.print_control("{{PROGRESS}} Documentation Checks Passed.")
+        else:
+            lc.print_control("{{FAIL}} Documentation checks failed because: " + reason)
+            lc.exit_control(2)
         stp_cnt += 1
 
-        # NOTE: Step 4: Not Yet Implemented.
+        # NOTE: Step 4: Check Fuzzy Consistency.
+        if run_fuzzy_checks:
+            lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
 
-    # NOTE: Step 5: Perform DRC checks on the MAG.
+            # Fuzzy Checks:
+            check, reason = consistency_checker.fuzzyCheck(target_path=target_path, pdk_root=pdk_root ,spice_netlist=spice_netlist, verilog_netlist=verilog_netlist,
+                                                        output_directory=output_directory, lc=lc)
+            if check:
+                lc.print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+            else:
+                lc.print_control("{{WARNING}} Consistency Checks Failed+ Reason: " + reason)
+            stp_cnt += 1
+
+        # NOTE: Step 5: Perform XOR checks on the GDS.
+        lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing XOR Consistency Checks.")
+        # Manifest Checks:
+        check, reason = xor_checker.gds_xor_check(str(target_path) + '/gds/', pdk_root, output_directory, lc)
+        if check:
+            lc.print_control("{{PROGRESS}} XOR Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+        else:
+            lc.print_control("{{WARNING}} XOR Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+            #lc.exit_control(2); # Removing the first `#` from this line will make the XOR test a fail/success condition
+        stp_cnt += 1
+
+
+    # NOTE: Step 6: Perform DRC checks on the GDS.
     # assumption that we'll always be using a caravel top module based on what's on step 3
     lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking DRC Violations.")
     if skip_drc:
@@ -157,18 +196,30 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, waive_fuzzy
     else:
         user_wrapper_path=Path(str(target_path)+"/gds/user_project_wrapper.gds")
         if not os.path.exists(user_wrapper_path):
-            lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
         else:
-            check, reason = mag_drc_checker.mag_drc_check(str(target_path) + '/mag/', 'caravel', pdk_root, output_directory, lc)
+            check, reason = gds_drc_checker.magic_gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
             if check:
-                lc.print_control("{{PROGRESS}} DRC Checks on MAG Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+                lc.print_control("{{PROGRESS}} DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
-                lc.print_control("{{FAIL}} DRC Checks on MAG Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+                lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
                 lc.exit_control(2)
-    stp_cnt += 1
+        stp_cnt += 1
+        if run_klayout_drc:
+            lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout DRC Violations.")
+            if not os.path.exists(user_wrapper_path):
+                lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
+                lc.exit_control(2)
+            else:
+                check, reason = gds_drc_checker.klayout_gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
+                if check:
+                    lc.print_control("{{PROGRESS}} Klayout DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+                else:
+                    lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+                    lc.exit_control(2)
+            stp_cnt += 1
 
-    # NOTE: Step 6: Not Yet Implemented.
     # NOTE: Step 7: Not Yet Implemented.
     lc.print_control("{{SUCCESS}} All Checks PASSED!")
     lc.dump_full_log()
@@ -188,27 +239,31 @@ if __name__ == "__main__":
                         help='PDK_ROOT, points to pdk installation path')
 
     parser.add_argument('--manifest_source', '-ms', default="master",
-                        help='The manifest files source branch: master or develop')
+                        help='The manifest files source branch: master or develop. Defaults to master')
 
-    parser.add_argument('--waive_fuzzy_checks', '-wfc', action='store_true', default=False,
-                        help="Specifies whether or not to waive fuzzy consistency checks.")
+    parser.add_argument('--run_fuzzy_checks', '-rfc', action='store_true', default=False,
+                        help="Specifies whether or not to run fuzzy consistency checks. Default: False")
 
     parser.add_argument('--skip_drc', '-sd', action='store_true', default=False,
-                        help="Specifies whether or not to skip DRC checks.")
+                        help="Specifies whether or not to skip DRC checks. Default: False")
 
     parser.add_argument('--drc_only', '-do', action='store_true', default=False,
-                        help="Specifies whether or not to only run DRC checks.")
+                        help="Specifies whether or not to only run DRC checks. Default: False")
 
     parser.add_argument('--dont_compress', '-dc', action='store_true', default=False,
-                        help="If enabled, compression won't happen at the end of the run.")
+                        help="If enabled, compression won't happen at the end of the run. Default: False")
+
+    parser.add_argument('--run_klayout_drc', '-rkd', action='store_true', default=False,
+                        help="Specifies whether or not to run Klayout DRC checks after Magic. Default: False")
 
     args = parser.parse_args()
     target_path = args.target_path
     pdk_root = args.pdk_root
     manifest_source = args.manifest_source
     skip_drc = args.skip_drc
-    waive_fuzzy_checks = args.waive_fuzzy_checks
+    run_fuzzy_checks = args.run_fuzzy_checks
     drc_only = args.drc_only
     dont_compress = args.dont_compress
+    run_klayout_drc = args.run_klayout_drc
 
-    run_check_sequence(target_path, pdk_root, args.output_directory, waive_fuzzy_checks, skip_drc, drc_only, dont_compress, manifest_source)
+    run_check_sequence(target_path, pdk_root, args.output_directory, run_fuzzy_checks, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)

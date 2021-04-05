@@ -1,5 +1,5 @@
-#!/bin/bash
-# SPDX-FileCopyrightText: 2020 Efabless Corporation
+#!/bin/sh
+# Copyright 2020 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# SPDX-License-Identifier: Apache-2.0
 
-# exit when any command fails
-export RUN_ROOT=$(pwd)
-export IMAGE_NAME=efabless/open_mpw_precheck:latest
-echo $PDK_ROOT
-echo $RUN_ROOT
-make skywater-pdk
-make skywater-library;
-make open_pdks
-docker run -it -v $(pwd)/..:/usr/local/bin -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) $IMAGE_NAME bash -c "cd /usr/local/bin/dependencies; make build-pdk"
+set -e
+
+: ${1?"Usage: $0 tech_file input.gds output.txt"}
+: ${2?"Usage: $0 tech_file input.gds output.txt"}
+: ${3?"Usage: $0 tech_file input.gds output.txt"}
+
+echo "Using Techfile: $1"
+echo "Using GDS file: $2"
+echo "Output Report File: $3"
+# The -a here is necessary to handle race conditions.
+# This limits the max number of possible jobs to 100.
+xvfb-run -a klayout -b \
+    -rd input=$2 \
+    -rd report=$3 \
+    -r $1
+
+exit 0

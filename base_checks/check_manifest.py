@@ -72,7 +72,7 @@ def check_manifest(target_path, output_file, git_url, lc=logging_controller(defa
 
 
 def check_manifests(target_path, output_file,manifest_source="master",lc=logging_controller(default_logger_path,default_target_path),call_path='/usr/local/bin/base_checks'):
-        manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/develop/manifest"
+        manifest_git_url="https://raw.githubusercontent.com/efabless/caravel/{0}/manifest".format(manifest_source)
         total_check = True
         total_lines = []
         real_reason = "Manifest Checks Passed. Caravel Version Matches."

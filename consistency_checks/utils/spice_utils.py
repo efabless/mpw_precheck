@@ -101,7 +101,7 @@ def extract_connections_from_inst(spice_netlist, toplevel,user_module):
             instances = re.findall(pattern, subckt)
             instances.append('.ends')
             if len(instances)>1:
-                ins_start_idx = 0
+                ins_start_idx = subckt.find(instances[0])
                 for ins in instances[1:]:
                     ins_end_idx = subckt.find(ins,ins_start_idx)
                     instantiation = subckt[ins_start_idx:ins_end_idx]
@@ -123,14 +123,14 @@ def extract_connections_from_inst(spice_netlist, toplevel,user_module):
                     if len(instances):
                         subckt = subckt[:subckt.find(instances[0])]
                     pins_list =  subckt.replace('+',' ').split()[2:]
-                if len(pins_list):
-                    if len(pins_list) == len(connections):
-                        connections_map=dict(zip(pins_list,connections))
-                        return True, connections_map
+                    if len(pins_list):
+                        if len(pins_list) == len(connections):
+                            connections_map=dict(zip(pins_list,connections))
+                            return True, connections_map
+                        else:
+                            return False, "Couldn't match the pins and connections of the user module"
                     else:
-                        return False, "Couldn't match the pins and connections of the user module"
-                else:
-                    return False, "Couldn't find the user module subcircuit in the toplevel spice"
+                        return False, "Couldn't find the user module subcircuit in the toplevel spice"
             return False, 'Hierarchy Check Failed'
         else:
             return False, 'Hierarchy Check Failed'

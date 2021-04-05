@@ -14,12 +14,11 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-# exit when any command fails
-export RUN_ROOT=$(pwd)
-export IMAGE_NAME=efabless/open_mpw_precheck:latest
-echo $PDK_ROOT
-echo $RUN_ROOT
-make skywater-pdk
-make skywater-library;
-make open_pdks
-docker run -it -v $(pwd)/..:/usr/local/bin -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) $IMAGE_NAME bash -c "cd /usr/local/bin/dependencies; make build-pdk"
+docker run -it -v $(pwd):/usr/local/bin \
+	-v $TARGET_PATH:$TARGET_PATH \
+	-v $PDK_ROOT:$PDK_ROOT \
+	-e TARGET_PATH=$TARGET_PATH \
+	-e PDK_ROOT=$PDK_ROOT \
+	-u $(id -u $USER):$(id -g $USER) \
+	efabless/open_mpw_precheck:latest
+
