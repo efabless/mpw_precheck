@@ -138,7 +138,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_c
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Complaince Checks.")
 
         # Manifest Checks:
-        check, reason, fail_lines = check_manifest.check_manifests(target_path=target_path,output_file=output_directory+'/manifest_check', manifest_source=manifest_source,lc=lc)
+        check, reason, fail_lines = check_manifest.check_manifests(target_path=target_path+'/caravel/',output_file=output_directory+'/manifest_check', manifest_source=manifest_source,lc=lc)
         if check:
             lc.print_control("{{PROGRESS}} " + reason)
         else:
