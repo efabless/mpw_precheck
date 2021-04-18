@@ -27,15 +27,15 @@ _spdx_copyright_header = 'SPDX-FileCopyrightText'
 _spdx_license_header = 'SPDX-License-Identifier'
 
 # Directories ignored for license check
-IGNORED_DIRS = ['third_party', '.git']
+IGNORED_DIRS = ['third_party', '.git', 'gl']
 
 # Files ignored for license check
-IGNORED_FILES = ['LICENSE', 'manifest', '.gitignore', 'info.yaml']
+IGNORED_FILES = ['LICENSE', 'manifest', '.gitignore', 'info.yaml', '.gitmodules', '.git', 'PDK_SOURCES', 'OPENLANE_VERSION']
 
 # File extensions to be ignored for license check
 IGNORED_EXTS = ['.cfg', '.csv', '.def', '.gds', '.lef', '.mag',
                 '.pdf', '.png', '.pyc', '.log', '.drc', '.rdb',
-                '.out', '.hex']
+                '.out', '.hex', '.spice']
 
 
 def check_license(user_license_path, licenses_path):
