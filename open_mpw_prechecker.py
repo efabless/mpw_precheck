@@ -47,7 +47,7 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
     return verilog_netlist, spice_netlist
 
 
-def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
+def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None, run_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
@@ -138,7 +138,7 @@ def run_check_sequence(target_path, pdk_root, output_directory=None, run_fuzzy_c
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Complaince Checks.")
 
         # Manifest Checks:
-        check, reason, fail_lines = check_manifest.check_manifests(target_path=target_path+'/caravel/',output_file=output_directory+'/manifest_check', manifest_source=manifest_source,lc=lc)
+        check, reason, fail_lines = check_manifest.check_manifests(target_path=caravel_root,output_file=output_directory+'/manifest_check', manifest_source=manifest_source,lc=lc)
         if check:
             lc.print_control("{{PROGRESS}} " + reason)
         else:
@@ -232,6 +232,9 @@ if __name__ == "__main__":
     parser.add_argument('--target_path', '-t', required=True,
                         help='Absolute Path to the project.')
 
+    parser.add_argument('--caravel_root', '-c', required=True,
+                        help='Absolute Path to caravel.')
+
     parser.add_argument('--output_directory', '-o', required=False,
                         help='Output Directory, defaults to /target_path/checks')
 
@@ -259,6 +262,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     target_path = args.target_path
     pdk_root = args.pdk_root
+    caravel_root = args.caravel_root
     manifest_source = args.manifest_source
     skip_drc = args.skip_drc
     run_fuzzy_checks = args.run_fuzzy_checks
@@ -266,4 +270,4 @@ if __name__ == "__main__":
     dont_compress = args.dont_compress
     run_klayout_drc = args.run_klayout_drc
 
-    run_check_sequence(target_path, pdk_root, args.output_directory, run_fuzzy_checks, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)
+    run_check_sequence(target_path, caravel_root, pdk_root, args.output_directory, run_fuzzy_checks, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)
