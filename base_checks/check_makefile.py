@@ -13,7 +13,8 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-makefileTargets = ["verify", "clean", "compress", "uncompress"]
+# makefileTargets = ["verify", "clean", "compress", "uncompress"]
+makefileTargets = ["verify", "clean"]
 
 def checkMakefile(target_path):
     try:
