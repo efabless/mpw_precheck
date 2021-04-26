@@ -53,7 +53,7 @@ RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x
         rm -rf /var/cache/yum
 
 # Install Magic
-RUN git clone git://opencircuitdesign.com/magic magic_24032021
+RUN git clone https://github.com/RTimothyEdwards/magic.git magic_24032021
 
 WORKDIR magic_24032021
 
