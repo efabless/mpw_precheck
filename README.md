@@ -74,13 +74,12 @@ The steps are as follows:
 If you have already integrated your design into caravel, then you can enable the fuzzy consistency checks to make sure that the integration went well. Check the [How To Run](#how-to-run) section below for more details.
 
 - Step #4: Consistency Checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
-    - The top level module is `caravel` and there is a `user_project_wrapper` under it.
     - `caravel` and `user_project_wrapper` exist and are non-trivial.
     - You have not changed the pin list of the `user_project_wrapper`.
     - The instance names and types match for `caravel` and the `user_project_wrapper` (a comparison between the netlist and the gds).
     - You have internal power connections in the `user_project_wrapper` netlist.
-    - You are only using the allowed power connections with the pads. Since the power info is not connected in caravel toplevel yet, this sub-check is expected to fail. So, don't worry about that.
-
+    - You are only using the allowed power connections with the pads.
+   
 - Step #7: Runs Klayout DRC checks on the GDS-II by using `gds/user_project_wrapper.gds`.
 
 ## Current Assumptions
@@ -126,6 +125,8 @@ optional arguments:
                         The manifest files source branch: master or develop. Defaults to master
   --run_fuzzy_checks, -rfc
                         Specifies whether or not to run fuzzy consistency
+                        checks. Default: False
+  --run-gds-fc, -rgfc   Specifies whether or not ot run gds fuzzy consistency
                         checks. Default: False
   --skip_drc, -sd       Specifies whether or not to skip DRC checks. Default: False
   --drc_only, -do       Specifies whether or not to only run DRC checks. Default: False
