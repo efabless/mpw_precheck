@@ -16,6 +16,7 @@
 # makefileTargets = ["verify", "clean", "compress", "uncompress"]
 makefileTargets = ["verify", "clean"]
 
+
 def checkMakefile(target_path):
     try:
         makefileOpener = open(target_path + "/Makefile")

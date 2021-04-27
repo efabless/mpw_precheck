@@ -13,12 +13,13 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-import re
 import os
+import re
 
-docExts = [".rst", ".html",".md",".doc",".docx",".odt"]
+docExts = [".rst", ".html", ".md", ".doc", ".docx", ".odt"]
 bannedList = ["slave", "blacklist", "whitelist"]
 IGNORED_DIRS = ["third_party", ".git"]
+
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories
@@ -38,21 +39,23 @@ def getListOfFiles(dirName):
             allFiles.append(fullPath)
     return allFiles
 
+
 def checkInclusiveLang(file):
-    docOpener = open(file,'r', encoding='utf-8')
+    docOpener = open(file, 'r', encoding='utf-8')
     if docOpener.mode == 'r':
         docContent = docOpener.read()
     docOpener.close()
     for word in bannedList:
         if docContent.find(word) != -1:
             return False, word
-    return True,""
+    return True, ""
+
 
 def checkDocumentation(target_path):
-    found = os.path.exists(target_path+"/README")
+    found = os.path.exists(target_path + "/README")
     if found == False:
         for ext in docExts:
-            if os.path.exists(target_path+"/README"+str(ext)):
+            if os.path.exists(target_path + "/README" + str(ext)):
                 found = True
                 break
     if found:
@@ -62,7 +65,7 @@ def checkDocumentation(target_path):
             if extension in docExts:
                 check, reason = checkInclusiveLang(f)
                 if check == False:
-                    return False, "The documentation file " + str(f) + " contains non-inclusive language: "+reason
+                    return False, "The documentation file " + str(f) + " contains non-inclusive language: " + reason
         return True, ""
     else:
         return False, "Documentation Not Found"

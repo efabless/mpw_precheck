@@ -32,7 +32,7 @@ except ImportError:
     import consistency_checks.utils.verilog_utils as verilog_utils
 
 ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
-"vdda2", "vssa1"]
+               "vdda2", "vssa1"]
 user_power_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2", "vssa1"]
 
 reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]
@@ -50,8 +50,7 @@ link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/master/lef/'
 
 
 def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist, output_directory,
-               call_path="/usr/local/bin/consistency_checks", lc=logging_controller(default_logger_path,default_target_path)):
-
+               call_path="/usr/local/bin/consistency_checks", lc=logging_controller(default_logger_path, default_target_path)):
     basic_hierarchy_checks = False
     connections_map = dict()
     instance_name = ""
@@ -93,11 +92,11 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
         return False, "Basic Hierarchy Checks Failed."
 
     lc.print_control("{PROGRESS} Running Pins and Power Checks...")
-    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(link_prefix+golden_wrapper)
+    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(link_prefix + golden_wrapper)
     if check == False:
         return False, user_project_wrapper_pin_list
     # use lef view to extract user pin list
-    check, user_pin_list =  extract_user_pin_list(target_path+"/lef/"+"user_project_wrapper.lef") 
+    check, user_pin_list = extract_user_pin_list(target_path + "/lef/" + "user_project_wrapper.lef")
     # [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
     if check == False:
         return False, user_pin_list
@@ -108,7 +107,7 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
         return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
     else:
         lc.print_control("Pins check passed")
-        check, power_reason = internal_power_checks(user_module,user_type_list, user_power_list, spice_netlist, verilog_netlist)
+        check, power_reason = internal_power_checks(user_module, user_type_list, user_power_list, spice_netlist, verilog_netlist)
         if check:
             lc.print_control(power_reason)
             check, power_reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
@@ -118,11 +117,11 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
                 return False, power_reason
         else:
             return False, power_reason
-    
+
     if run_gds_fc:
         # should only on the integrated gds (caravel + user_project_wrapper)
-        check, reason = check_source_gds_consistency(target_path+'/gds/', pdk_root, toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
-                                                    user_type_list, user_name_list, lc, call_path)
+        check, reason = check_source_gds_consistency(target_path + '/gds/', pdk_root, toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
+                                                     user_type_list, user_name_list, lc, call_path)
         if check:
             lc.print_control(reason + "\nGDS Checks Passed")
         else:
@@ -130,7 +129,8 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
 
     return True, "Fuzzy Checks Passed!"
 
-def internal_power_checks(user_module,user_type_list,user_power_list, spice_netlists, verilog_netlists):
+
+def internal_power_checks(user_module, user_type_list, user_power_list, spice_netlists, verilog_netlists):
     spice_netlist = None
     verilog_netlist = None
     if len(spice_netlists) == 2:
@@ -141,7 +141,7 @@ def internal_power_checks(user_module,user_type_list,user_power_list, spice_netl
 
     cnt = 0
     while cnt < 20 and cnt < len(user_type_list):
-        inst =  str(random.choice(user_type_list))
+        inst = str(random.choice(user_type_list))
         if spice_netlist is not None:
             check, connections_map = spice_utils.extract_connections_from_inst(spice_netlist, user_module, inst)
             if check == False:
@@ -153,7 +153,7 @@ def internal_power_checks(user_module,user_type_list,user_power_list, spice_netl
                         flag = True
                         break
                 if not flag:
-                    return False, "Instance "+inst+" was not connected to any power in "+str(spice_netlist)
+                    return False, "Instance " + inst + " was not connected to any power in " + str(spice_netlist)
         elif verilog_netlist is not None:
             check, connections_map = verilog_utils.extract_connections_from_inst(verilog_netlist, user_module, inst)
             if check == False:
@@ -165,11 +165,12 @@ def internal_power_checks(user_module,user_type_list,user_power_list, spice_netl
                         flag = True
                         break
                 if not flag:
-                    return False, "Instance "+inst+" was not connected to any power in "+str(verilog_netlist)
+                    return False, "Instance " + inst + " was not connected to any power in " + str(verilog_netlist)
         else:
             return False, "No netlist was passed to internal power checks!"
-        cnt+=1
+        cnt += 1
     return True, "Internal Power Checks Passed!"
+
 
 def extract_user_project_wrapper_pin_list(lef_url):
     try:
@@ -188,8 +189,9 @@ def extract_user_project_wrapper_pin_list(lef_url):
     except OSError:
         return False, "LEF file not found"
 
+
 def extract_user_pin_list(lef_file):
-    path=Path(lef_file)
+    path = Path(lef_file)
     if not os.path.exists(path):
         return False, "LEF file not found"
     lefFileOpener = open(path)
@@ -204,11 +206,12 @@ def extract_user_pin_list(lef_file):
     else:
         return False, "No Pins found in LEF"
 
-def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=logging_controller(default_logger_path,default_target_path)):
-    path=Path(spice_netlist[0])
+
+def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=logging_controller(default_logger_path, default_target_path)):
+    path = Path(spice_netlist[0])
     if not os.path.exists(path):
         return False, "top level netlist not found"
-    path=Path(spice_netlist[1])
+    path = Path(spice_netlist[1])
     if not os.path.exists(path):
         return False, "user level netlist not found"
 
@@ -251,17 +254,17 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=loggin
                             return True, connections_map
 
 
-def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=logging_controller(default_logger_path,default_target_path)):
-    path=Path(verilog_netlist[0])
+def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=logging_controller(default_logger_path, default_target_path)):
+    path = Path(verilog_netlist[0])
     if not os.path.exists(path):
         return False, "top level netlist not found"
-    path=Path(verilog_netlist[1])
+    path = Path(verilog_netlist[1])
     if not os.path.exists(path):
         return False, "user level netlist not found"
 
     check, reason = verilog_utils.find_module(verilog_netlist[0], toplevel)
     if check == False:
-        lc.print_control("{{ERROR}} verilog Check Failed because: " + reason+ " in netlist: " + verilog_netlist[0])
+        lc.print_control("{{ERROR}} verilog Check Failed because: " + reason + " in netlist: " + verilog_netlist[0])
         return False, reason
     else:
         lc.print_control(reason)
@@ -315,6 +318,7 @@ def check_power_pins(connections_map, forbidden_list, check_list):
 def diff_lists(li1, li2):
     return (list(list(set(li1) - set(li2)) + list(set(li2) - set(li1))))
 
+
 def one_side_diff_lists(li1, li2):
     return (list(set(li1) - set(li2)))
 
@@ -326,23 +330,16 @@ def clean_gds_list(cells):
 
 
 def check_source_gds_consistency(target_path, pdk_root, toplevel, user_module, user_module_name, output_directory, top_type_list, top_name_list, user_type_list,
-                                user_name_list, lc=logging_controller(default_logger_path,default_target_path), call_path="/usr/local/bin/consistency_checks"):
-    path=Path(target_path+"/"+toplevel+".gds")
+                                 user_name_list, lc=logging_controller(default_logger_path, default_target_path), call_path="/usr/local/bin/consistency_checks"):
+    path = Path(target_path + "/" + toplevel + ".gds")
     if not os.path.exists(path):
-        return False,"Integrated Caravel GDS not found"
+        return False, "Integrated Caravel GDS not found"
     call_path = os.path.abspath(call_path)
-    run_instance_list_cmd = "sh {call_path}/run_instances_listing.sh {target_path} {pdk_root} {design_name} {sub_design_name} {output_directory} {call_path}".format(
-        call_path=call_path,
-        target_path=target_path,
-        pdk_root=pdk_root,
-        design_name=toplevel,
-        sub_design_name=user_module_name,
-        output_directory=output_directory
-    )
+    run_instance_list_cmd = ['sh', '%s/run_instances_listing.sh' % call_path, target_path, pdk_root, toplevel, user_module_name, output_directory, call_path]
 
     lc.print_control("{{PROGRESS}} Running Magic Extractions From GDS...")
 
-    process = subprocess.Popen(run_instance_list_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    process = subprocess.Popen(run_instance_list_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:
         while True:
             output = process.stdout.readline()
@@ -355,13 +352,13 @@ def check_source_gds_consistency(target_path, pdk_root, toplevel, user_module, u
         lc.print_control("{{ERROR}} " + str(error_msg))
         lc.exit_control(255)
     try:
-        logFileOpener = open(output_directory+'/magic_extract.log')
+        logFileOpener = open(output_directory + '/magic_extract.log')
         if logFileOpener.mode == 'r':
             logContent = logFileOpener.read()
         logFileOpener.close()
 
         if logContent.find("was used but not defined.") != -1:
-            return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `"+str(output_directory)+"/magic_extract.log` in the output directory for more details."
+            return False, "The GDS is not valid/corrupt contains cells that are used but not defined. Please check `" + str(output_directory) + "/magic_extract.log` in the output directory for more details."
 
         toplevelFileOpener = open(output_directory + "/" + toplevel + ".magic.typelist")
         if toplevelFileOpener.mode == "r":
@@ -409,9 +406,10 @@ def check_source_gds_consistency(target_path, pdk_root, toplevel, user_module, u
         else:
             return False, "GDS Hierarchy Check Failed"
     except FileNotFoundError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `"+str(output_directory)+"/magic_extract.log` in the output directory for potentially more details."
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `" + str(output_directory) + "/magic_extract.log` in the output directory for potentially more details."
     except OSError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `"+str(output_directory)+"/magic_extract.log` in the output directory for potentially more details."
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken. Please check `" + str(output_directory) + "/magic_extract.log` in the output directory for potentially more details."
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

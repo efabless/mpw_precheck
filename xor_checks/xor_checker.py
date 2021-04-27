@@ -26,27 +26,21 @@ golden_wrapper = 'user_project_wrapper_empty.gds'
 link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/master/gds'
 design_name = 'user_project_wrapper'
 
-def gds_xor_check(target_path, pdk_root, output_directory, lc=logging_controller(default_logger_path,default_target_path), call_path='/usr/local/bin/xor_checks'):
-    gds_path=target_path+"/"+design_name+".gds"
+
+def gds_xor_check(target_path, pdk_root, output_directory, lc=logging_controller(default_logger_path, default_target_path), call_path='/usr/local/bin/xor_checks'):
+    gds_path = target_path + "/" + design_name + ".gds"
     if not os.path.exists(Path(gds_path)):
-        return False,"GDS not found"
+        return False, "GDS not found"
 
     call_path = os.path.abspath(call_path)
-    run_xor_check_cmd = \
-        "sh {call_path}/run_xor_checks.sh {target_path} {user_gds} {golden_wrapper} {link_prefix} {design_name} {out_dir} {pdk_root} {call_path}".format(
-        target_path=target_path,
-        user_gds=design_name+'.gds',
-        golden_wrapper=golden_wrapper,
-        link_prefix=link_prefix,
-        call_path=call_path,
-        pdk_root=pdk_root,
-        design_name=design_name,
-        out_dir=output_directory
-    )
+    run_xor_check_cmd = ['sh',
+                         '%s/run_xor_checks.sh' % call_path,
+                         target_path, '%s.gds' % design_name,
+                         golden_wrapper, link_prefix, design_name, output_directory, pdk_root, call_path]
 
     lc.print_control("{{PROGRESS}} Running XOR Checks...")
 
-    process = subprocess.Popen(run_xor_check_cmd.split(), stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    process = subprocess.Popen(run_xor_check_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     try:
         while True:
             output = process.stdout.readline()
@@ -73,9 +67,10 @@ def gds_xor_check(target_path, pdk_root, output_directory, lc=logging_controller
         else:
             return False, "No xor Result retreived. Please view the full_log.log and xor.log for more details."
     except FileNotFoundError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"/magic_xor.log"
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: " + str(output_directory) + "/magic_xor.log"
     except OSError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: "+str(output_directory)+"/magic_xor.log"
+        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: " + str(output_directory) + "/magic_xor.log"
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -98,4 +93,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    print("{{RESULT}} ", gds_xor_check(target_path, design_name, output_directory, logging_controller(str(output_directory) + '/full_log.log',target_path), '.'))
+    print("{{RESULT}} ", gds_xor_check(target_path, design_name, output_directory, logging_controller(str(output_directory) + '/full_log.log', target_path), '.'))

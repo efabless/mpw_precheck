@@ -20,17 +20,17 @@ from strsimpy.sorensen_dice import SorensenDice
 # Default value for file headers, names, and paths
 _license_filename = 'LICENSE'
 _lib_license_filename = 'LICENSE'
-_prohibited_licenses_path = 'base_checks/_licenses/_prohibited_licenses'
 _approved_licenses_path = 'base_checks/_licenses/_approved_licenses'
+_prohibited_licenses_path = 'base_checks/_licenses/_prohibited_licenses'
 
-_spdx_copyright_header = 'SPDX-FileCopyrightText'
 _spdx_license_header = 'SPDX-License-Identifier'
+_spdx_copyright_header = 'SPDX-FileCopyrightText'
 
 # Directories ignored for license check
-IGNORED_DIRS = ['third_party', '.git', 'gl']
+IGNORED_DIRS = ['.git', 'gl', 'third_party']
 
 # Files ignored for license check
-IGNORED_FILES = ['LICENSE', 'manifest', '.gitignore', 'info.yaml', '.gitmodules', '.git', 'PDK_SOURCES', 'OPENLANE_VERSION']
+IGNORED_FILES = ['.git', '.gitignore', '.gitmodules', 'manifest', 'info.yaml', 'LICENSE', 'PDK_SOURCES', 'OPENLANE_VERSION']
 
 # File extensions to be ignored for license check
 IGNORED_EXTS = ['.cfg', '.csv', '.def', '.gds', '.lef', '.mag',
