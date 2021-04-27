@@ -40,7 +40,7 @@ If you don't have the skywater-pdk installed, run:
 
 - Please create a file `./third_party/used_external_repos.csv` and add to it all `repository name,commit hash` for any external github repository that you are using to build this project.
 
-- Please include any useful statistics about your design, i.e. cell count, core utilization, etc. in a `.csv` file. If you're using OpenLANE then, this file should be created automatically in `<run path>/reports/final_summary_report.csv`.
+- Please include any useful statistics about your design, i.e. cell count, core utilization, etc. in a `.csv` file under `./signoff/<macro-name>/final_summary_report.csv`. If you're using OpenLANE then, this file should be created automatically in `<run path>/reports/final_summary_report.csv`.
 
 ## What Does the Script Do?
 
@@ -85,8 +85,8 @@ If you have already integrated your design into caravel, then you can enable the
 
 ## Current Assumptions
 
-- The top module name is `caravel`.
 - The user module name is `user_project_wrapper`
+- Caravel is submoduled inside the user project or installed at a different path specified by CARAVEL_ROOT.
 
 ## How To Run
 
@@ -102,6 +102,7 @@ Run the following command:
 
 ```
 python3 open_mpw_prechecker.py [-h] --target_path TARGET_PATH
+                              --caravel_root CARAVEL_ROOT
                               [--output_directory OUTPUT_DIRECTORY] --pdk_root
                               PDK_ROOT [--manifest_source MANIFEST_SOURCE]
                               [--run_fuzzy_checks] [--skip_drc] [--drc_only]
@@ -112,7 +113,9 @@ Runs the precheck tool by calling the various checks in order.
 optional arguments:
   -h, --help            show this help message and exit
   --target_path TARGET_PATH, -t TARGET_PATH
-                        Absolute Path to the project.
+                        Absolute Path to the user project.
+   --caravel_root CARAVEL_ROOT, -c CARAVEL_ROOT
+                        Absolute Path to caravel. 
   --output_directory OUTPUT_DIRECTORY, -o OUTPUT_DIRECTORY
                         Output Directory, defaults to /target_path/checks
   --pdk_root PDK_ROOT, -p PDK_ROOT
