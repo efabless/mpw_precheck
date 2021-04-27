@@ -92,19 +92,17 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
     else:
         return False, "Basic Hierarchy Checks Failed."
 
-    check, reason = check_source_gds_consitency(target_path+'/gds/', pdk_root, toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
-                                                user_type_list, user_name_list, lc, call_path)
-    if check:
-        lc.print_control(reason + "\nGDS Checks Passed")
-    else:
-        return False, "GDS Checks Failed: " + reason
-
     lc.print_control("{PROGRESS} Running Pins and Power Checks...")
     check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(link_prefix+golden_wrapper)
     if check == False:
         return False, user_project_wrapper_pin_list
-    user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
-    pin_name_diffs = diff_lists(user_pin_list, user_project_wrapper_pin_list)
+    # use lef view to extract user pin list
+    check, user_pin_list =  extract_user_pin_list(target_path+"/lef/"+"user_project_wrapper.lef") 
+    # [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
+    if check == False:
+        return False, user_pin_list
+
+    pin_name_diffs = diff_lists(list(user_pin_list), user_project_wrapper_pin_list)
     pin_name_diffs = one_side_diff_lists(pin_name_diffs, ignore_list)
     if len(pin_name_diffs):
         return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
@@ -120,6 +118,14 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
                 return False, power_reason
         else:
             return False, power_reason
+    
+    check, reason = check_source_gds_consitency(target_path+'/gds/', pdk_root, toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
+                                                user_type_list, user_name_list, lc, call_path)
+    if check:
+        lc.print_control(reason + "\nGDS Checks Passed")
+    else:
+        return False, "GDS Checks Failed: " + reason
+
     return True, "Fuzzy Checks Passed!"
 
 def internal_power_checks(user_module,user_type_list,user_power_list, spice_netlists, verilog_netlists):
@@ -180,6 +186,21 @@ def extract_user_project_wrapper_pin_list(lef_url):
     except OSError:
         return False, "LEF file not found"
 
+def extract_user_pin_list(lef_file):
+    path=Path(lef_file)
+    if not os.path.exists(path):
+        return False, "LEF file not found"
+    lefFileOpener = open(path)
+    if lefFileOpener.mode == "r":
+        lefContent = lefFileOpener.read()
+    lefFileOpener.close()
+    pattern = re.compile(r"\s*\bPIN\b\s*\b[\S+]+\s*")
+    pins = re.findall(pattern, lefContent)
+    if len(pins):
+        ret_pins = [pin.strip().split()[-1] for pin in pins]
+        return True, ret_pins
+    else:
+        return False, "No Pins found in LEF"
 
 def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=logging_controller(default_logger_path,default_target_path)):
     path=Path(spice_netlist[0])
@@ -306,7 +327,7 @@ def check_source_gds_consitency(target_path, pdk_root, toplevel, user_module, us
                                 user_name_list, lc=logging_controller(default_logger_path,default_target_path), call_path="/usr/local/bin/consistency_checks"):
     path=Path(target_path+"/"+toplevel+".gds")
     if not os.path.exists(path):
-        return False,"GDS not found"
+        return False,"Integrated Caravel GDS not found"
     call_path = os.path.abspath(call_path)
     run_instance_list_cmd = "sh {call_path}/run_instances_listing.sh {target_path} {pdk_root} {design_name} {sub_design_name} {output_directory} {call_path}".format(
         call_path=call_path,
