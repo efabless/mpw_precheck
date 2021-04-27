@@ -49,7 +49,7 @@ golden_wrapper = 'user_project_wrapper_empty.lef'
 link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/master/lef/'
 
 
-def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_directory,
+def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist, output_directory,
                call_path="/usr/local/bin/consistency_checks", lc=logging_controller(default_logger_path,default_target_path)):
 
     basic_hierarchy_checks = False
@@ -119,12 +119,14 @@ def fuzzyCheck(target_path, pdk_root, spice_netlist, verilog_netlist, output_dir
         else:
             return False, power_reason
     
-    check, reason = check_source_gds_consitency(target_path+'/gds/', pdk_root, toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
-                                                user_type_list, user_name_list, lc, call_path)
-    if check:
-        lc.print_control(reason + "\nGDS Checks Passed")
-    else:
-        return False, "GDS Checks Failed: " + reason
+    if run_gds_fc:
+        # should only on the integrated gds (caravel + user_project_wrapper)
+        check, reason = check_source_gds_consistency(target_path+'/gds/', pdk_root, toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
+                                                    user_type_list, user_name_list, lc, call_path)
+        if check:
+            lc.print_control(reason + "\nGDS Checks Passed")
+        else:
+            return False, "GDS Checks Failed: " + reason
 
     return True, "Fuzzy Checks Passed!"
 
@@ -323,7 +325,7 @@ def clean_gds_list(cells):
     return cells.replace("\\", "")
 
 
-def check_source_gds_consitency(target_path, pdk_root, toplevel, user_module, user_module_name, output_directory, top_type_list, top_name_list, user_type_list,
+def check_source_gds_consistency(target_path, pdk_root, toplevel, user_module, user_module_name, output_directory, top_type_list, top_name_list, user_type_list,
                                 user_name_list, lc=logging_controller(default_logger_path,default_target_path), call_path="/usr/local/bin/consistency_checks"):
     path=Path(target_path+"/"+toplevel+".gds")
     if not os.path.exists(path):

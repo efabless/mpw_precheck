@@ -47,7 +47,7 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
     return verilog_netlist, spice_netlist
 
 
-def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None, run_fuzzy_checks=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
+def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None, run_fuzzy_checks=False, run_gds_fc=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
@@ -168,7 +168,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
 
             # Fuzzy Checks:
-            check, reason = consistency_checker.fuzzyCheck(target_path=target_path, pdk_root=pdk_root ,spice_netlist=spice_netlist, verilog_netlist=verilog_netlist,
+            check, reason = consistency_checker.fuzzyCheck(target_path=target_path, pdk_root=pdk_root, run_gds_fc=run_gds_fc, spice_netlist=spice_netlist, verilog_netlist=verilog_netlist,
                                                         output_directory=output_directory, lc=lc)
             if check:
                 lc.print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
@@ -247,6 +247,9 @@ if __name__ == "__main__":
     parser.add_argument('--run_fuzzy_checks', '-rfc', action='store_true', default=False,
                         help="Specifies whether or not to run fuzzy consistency checks. Default: False")
 
+    parser.add_argument('--run_gds_fc', '-rgfc', action='store_true', default=False,
+                        help="Specifies whether or not to run gds fuzzy consistency checks. Default: False")
+
     parser.add_argument('--skip_drc', '-sd', action='store_true', default=False,
                         help="Specifies whether or not to skip DRC checks. Default: False")
 
@@ -266,8 +269,9 @@ if __name__ == "__main__":
     manifest_source = args.manifest_source
     skip_drc = args.skip_drc
     run_fuzzy_checks = args.run_fuzzy_checks
+    run_gds_fc = args.run_gds_fc
     drc_only = args.drc_only
     dont_compress = args.dont_compress
     run_klayout_drc = args.run_klayout_drc
 
-    run_check_sequence(target_path, caravel_root, pdk_root, args.output_directory, run_fuzzy_checks, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)
+    run_check_sequence(target_path, caravel_root, pdk_root, args.output_directory, run_fuzzy_checks, run_gds_fc, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)
