@@ -94,7 +94,9 @@ Mount the docker file:
 
 ```bash
 export PDK_ROOT=<Absolute path to parent of sky130A. Installed PDK root.>
-export TARGET_PATH=<Absolute path to the target caravel path>
+export TARGET_PATH=<Absolute path to the user project path>
+# if caravel is submoduled under the user project, run "export CARAVEL_ROOT=$TARGET_PATH/caravel"
+export CARAVEL_ROOT=<Absolute path to caravel>
 sh docker-mount.sh
 ```
 

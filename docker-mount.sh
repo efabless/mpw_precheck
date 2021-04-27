@@ -17,8 +17,10 @@
 docker run -it -v $(pwd):/usr/local/bin \
 	-v $TARGET_PATH:$TARGET_PATH \
 	-v $PDK_ROOT:$PDK_ROOT \
+	-v $CARAVEL_ROOT:$CARAVEL_ROOT \
 	-e TARGET_PATH=$TARGET_PATH \
 	-e PDK_ROOT=$PDK_ROOT \
+	-e CARAVEL_ROOT=$CARAVEL_ROOT \
 	-u $(id -u $USER):$(id -g $USER) \
 	efabless/open_mpw_precheck:latest
 
