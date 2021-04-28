@@ -33,10 +33,7 @@ def gds_xor_check(target_path, pdk_root, output_directory, lc=logging_controller
         return False, "GDS not found"
 
     call_path = os.path.abspath(call_path)
-    run_xor_check_cmd = ['sh',
-                         '%s/run_xor_checks.sh' % call_path,
-                         target_path, '%s.gds' % design_name,
-                         golden_wrapper, link_prefix, design_name, output_directory, pdk_root, call_path]
+    run_xor_check_cmd = ['sh', '%s/run_xor_checks.sh' % call_path, target_path, '%s.gds' % design_name, golden_wrapper, link_prefix, design_name, output_directory, pdk_root, call_path]
 
     lc.print_control("{{PROGRESS}} Running XOR Checks...")
 

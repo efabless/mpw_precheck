@@ -30,7 +30,7 @@ def magic_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc
         return False, "GDS not found"
 
     call_path = os.path.abspath(call_path)
-    run_drc_check_cmd = ['sh', '%s/run_drc_magic.sh' % call_path, target_path, pdk_root, design_name, output_directory, call_path]
+    run_drc_check_cmd = ['sh', '%s/run_drc_magic.sh' % call_path, target_path, design_name, pdk_root, output_directory, call_path]
 
     lc.print_control("{{PROGRESS}} Running Magic DRC Checks...")
 

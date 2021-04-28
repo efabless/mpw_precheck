@@ -24,7 +24,7 @@ export SCRIPTS_ROOT=${5:-$(pwd)}
 
 if ! [[ -d "$OUT_DIR" ]]
 then
-    mkdir $OUT_DIR
+    mkdir "$OUT_DIR"
 fi
 echo "Running Magic..."
 cp /usr/local/bin/tech-files/sky130A.magicrc $TARGET_DIR/.magicrc
@@ -36,7 +36,7 @@ magic \
     -dnull \
     $SCRIPTS_ROOT/magic_drc_check.tcl \
     </dev/null \
-    |& tee $OUT_DIR/magic_drc.log
+    |& tee "$OUT_DIR/magic_drc.log"
 
 TEST=$OUT_DIR/$DESIGN_NAME.magic.drc
 

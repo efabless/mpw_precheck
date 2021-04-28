@@ -24,7 +24,7 @@ export SCRIPTS_ROOT=${8:-$(pwd)}
 
 if ! [[ -d "$OUT_DIR" ]]
 then
-    mkdir -p $OUT_DIR
+    mkdir -p "$OUT_DIR"
 fi
 
 wget --header='Accept-Encoding: gzip' $FILE_URL
@@ -44,8 +44,8 @@ sh $SCRIPTS_ROOT/xor.sh \
     $DESIGN_NAME $OUT_DIR/$DESIGN_NAME.xor.gds > $OUT_DIR/xor.log
 
 python $SCRIPTS_ROOT/parse_klayout_xor_log.py \
-    -l $OUT_DIR/xor.log \
-    -o $OUT_DIR/xor_total.txt
+    -l "$OUT_DIR/xor.log" \
+    -o "$OUT_DIR/xor_total.txt"
 
 # screenshot the result for convenience
 sh $SCRIPTS_ROOT/scrotLayout.sh \
