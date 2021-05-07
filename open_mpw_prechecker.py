@@ -47,6 +47,18 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
         lc.exit_control(2)
     return verilog_netlist, spice_netlist
 
+def get_project_type(top_level_netlist, user_level_netlist):
+    if "caravel.v" in top_level_netlist and "user_project_wrapper.v" in user_level_netlist: 
+        project_type = "digital"
+    elif "caravan.v" in top_level_netlist and "user_analog_project_wrapper.v" in user_level_netlist: 
+        project_type = "analog"
+    else: 
+        lc.print_control(
+            "{{FAIL}} the provided top level and user level netlists are not correct. \n \
+            The top level netlist should point to caravel.v if your project is digital or caravan.v if your project is analog. \n \
+            The user_level_netlist should point to user_project_wrapper.v if your project is digital or user_analog_project_wrapper.v if your project is analog.")
+        lc.exit_control(2)
+    return project_type
 
 def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None, run_fuzzy_checks=False, run_gds_fc=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
     if output_directory is None:
@@ -134,6 +146,10 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         stp_cnt += 1
 
         verilog_netlist, spice_netlist = parse_netlists(target_path, top_level_netlist, user_level_netlist, lc)
+        
+        project_type = get_project_type(top_level_netlist, user_level_netlist)
+        config.init(project_type)
+        lc.print_control("{{PROGRESS}} Detected Project Type is \"" + project_type + "\"")
 
         # NOTE: Step 3: Check Complaince.
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Complaince Checks.")
@@ -263,9 +279,6 @@ if __name__ == "__main__":
     parser.add_argument('--run_klayout_drc', '-rkd', action='store_true', default=False,
                         help="Specifies whether or not to run Klayout DRC checks after Magic. Default: False")
 
-    parser.add_argument('--analog_project', '-a', action='store_true', default=False,
-                        help="Specifies whether the user project is analog or digital project. Default: False")
-
     args = parser.parse_args()
     target_path = args.target_path
     pdk_root = args.pdk_root
@@ -277,7 +290,5 @@ if __name__ == "__main__":
     drc_only = args.drc_only
     dont_compress = args.dont_compress
     run_klayout_drc = args.run_klayout_drc
-    analog_project = args.analog_project
 
-    config.init(args)
     run_check_sequence(target_path, caravel_root, pdk_root, args.output_directory, run_fuzzy_checks, run_gds_fc, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)
