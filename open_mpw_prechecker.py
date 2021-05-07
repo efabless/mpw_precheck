@@ -18,6 +18,7 @@ import os.path
 import argparse
 import subprocess
 from utils.utils import *
+import config
 import base_checks.check_yaml as check_yaml
 import base_checks.check_license as check_license
 import base_checks.check_manifest as check_manifest
@@ -183,7 +184,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         if check:
             lc.print_control("{{PROGRESS}} XOR Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
-            lc.print_control("{{WARNING}} XOR Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{FAIL}} XOR Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2); # Removing the first `#` from this line will make the XOR test a fail/success condition
         stp_cnt += 1
 
@@ -194,12 +195,12 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
     if skip_drc:
         lc.print_control("{{WARNING}} Skipping DRC Checks...")
     else:
-        user_wrapper_path=Path(str(target_path)+"/gds/user_project_wrapper.gds")
+        user_wrapper_path=Path(str(target_path) + "/gds/" + config.user_module + ".gds")
         if not os.path.exists(user_wrapper_path):
-            lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/" + config.user_module + ".gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
         else:
-            check, reason = gds_drc_checker.magic_gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
+            check, reason = gds_drc_checker.magic_gds_drc_check(str(target_path) + '/gds/', config.user_module, pdk_root, output_directory, lc)
             if check:
                 lc.print_control("{{PROGRESS}} DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
@@ -209,10 +210,10 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         if run_klayout_drc:
             lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout DRC Violations.")
             if not os.path.exists(user_wrapper_path):
-                lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
+                lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: ./gds/" + config.user_module + ".gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
                 lc.exit_control(2)
             else:
-                check, reason = gds_drc_checker.klayout_gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
+                check, reason = gds_drc_checker.klayout_gds_drc_check(str(target_path) + '/gds/', config.user_module, pdk_root, output_directory, lc)
                 if check:
                     lc.print_control("{{PROGRESS}} Klayout DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
                 else:
@@ -262,6 +263,9 @@ if __name__ == "__main__":
     parser.add_argument('--run_klayout_drc', '-rkd', action='store_true', default=False,
                         help="Specifies whether or not to run Klayout DRC checks after Magic. Default: False")
 
+    parser.add_argument('--analog_project', '-a', action='store_true', default=False,
+                        help="Specifies whether the user project is analog or digital project. Default: False")
+
     args = parser.parse_args()
     target_path = args.target_path
     pdk_root = args.pdk_root
@@ -273,5 +277,7 @@ if __name__ == "__main__":
     drc_only = args.drc_only
     dont_compress = args.dont_compress
     run_klayout_drc = args.run_klayout_drc
+    analog_project = args.analog_project
 
+    config.init(args)
     run_check_sequence(target_path, caravel_root, pdk_root, args.output_directory, run_fuzzy_checks, run_gds_fc, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)

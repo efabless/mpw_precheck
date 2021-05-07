@@ -17,23 +17,23 @@ import os
 import sys
 import argparse
 import subprocess
+import config
 from pathlib import Path
 from utils.utils import *
 
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
-golden_wrapper = 'user_project_wrapper_empty.gds'
-link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/master/gds'
-design_name = 'user_project_wrapper'
-
 
 def gds_xor_check(target_path, pdk_root, output_directory, lc=logging_controller(default_logger_path, default_target_path), call_path='/usr/local/bin/xor_checks'):
-    gds_path = target_path + "/" + design_name + ".gds"
+    gds_path = target_path + "/" + config.user_module + ".gds"
     if not os.path.exists(Path(gds_path)):
         return False, "GDS not found"
+    
+    golden_wrapper_gds = config.golden_wrapper + ".gds"
+    link_prefix_gds    = config.link_prefix + "/gds"
 
     call_path = os.path.abspath(call_path)
-    run_xor_check_cmd = ['sh', '%s/run_xor_checks.sh' % call_path, target_path, '%s.gds' % design_name, golden_wrapper, link_prefix, design_name, output_directory, pdk_root, call_path]
+    run_xor_check_cmd = ['sh', '%s/run_xor_checks.sh' % call_path, target_path, '%s.gds' % config.user_module, golden_wrapper_gds, link_prefix_gds, config.user_module, output_directory, pdk_root, call_path]
 
     lc.print_control("{{PROGRESS}} Running XOR Checks...")
 
