@@ -70,6 +70,9 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
     steps = 5
     if drc_only:
         steps = 1
+        _, top_level_netlist, user_level_netlist = check_yaml.check_yaml(target_path)
+        project_type = get_project_type(top_level_netlist, user_level_netlist)
+        config.init(project_type)
     elif run_fuzzy_checks or run_klayout_drc:
         steps += int(run_fuzzy_checks) + int(run_klayout_drc)
     stp_cnt = 0
