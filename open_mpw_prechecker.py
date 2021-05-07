@@ -18,6 +18,7 @@ import os.path
 import argparse
 import subprocess
 from utils.utils import *
+import config
 import base_checks.check_yaml as check_yaml
 import base_checks.check_license as check_license
 import base_checks.check_manifest as check_manifest
@@ -46,6 +47,18 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
         lc.exit_control(2)
     return verilog_netlist, spice_netlist
 
+def get_project_type(top_level_netlist, user_level_netlist):
+    if "caravel.v" in top_level_netlist and "user_project_wrapper.v" in user_level_netlist: 
+        project_type = "digital"
+    elif "caravan.v" in top_level_netlist and "user_analog_project_wrapper.v" in user_level_netlist: 
+        project_type = "analog"
+    else: 
+        lc.print_control(
+            "{{FAIL}} the provided top level and user level netlists are not correct. \n \
+            The top level netlist should point to caravel.v if your project is digital or caravan.v if your project is analog. \n \
+            The user_level_netlist should point to user_project_wrapper.v if your project is digital or user_analog_project_wrapper.v if your project is analog.")
+        lc.exit_control(2)
+    return project_type
 
 def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None, run_fuzzy_checks=False, run_gds_fc=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
     if output_directory is None:
@@ -133,6 +146,10 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         stp_cnt += 1
 
         verilog_netlist, spice_netlist = parse_netlists(target_path, top_level_netlist, user_level_netlist, lc)
+        
+        project_type = get_project_type(top_level_netlist, user_level_netlist)
+        config.init(project_type)
+        lc.print_control("{{PROGRESS}} Detected Project Type is \"" + project_type + "\"")
 
         # NOTE: Step 3: Check Complaince.
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Complaince Checks.")
@@ -183,7 +200,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         if check:
             lc.print_control("{{PROGRESS}} XOR Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
-            lc.print_control("{{WARNING}} XOR Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{FAIL}} XOR Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2); # Removing the first `#` from this line will make the XOR test a fail/success condition
         stp_cnt += 1
 
@@ -194,12 +211,12 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
     if skip_drc:
         lc.print_control("{{WARNING}} Skipping DRC Checks...")
     else:
-        user_wrapper_path=Path(str(target_path)+"/gds/user_project_wrapper.gds")
+        user_wrapper_path=Path(str(target_path) + "/gds/" + config.user_module + ".gds")
         if not os.path.exists(user_wrapper_path):
-            lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/" + config.user_module + ".gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
         else:
-            check, reason = gds_drc_checker.magic_gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
+            check, reason = gds_drc_checker.magic_gds_drc_check(str(target_path) + '/gds/', config.user_module, pdk_root, output_directory, lc)
             if check:
                 lc.print_control("{{PROGRESS}} DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
@@ -209,10 +226,10 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         if run_klayout_drc:
             lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout DRC Violations.")
             if not os.path.exists(user_wrapper_path):
-                lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: ./gds/user_project_wrapper.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
+                lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: ./gds/" + config.user_module + ".gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
                 lc.exit_control(2)
             else:
-                check, reason = gds_drc_checker.klayout_gds_drc_check(str(target_path) + '/gds/', 'user_project_wrapper', pdk_root, output_directory, lc)
+                check, reason = gds_drc_checker.klayout_gds_drc_check(str(target_path) + '/gds/', config.user_module, pdk_root, output_directory, lc)
                 if check:
                     lc.print_control("{{PROGRESS}} Klayout DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
                 else:

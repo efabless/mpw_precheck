@@ -21,6 +21,7 @@ import subprocess
 import random
 import copy
 import urllib3
+import config
 from pathlib import Path
 from utils.utils import *
 
@@ -40,14 +41,8 @@ reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]
 toplevel_name_ignore = ["copyright_block_0", "user_id_textblock_0", "open_source_0"]
 toplevel_type_ignore = ["copyright_block", "user_id_textblock", "open_source"]
 
-toplevel = "caravel"
-user_module = "user_project_wrapper"
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
-
-golden_wrapper = 'user_project_wrapper_empty.lef'
-link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/master/lef/'
-
 
 def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist, output_directory,
                call_path="/usr/local/bin/consistency_checks", lc=logging_controller(default_logger_path, default_target_path)):
@@ -62,25 +57,25 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
         return False, "No toplevel netlist provided, please provide either a spice netlist or a verilog netlist: -v | -s toplevel user_project_wrapper"
     else:
         if len(spice_netlist) == 2:
-            basic_hierarchy_checks, connections_map = basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc)
+            basic_hierarchy_checks, connections_map = basic_spice_hierarchy_checks(spice_netlist, config.toplevel, config.user_module, lc)
             if basic_hierarchy_checks:
-                basic_hierarchy_checks, tmp = spice_utils.extract_instance_name(spice_netlist[0], toplevel, user_module)
+                basic_hierarchy_checks, tmp = spice_utils.extract_instance_name(spice_netlist[0], config.toplevel, config.user_module)
                 if basic_hierarchy_checks:
                     instance_name = tmp
-                    check, top_name_list, top_type_list = spice_utils.extract_cell_list(spice_netlist[0], toplevel)
-                    check, user_name_list, user_type_list = spice_utils.extract_cell_list(spice_netlist[1], user_module)
+                    check, top_name_list, top_type_list = spice_utils.extract_cell_list(spice_netlist[0], config.toplevel)
+                    check, user_name_list, user_type_list = spice_utils.extract_cell_list(spice_netlist[1], config.user_module)
         if len(verilog_netlist) == 2:
             check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[0])
             if check:
                 check, reason = verilog_utils.verify_non_behavioral_netlist(verilog_netlist[1])
                 if check:
-                    basic_hierarchy_checks, connections_map = basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc)
+                    basic_hierarchy_checks, connections_map = basic_verilog_hierarchy_checks(verilog_netlist, config.toplevel, config.user_module, lc)
                     if basic_hierarchy_checks:
-                        basic_hierarchy_checks, tmp = verilog_utils.extract_instance_name(verilog_netlist[0], toplevel, user_module)
+                        basic_hierarchy_checks, tmp = verilog_utils.extract_instance_name(verilog_netlist[0], config.toplevel, config.user_module)
                         if basic_hierarchy_checks:
                             instance_name = tmp
-                            check, top_name_list, top_type_list = verilog_utils.extract_cell_list(verilog_netlist[0], toplevel)
-                            check, user_name_list, user_type_list = verilog_utils.extract_cell_list(verilog_netlist[1], user_module)
+                            check, top_name_list, top_type_list = verilog_utils.extract_cell_list(verilog_netlist[0], config.toplevel)
+                            check, user_name_list, user_type_list = verilog_utils.extract_cell_list(verilog_netlist[1], config.user_module)
                 else:
                     return False, reason
             else:
@@ -92,12 +87,17 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
         return False, "Basic Hierarchy Checks Failed."
 
     lc.print_control("{PROGRESS} Running Pins and Power Checks...")
-    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(link_prefix + golden_wrapper)
+    check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(config.link_prefix + "/lef/" + config.golden_wrapper + ".lef")
     if check == False:
         return False, user_project_wrapper_pin_list
-    # use lef view to extract user pin list
-    check, user_pin_list = extract_user_pin_list(target_path + "/lef/" + "user_project_wrapper.lef")
-    # [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
+    
+    lef_path = target_path + "/lef/" + config.user_module + ".lef"
+    if os.path.exists(Path(lef_path)):
+        # use lef view to extract user pin list
+        _, user_pin_list =  extract_user_pin_list(lef_path)
+    else: 
+        user_pin_list =  [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
+
     if check == False:
         return False, user_pin_list
 
@@ -107,7 +107,7 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
         return False, "Pins check failed. The user is using different pins: " + ", ".join(pin_name_diffs)
     else:
         lc.print_control("Pins check passed")
-        check, power_reason = internal_power_checks(user_module, user_type_list, user_power_list, spice_netlist, verilog_netlist)
+        check, power_reason = internal_power_checks(config.user_module, user_type_list, user_power_list, spice_netlist, verilog_netlist)
         if check:
             lc.print_control(power_reason)
             check, power_reason = check_power_pins(connections_map, reserved_power_list, user_power_list)
@@ -120,7 +120,7 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
 
     if run_gds_fc:
         # should only on the integrated gds (caravel + user_project_wrapper)
-        check, reason = check_source_gds_consistency(target_path + '/gds/', pdk_root, toplevel, user_module, instance_name, output_directory, top_type_list, top_name_list,
+        check, reason = check_source_gds_consistency(target_path + '/gds/', pdk_root, config.toplevel, config.user_module, instance_name, output_directory, top_type_list, top_name_list,
                                                      user_type_list, user_name_list, lc, call_path)
         if check:
             lc.print_control(reason + "\nGDS Checks Passed")
