@@ -16,4 +16,4 @@ def init(project_type):
         user_module     = "user_project_wrapper"
         golden_wrapper  = "user_project_wrapper_empty"
     
-    link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/develop'
+    link_prefix = 'https://raw.githubusercontent.com/efabless/caravel/master'
