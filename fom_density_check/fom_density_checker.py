@@ -13,7 +13,7 @@ def fom_density_checker(gds_input, density_check_drc, report_file):
     sh_process = subprocess.Popen(["sh", "%s/fom_density_checker.sh" % parent_path,
                                     gds_input, report_file],
                                     stderr=subprocess.PIPE,
-                                    stdout=subprocess.PIPE)
+                                    stdout=subprocess.PIPE).wait()
     # os.system('sh %s/fom_density_checker.sh %s %s ' % (parent_path, gds_input, report_file))
     malformed_xml = open(report_file, 'r')
     xml_lines = malformed_xml.readlines()
