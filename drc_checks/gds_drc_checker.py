@@ -24,7 +24,13 @@ default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
 
-def magic_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path, default_target_path), call_path='/usr/local/bin/drc_checks'):
+def magic_gds_drc_check(target_path,
+        design_name,
+        pdk_root,
+        output_directory,
+        lc=logging_controller(default_logger_path, default_target_path),
+        call_path='/usr/local/bin/drc_checks'):
+
     path = Path(target_path + "/" + design_name + ".gds")
     if not os.path.exists(path):
         return False, "GDS not found"

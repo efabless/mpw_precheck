@@ -27,12 +27,17 @@ import base_checks.check_documentation as check_documentation
 import drc_checks.gds_drc_checker as gds_drc_checker
 import xor_checks.xor_checker as xor_checker
 import consistency_checks.consistency_checker as consistency_checker
+import fom_density_check.fom_density_checker as fom_density_checker
 
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
 
-def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logging_controller(default_logger_path, default_target_path)):
+def parse_netlists(target_path,
+        top_level_netlist,
+        user_level_netlist,
+        lc=logging_controller(default_logger_path, default_target_path)):
+
     verilog_netlist = []
     spice_netlist = []
     toplvl_extension = os.path.splitext(top_level_netlist)[1]
@@ -48,11 +53,11 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=loggin
     return verilog_netlist, spice_netlist
 
 def get_project_type(top_level_netlist, user_level_netlist):
-    if "caravel.v" in top_level_netlist and "user_project_wrapper.v" in user_level_netlist: 
+    if "caravel.v" in top_level_netlist and "user_project_wrapper.v" in user_level_netlist:
         project_type = "digital"
-    elif "caravan.v" in top_level_netlist and "user_analog_project_wrapper.v" in user_level_netlist: 
+    elif "caravan.v" in top_level_netlist and "user_analog_project_wrapper.v" in user_level_netlist:
         project_type = "analog"
-    else: 
+    else:
         lc.print_control(
             "{{FAIL}} the provided top level and user level netlists are not correct. \n \
             The top level netlist should point to caravel.v if your project is digital or caravan.v if your project is analog. \n \
@@ -60,14 +65,26 @@ def get_project_type(top_level_netlist, user_level_netlist):
         lc.exit_control(2)
     return project_type
 
-def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None, run_fuzzy_checks=False, run_gds_fc=False, skip_drc=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False):
+def run_check_sequence(target_path,
+        caravel_root,
+        pdk_root,
+        output_directory=None,
+        run_fuzzy_checks=False,
+        run_gds_fc=False,
+        skip_drc=False,
+        drc_only=False,
+        dont_compress=False,
+        manifest_source="master",
+        run_klayout_drc=False,
+        run_klayout_fom_density_check=False):
+
     if output_directory is None:
         output_directory = str(target_path) + '/checks'
     # Create the logging controller
     lc = logging_controller(str(output_directory) + '/full_log.log', target_path, dont_compress)
     lc.create_full_log()
 
-    steps = 5
+    steps = 7
     if drc_only:
         steps = 1
         _, top_level_netlist, user_level_netlist = check_yaml.check_yaml(target_path)
@@ -148,8 +165,11 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.exit_control(2)
         stp_cnt += 1
 
-        verilog_netlist, spice_netlist = parse_netlists(target_path, top_level_netlist, user_level_netlist, lc)
-        
+        verilog_netlist, spice_netlist = parse_netlists(target_path,
+                                                    top_level_netlist,
+                                                    user_level_netlist,
+                                                    lc)
+
         project_type = get_project_type(top_level_netlist, user_level_netlist)
         config.init(project_type)
         lc.print_control("{{PROGRESS}} Detected Project Type is \"" + project_type + "\"")
@@ -158,7 +178,10 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Complaince Checks.")
 
         # Manifest Checks:
-        check, reason, fail_lines = check_manifest.check_manifests(target_path=caravel_root,output_file=output_directory+'/manifest_check', manifest_source=manifest_source,lc=lc)
+        check, reason, fail_lines = check_manifest.check_manifests(target_path=caravel_root,
+                                                    output_file=output_directory+'/manifest_check',
+                                                    manifest_source=manifest_source,
+                                                    lc=lc)
         if check:
             lc.print_control("{{PROGRESS}} " + reason)
         else:
@@ -188,8 +211,13 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Executing Fuzzy Consistency Checks.")
 
             # Fuzzy Checks:
-            check, reason = consistency_checker.fuzzyCheck(target_path=target_path, pdk_root=pdk_root, run_gds_fc=run_gds_fc, spice_netlist=spice_netlist, verilog_netlist=verilog_netlist,
-                                                        output_directory=output_directory, lc=lc)
+            check, reason = consistency_checker.fuzzyCheck(target_path=target_path,
+                                                            pdk_root=pdk_root,
+                                                            run_gds_fc=run_gds_fc,
+                                                            spice_netlist=spice_netlist,
+                                                            verilog_netlist=verilog_netlist,
+                                                            output_directory=output_directory,
+                                                            lc=lc)
             if check:
                 lc.print_control("{{PROGRESS}} Fuzzy Consistency Checks Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
@@ -213,13 +241,17 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
     lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking DRC Violations.")
     if skip_drc:
         lc.print_control("{{WARNING}} Skipping DRC Checks...")
+        stp_cnt += 1
     else:
         user_wrapper_path=Path(str(target_path) + "/gds/" + config.user_module + ".gds")
         if not os.path.exists(user_wrapper_path):
             lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/" + config.user_module + ".gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
             lc.exit_control(2)
         else:
-            check, reason = gds_drc_checker.magic_gds_drc_check(str(target_path) + '/gds/', config.user_module, pdk_root, output_directory, lc)
+            check, reason = gds_drc_checker.magic_gds_drc_check(str(target_path) + '/gds/',
+                                                                config.user_module,
+                                                                pdk_root,
+                                                                output_directory, lc)
             if check:
                 lc.print_control("{{PROGRESS}} DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
@@ -232,7 +264,11 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                 lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: ./gds/" + config.user_module + ".gds(.gz) not found can't run DRC\nTEST FAILED AT STEP " + str(stp_cnt))
                 lc.exit_control(2)
             else:
-                check, reason = gds_drc_checker.klayout_gds_drc_check(str(target_path) + '/gds/', config.user_module, pdk_root, output_directory, lc)
+                check, reason = gds_drc_checker.klayout_gds_drc_check(str(target_path) + '/gds/',
+                                                                        config.user_module,
+                                                                        pdk_root,
+                                                                        output_directory,
+                                                                        lc)
                 if check:
                     lc.print_control("{{PROGRESS}} Klayout DRC Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
                 else:
@@ -240,7 +276,23 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                     lc.exit_control(2)
             stp_cnt += 1
 
-    # NOTE: Step 7: Not Yet Implemented.
+
+    # NOTE: Step 7 perform FOM density checks on the GDS
+    if run_klayout_fom_density_check:
+        lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout FOM density.")
+        user_wrapper_path = Path(str(target_path) + "/gds/" + config.user_module + ".gds")
+        report_file = Path(str(target_path) + "/checks/fom_density_check.log")
+        check, reason = fom_density_checker.fom_density_checker(user_wrapper_path,
+                                                    "fom_density_check/density_check.drc",
+                                                    report_file)
+        if check:
+            lc.print_control("{{PROGRESS}} Klayout FOM density Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+        else:
+            lc.print_control("{{FAIL}} Klayout FOM density Checks on GDS Failed, Reason: " + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
+            lc.exit_control(2)
+
+            stp_cnt += 1
+
     lc.print_control("{{SUCCESS}} All Checks PASSED!")
     lc.dump_full_log()
 
@@ -282,6 +334,9 @@ if __name__ == "__main__":
     parser.add_argument('--run_klayout_drc', '-rkd', action='store_true', default=False,
                         help="Specifies whether or not to run Klayout DRC checks after Magic. Default: False")
 
+    parser.add_argument('--run_klayout_fom_density_check', '-rkfdc', action='store_true', default=False,
+                        help="Specifies whether or not to run Klayout metal fill density checks after Magic. Default: False")
+
     args = parser.parse_args()
     target_path = args.target_path
     pdk_root = args.pdk_root
@@ -293,5 +348,18 @@ if __name__ == "__main__":
     drc_only = args.drc_only
     dont_compress = args.dont_compress
     run_klayout_drc = args.run_klayout_drc
+    run_klayout_fom_density_check = args.run_klayout_fom_density_check
 
-    run_check_sequence(target_path, caravel_root, pdk_root, args.output_directory, run_fuzzy_checks, run_gds_fc, skip_drc, drc_only, dont_compress, manifest_source, run_klayout_drc)
+    run_check_sequence(target_path,
+            caravel_root,
+            pdk_root,
+            args.output_directory,
+            run_fuzzy_checks,
+            run_gds_fc,
+            skip_drc,
+            drc_only,
+            dont_compress,
+            manifest_source,
+            run_klayout_drc,
+            run_klayout_fom_density_check)
+

@@ -22,6 +22,7 @@ import random
 import copy
 import urllib3
 import config
+import copy
 from pathlib import Path
 from utils.utils import *
 
@@ -32,11 +33,24 @@ except ImportError:
     import consistency_checks.utils.spice_utils as spice_utils
     import consistency_checks.utils.verilog_utils as verilog_utils
 
-ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
-               "vdda2", "vssa1"]
-user_power_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2", "vssa1"]
+ignore_list = ["vdda1",
+                "vssd1",
+                "vccd1",
+                "vccd2",
+                "vssd2",
+                "vssa2",
+                "vdda2",
+                "vssa1"]
 
-reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]
+user_power_list = copy.deepcopy(ignore_list)
+
+reserved_power_list = ["vddio",
+                        "vdda",
+                        "vccd",
+                        "vssa",
+                        "vssd",
+                        "vssio",
+                        "vdda"]
 
 toplevel_name_ignore = ["copyright_block_0", "user_id_textblock_0", "open_source_0"]
 toplevel_type_ignore = ["copyright_block", "user_id_textblock", "open_source"]
@@ -44,8 +58,15 @@ toplevel_type_ignore = ["copyright_block", "user_id_textblock", "open_source"]
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
-def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist, output_directory,
-               call_path="/usr/local/bin/consistency_checks", lc=logging_controller(default_logger_path, default_target_path)):
+def fuzzyCheck(target_path,
+        pdk_root,
+        run_gds_fc,
+        spice_netlist,
+        verilog_netlist,
+        output_directory,
+        call_path="/usr/local/bin/consistency_checks",
+        lc=logging_controller(default_logger_path, default_target_path)):
+
     basic_hierarchy_checks = False
     connections_map = dict()
     instance_name = ""
@@ -90,12 +111,12 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
     check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(config.link_prefix + "/lef/" + config.golden_wrapper + ".lef")
     if check == False:
         return False, user_project_wrapper_pin_list
-    
+
     lef_path = target_path + "/lef/" + config.user_module + ".lef"
     if os.path.exists(Path(lef_path)):
         # use lef view to extract user pin list
         _, user_pin_list =  extract_user_pin_list(lef_path)
-    else: 
+    else:
         user_pin_list =  [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
 
     if check == False:
@@ -130,7 +151,11 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
     return True, "Fuzzy Checks Passed!"
 
 
-def internal_power_checks(user_module, user_type_list, user_power_list, spice_netlists, verilog_netlists):
+def internal_power_checks(user_module,
+                            user_type_list,
+                            user_power_list,
+                            spice_netlists,
+                            verilog_netlists):
     spice_netlist = None
     verilog_netlist = None
     if len(spice_netlists) == 2:
@@ -207,7 +232,10 @@ def extract_user_pin_list(lef_file):
         return False, "No Pins found in LEF"
 
 
-def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=logging_controller(default_logger_path, default_target_path)):
+def basic_spice_hierarchy_checks(spice_netlist,
+        toplevel,
+        user_module,
+        lc=logging_controller(default_logger_path, default_target_path)):
     path = Path(spice_netlist[0])
     if not os.path.exists(path):
         return False, "top level netlist not found"
@@ -254,7 +282,10 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=loggin
                             return True, connections_map
 
 
-def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=logging_controller(default_logger_path, default_target_path)):
+def basic_verilog_hierarchy_checks(verilog_netlist,
+        toplevel,
+        user_module,
+        lc=logging_controller(default_logger_path, default_target_path)):
     path = Path(verilog_netlist[0])
     if not os.path.exists(path):
         return False, "top level netlist not found"
@@ -301,7 +332,9 @@ def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=lo
                             return True, connections_map
 
 
-def check_power_pins(connections_map, forbidden_list, check_list):
+def check_power_pins(connections_map,
+        forbidden_list,
+        check_list):
     check_list_copy = copy.deepcopy(check_list)
     for key in connections_map:
         con = connections_map[key]
@@ -329,8 +362,19 @@ def clean_gds_list(cells):
     return cells.replace("\\", "")
 
 
-def check_source_gds_consistency(target_path, pdk_root, toplevel, user_module, user_module_name, output_directory, top_type_list, top_name_list, user_type_list,
-                                 user_name_list, lc=logging_controller(default_logger_path, default_target_path), call_path="/usr/local/bin/consistency_checks"):
+def check_source_gds_consistency(target_path,
+        pdk_root,
+        toplevel,
+        user_module,
+        user_module_name,
+        output_directory,
+        top_type_list,
+        top_name_list,
+        user_type_list,
+        user_name_list,
+        lc=logging_controller(default_logger_path, default_target_path),
+        call_path="/usr/local/bin/consistency_checks"):
+
     path = Path(target_path + "/" + toplevel + ".gds")
     if not os.path.exists(path):
         return False, "Integrated Caravel GDS not found"
