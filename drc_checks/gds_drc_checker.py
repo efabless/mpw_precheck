@@ -24,7 +24,7 @@ default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
 
-def magic_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path, default_target_path), call_path='/usr/local/bin/drc_checks'):
+def magic_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logger(default_logger_path, default_target_path), call_path='/usr/local/bin/drc_checks'):
     path = Path(target_path + "/" + design_name + ".gds")
     if not os.path.exists(path):
         return False, "GDS not found"
@@ -93,7 +93,7 @@ def magic_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc
         return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: " + str(output_directory) + "/magic_drc.log"
 
 
-def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logging_controller(default_logger_path, default_target_path), call_path='/usr/local/bin/drc_checks'):
+def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, lc=logger(default_logger_path, default_target_path), call_path='/usr/local/bin/drc_checks'):
     path = Path(target_path + "/" + design_name + ".gds")
     if not os.path.exists(path):
         return False, "GDS not found"
@@ -163,4 +163,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    print("{{RESULT}} ", magic_gds_drc_check(target_path, design_name, output_directory, logging_controller(str(output_directory) + '/full_log.log', target_path), '.'))
+    print("{{RESULT}} ", magic_gds_drc_check(target_path, design_name, output_directory, logger(str(output_directory) + '/full_log.log', target_path), '.'))

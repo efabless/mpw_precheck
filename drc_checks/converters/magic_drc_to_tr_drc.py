@@ -15,6 +15,7 @@
 import argparse
 import os
 import re
+
 parser = argparse.ArgumentParser(
     description='Converts a magic.drc file to a TritonRoute DRC format file.')
 
@@ -30,7 +31,8 @@ output_file = args.output_file
 
 
 def cleanup(vio_type):
-    return str(vio_type).replace(" ","_").replace(">","gt").replace("<","lt").replace("=","eq").replace("!","not").replace("^","pow").replace(".","dot").replace("-","_").replace("+","plus").replace("(","").replace(")","")
+    return str(vio_type).replace(" ", "_").replace(">", "gt").replace("<", "lt").replace("=", "eq").replace("!", "not").replace("^", "pow").replace(".", "dot").replace("-", "_").replace("+", "plus").replace("(", "").replace(")", "")
+
 
 printArr = []
 
@@ -56,16 +58,16 @@ if os.path.exists(input_file):
                 m = pattern.match(vio_name)
                 if m:
                     layer = m.group(1).split(".")[0]
-                message_prefix= "  violation type: "+cleanup(vio_name)+"\n    srcs: N/A N/A\n"
+                message_prefix = "  violation type: "+cleanup(vio_name)+"\n    srcs: N/A N/A\n"
                 for vio in drcSections[i + 1].split("\n"):
                     vio_cor = vio.strip().split()
-                    if len(vio_cor)>3:
-                        vio_line=message_prefix+"    bbox = ( "+vio_cor[0]+", "+vio_cor[1]+" ) - ( "+vio_cor[2]+", "+vio_cor[3]+" ) on Layer "+layer
+                    if len(vio_cor) > 3:
+                        vio_line = message_prefix+"    bbox = ( "+vio_cor[0]+", "+vio_cor[1]+" ) - ( "+vio_cor[2]+", "+vio_cor[3]+" ) on Layer "+layer
                         printArr.append(vio_line)
 else:
     printArr.append("Source not found.")
 
 # write into file
-outputFileOpener = open(output_file,"w")
+outputFileOpener = open(output_file, "w")
 outputFileOpener.write("\n".join(printArr))
 outputFileOpener.close()

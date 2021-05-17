@@ -52,12 +52,12 @@ if os.path.exists(input_file):
                 for vio in drcSections[i + 1].split("\n"):
                     vio = "um ".join(vio.strip().split())
                     if len(vio):
-                        vio_line="box "+vio+"; feedback add \""+vio_name+"\" medium"
+                        vio_line = "box "+vio+"; feedback add \""+vio_name+"\" medium"
                         printArr.append(vio_line)
 else:
     printArr.append("Source not found.")
 
 # write into file
-outputFileOpener = open(output_file,"w")
+outputFileOpener = open(output_file, "w")
 outputFileOpener.write("\n".join(printArr))
 outputFileOpener.close()

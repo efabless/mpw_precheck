@@ -24,13 +24,14 @@ def find_subckt(spice_netlist, subckt_name):
         spiceOpener.close()
         pattern = re.compile(r'\.subckt\s*\b%s\b\s*' % subckt_name)
         if len(re.findall(pattern, spiceContent)):
-            return True, 'instance '+subckt_name+ ' found'
+            return True, 'instance '+subckt_name + ' found'
         else:
-            return False, 'instance '+subckt_name+ ' not found'
+            return False, 'instance '+subckt_name + ' not found'
     except OSError:
-        return False, 'Spice file '+str(spice_netlist)+ ' not found'
+        return False, 'Spice file '+str(spice_netlist) + ' not found'
 
-def confirm_complex_subckt(spice_netlist,subckt_name,minimum_devices_number):
+
+def confirm_complex_subckt(spice_netlist, subckt_name, minimum_devices_number):
     try:
         spiceOpener = open(spice_netlist)
         if spiceOpener.mode == 'r':
@@ -40,7 +41,7 @@ def confirm_complex_subckt(spice_netlist,subckt_name,minimum_devices_number):
         subckts = re.findall(pattern, spiceContent)
         if len(subckts):
             start_idx = spiceContent.find(subckts[0])
-            end_idx =spiceContent.find('.ends',start_idx)
+            end_idx = spiceContent.find('.ends', start_idx)
             subckt = spiceContent[start_idx:end_idx]
             pattern2 = re.compile(r'\nX[\S+]+\s*')
             instances = re.findall(pattern2, subckt)
@@ -49,9 +50,9 @@ def confirm_complex_subckt(spice_netlist,subckt_name,minimum_devices_number):
             else:
                 return False, "The subckt "+subckt_name + " doesn't contain the minimum number of devices required"
         else:
-            return False, 'instance '+subckt_name+ ' not found'
+            return False, 'instance '+subckt_name + ' not found'
     except OSError:
-        return False, 'Spice file '+str(spice_netlist)+ ' not found'
+        return False, 'Spice file '+str(spice_netlist) + ' not found'
 
 
 def confirm_circuit_hierarchy(spice_netlist, toplevel, user_module):
@@ -64,26 +65,27 @@ def confirm_circuit_hierarchy(spice_netlist, toplevel, user_module):
         subckts = re.findall(pattern, spiceContent)
         if len(subckts):
             start_idx = spiceContent.find(subckts[0])
-            end_idx =spiceContent.find('.ends',start_idx)
+            end_idx = spiceContent.find('.ends', start_idx)
             subckt = spiceContent[start_idx:end_idx]
             pattern = re.compile(r'\nX[\S+]+\s*')
             instances = re.findall(pattern, subckt)
             instances.append('.ends')
-            if len(instances)>1:
+            if len(instances) > 1:
                 ins_start_idx = 0
                 for ins in instances[1:]:
-                    ins_end_idx = subckt.find(ins,ins_start_idx)
+                    ins_end_idx = subckt.find(ins, ins_start_idx)
                     instantiation = subckt[ins_start_idx:ins_end_idx]
                     if instantiation.strip().split()[-1] == user_module:
                         return True, user_module + ' is part of ' + toplevel
                     ins_start_idx = ins_end_idx
             return False, 'Hierarchy Check Failed'
         else:
-            return False, 'instance '+toplevel+ ' not found'
+            return False, 'instance '+toplevel + ' not found'
     except OSError:
-        return False, 'Spice file '+str(spice_netlist)+ ' not found'
+        return False, 'Spice file '+str(spice_netlist) + ' not found'
 
-def extract_connections_from_inst(spice_netlist, toplevel,user_module):
+
+def extract_connections_from_inst(spice_netlist, toplevel, user_module):
     try:
         spiceOpener = open(spice_netlist)
         if spiceOpener.mode == 'r':
@@ -95,37 +97,37 @@ def extract_connections_from_inst(spice_netlist, toplevel,user_module):
         subckts = re.findall(pattern, spiceContent)
         if len(subckts):
             start_idx = spiceContent.find(subckts[0])
-            end_idx =spiceContent.find('.ends',start_idx)
+            end_idx = spiceContent.find('.ends', start_idx)
             subckt = spiceContent[start_idx:end_idx]
             pattern = re.compile(r'\nX[\S+]+\s*')
             instances = re.findall(pattern, subckt)
             instances.append('.ends')
-            if len(instances)>1:
+            if len(instances) > 1:
                 ins_start_idx = subckt.find(instances[0])
                 for ins in instances[1:]:
-                    ins_end_idx = subckt.find(ins,ins_start_idx)
+                    ins_end_idx = subckt.find(ins, ins_start_idx)
                     instantiation = subckt[ins_start_idx:ins_end_idx]
                     if instantiation.strip().split()[-1] == user_module:
-                        connections = instantiation.replace('+',' ').split()[1:-1]
+                        connections = instantiation.replace('+', ' ').split()[1:-1]
                         break
                     ins_start_idx = ins_end_idx
             # Extract the pinlist in the user_module
-            pins_list= list()
+            pins_list = list()
             if len(connections):
                 pattern = re.compile(r'\.subckt\s*\b%s\b\s*' % user_module)
                 subckts = re.findall(pattern, spiceContent)
                 if len(subckts):
                     start_idx = spiceContent.find(subckts[0])
-                    end_idx =spiceContent.find('.ends',start_idx)
+                    end_idx = spiceContent.find('.ends', start_idx)
                     subckt = spiceContent[start_idx:end_idx]
                     pattern = re.compile(r'\nX[\S+]+\s*')
                     instances = re.findall(pattern, subckt)
                     if len(instances):
                         subckt = subckt[:subckt.find(instances[0])]
-                    pins_list =  subckt.replace('+',' ').split()[2:]
+                    pins_list = subckt.replace('+', ' ').split()[2:]
                     if len(pins_list):
                         if len(pins_list) == len(connections):
-                            connections_map=dict(zip(pins_list,connections))
+                            connections_map = dict(zip(pins_list, connections))
                             return True, connections_map
                         else:
                             return False, "Couldn't match the pins and connections of the user module"
@@ -135,9 +137,10 @@ def extract_connections_from_inst(spice_netlist, toplevel,user_module):
         else:
             return False, 'Hierarchy Check Failed'
     except OSError:
-        return False, 'Spice file '+str(spice_netlist)+ ' not found'
+        return False, 'Spice file '+str(spice_netlist) + ' not found'
 
-def extract_instance_name(spice_netlist, toplevel,instance):
+
+def extract_instance_name(spice_netlist, toplevel, instance):
     try:
         spiceOpener = open(spice_netlist)
         if spiceOpener.mode == 'r':
@@ -147,16 +150,16 @@ def extract_instance_name(spice_netlist, toplevel,instance):
         subckts = re.findall(pattern, spiceContent)
         if len(subckts):
             start_idx = spiceContent.find(subckts[0])
-            end_idx =spiceContent.find('.ends',start_idx)
+            end_idx = spiceContent.find('.ends', start_idx)
             subckt = spiceContent[start_idx:end_idx]
             pattern = re.compile(r'\nX[\S+]+\s*')
             instances = re.findall(pattern, subckt)
             instances.append('.ends')
-            if len(instances)>1:
+            if len(instances) > 1:
                 ins_start_idx = 0
-                prev_ins=instances[0]
+                prev_ins = instances[0]
                 for ins in instances[1:]:
-                    ins_end_idx = subckt.find(ins,ins_start_idx)
+                    ins_end_idx = subckt.find(ins, ins_start_idx)
                     instantiation = subckt[ins_start_idx:ins_end_idx]
                     if instantiation.strip().split()[-1] == instance:
                         instance_name = prev_ins.strip()[1:]
@@ -167,14 +170,14 @@ def extract_instance_name(spice_netlist, toplevel,instance):
         else:
             return False, 'Hierarchy Check Failed'
     except OSError:
-        return False, 'Spice file '+str(spice_netlist)+ ' not found'
-
+        return False, 'Spice file '+str(spice_netlist) + ' not found'
 
 
 def remove_backslashes(name):
-    return name.replace('\\','')
+    return name.replace('\\', '')
 
-def extract_cell_list(spice_netlist, toplevel,exclude_prefix=None):
+
+def extract_cell_list(spice_netlist, toplevel, exclude_prefix=None):
     try:
         spiceOpener = open(spice_netlist)
         if spiceOpener.mode == 'r':
@@ -184,18 +187,18 @@ def extract_cell_list(spice_netlist, toplevel,exclude_prefix=None):
         subckts = re.findall(pattern, spiceContent)
         if len(subckts):
             start_idx = spiceContent.find(subckts[0])
-            end_idx =spiceContent.find('.ends',start_idx)
+            end_idx = spiceContent.find('.ends', start_idx)
             subckt = spiceContent[start_idx:end_idx]
             pattern = re.compile(r'\nX[\S+]+\s*')
             instances = re.findall(pattern, subckt)
             instances.append('.ends')
-            if len(instances)>1:
+            if len(instances) > 1:
                 name_list = list()
                 type_list = list()
                 ins_start_idx = 0
-                prev_ins=instances[0]
+                prev_ins = instances[0]
                 for ins in instances[1:]:
-                    ins_end_idx = subckt.find(ins,ins_start_idx)
+                    ins_end_idx = subckt.find(ins, ins_start_idx)
                     instantiation = subckt[ins_start_idx:ins_end_idx]
                     inst_type = instantiation.strip().split()[-1]
                     inst_name = prev_ins.strip()[1:]
@@ -213,4 +216,4 @@ def extract_cell_list(spice_netlist, toplevel,exclude_prefix=None):
         else:
             return False, 'Hierarchy Check Failed'
     except OSError:
-        return False, 'Spice file '+str(spice_netlist)+ ' not found'
+        return False, 'Spice file '+str(spice_netlist) + ' not found'

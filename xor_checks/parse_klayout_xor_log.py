@@ -18,7 +18,7 @@ import re
 parser = argparse.ArgumentParser(
     description='extracts the total xor differnces from an xor log')
 
-parser.add_argument('--log_file', '-l',required=True,
+parser.add_argument('--log_file', '-l', required=True,
                     help='log file')
 
 parser.add_argument('--output', '-o', required=True,
@@ -38,5 +38,5 @@ with open(log_file_name, "r") as f:
             tot_cnt += int(m.group(1))
 
 outFileOpener = open(out_file_name, "w")
-outFileOpener.write("Total XOR differences = "+ str(tot_cnt))
+outFileOpener.write("Total XOR differences = " + str(tot_cnt))
 outFileOpener.close()

@@ -13,16 +13,18 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-import re
-import sys
 import argparse
-import subprocess
-import random
 import copy
-import urllib3
-import config
+import os
+import random
+import re
+import subprocess
+import sys
 from pathlib import Path
+
+import config
+import urllib3
+
 from utils.utils import *
 
 try:
@@ -32,11 +34,9 @@ except ImportError:
     import consistency_checks.utils.spice_utils as spice_utils
     import consistency_checks.utils.verilog_utils as verilog_utils
 
-ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2",
-               "vdda2", "vssa1"]
-user_power_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2", "vssa1"]
-
+ignore_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2", "vssa1"]
 reserved_power_list = ["vddio", "vdda", "vccd", "vssa", "vssd", "vssio", "vdda"]
+user_power_list = ["vdda1", "vssd1", "vccd1", "vccd2", "vssd2", "vssa2", "vdda2", "vssa1"]
 
 toplevel_name_ignore = ["copyright_block_0", "user_id_textblock_0", "open_source_0"]
 toplevel_type_ignore = ["copyright_block", "user_id_textblock", "open_source"]
@@ -44,8 +44,9 @@ toplevel_type_ignore = ["copyright_block", "user_id_textblock", "open_source"]
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
+
 def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist, output_directory,
-               call_path="/usr/local/bin/consistency_checks", lc=logging_controller(default_logger_path, default_target_path)):
+               call_path="/usr/local/bin/consistency_checks", lc=logger(default_logger_path, default_target_path)):
     basic_hierarchy_checks = False
     connections_map = dict()
     instance_name = ""
@@ -90,13 +91,13 @@ def fuzzyCheck(target_path, pdk_root, run_gds_fc, spice_netlist, verilog_netlist
     check, user_project_wrapper_pin_list = extract_user_project_wrapper_pin_list(config.link_prefix + "/lef/" + config.golden_wrapper + ".lef")
     if check == False:
         return False, user_project_wrapper_pin_list
-    
+
     lef_path = target_path + "/lef/" + config.user_module + ".lef"
     if os.path.exists(Path(lef_path)):
         # use lef view to extract user pin list
-        _, user_pin_list =  extract_user_pin_list(lef_path)
-    else: 
-        user_pin_list =  [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
+        _, user_pin_list = extract_user_pin_list(lef_path)
+    else:
+        user_pin_list = [verilog_utils.remove_backslashes(k) for k in connections_map.keys()]
 
     if check == False:
         return False, user_pin_list
@@ -207,7 +208,7 @@ def extract_user_pin_list(lef_file):
         return False, "No Pins found in LEF"
 
 
-def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=logging_controller(default_logger_path, default_target_path)):
+def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=logger(default_logger_path, default_target_path)):
     path = Path(spice_netlist[0])
     if not os.path.exists(path):
         return False, "top level netlist not found"
@@ -254,7 +255,7 @@ def basic_spice_hierarchy_checks(spice_netlist, toplevel, user_module, lc=loggin
                             return True, connections_map
 
 
-def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=logging_controller(default_logger_path, default_target_path)):
+def basic_verilog_hierarchy_checks(verilog_netlist, toplevel, user_module, lc=logger(default_logger_path, default_target_path)):
     path = Path(verilog_netlist[0])
     if not os.path.exists(path):
         return False, "top level netlist not found"
@@ -330,7 +331,7 @@ def clean_gds_list(cells):
 
 
 def check_source_gds_consistency(target_path, pdk_root, toplevel, user_module, user_module_name, output_directory, top_type_list, top_name_list, user_type_list,
-                                 user_name_list, lc=logging_controller(default_logger_path, default_target_path), call_path="/usr/local/bin/consistency_checks"):
+                                 user_name_list, lc=logger(default_logger_path, default_target_path), call_path="/usr/local/bin/consistency_checks"):
     path = Path(target_path + "/" + toplevel + ".gds")
     if not os.path.exists(path):
         return False, "Integrated Caravel GDS not found"

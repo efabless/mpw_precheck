@@ -13,27 +13,28 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-import re
 import os
+import re
 import subprocess
 from pathlib import Path
 
-class logging_controller:
+
+class logger:
     def __init__(self, log, target_path, dont_compress=False):
         self.log = log
         self.target_path = target_path
         self.dont_compress = dont_compress
 
-    def switch_log(self,log):
+    def switch_log(self, log):
         self.log = log
 
-    def print_control(self,message):
+    def print_control(self, message):
         if re.search(r'{{(\w+)}}(.*)', str(message)):
-            print(str(message),flush=True)
+            print(str(message), flush=True)
             message = str(message).split("}}")[1]
         try:
-            f=open(self.log,'a')
-            f.write(str(message)+'\n')
+            f = open(self.log, 'a')
+            f.write(str(message) + '\n')
             f.close()
         except OSError:
             print("{{ERROR}} unable to print notification.")
@@ -42,10 +43,10 @@ class logging_controller:
     def create_full_log(self):
         try:
             path = Path(self.log)
-            dir = path.parent
-            if not os.path.exists(dir):
-                os.mkdir(dir)
-            f=open(self.log,'w+')
+            directory = path.parent
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+            f = open(self.log, 'w+')
             f.write("FULL RUN LOG:\n")
             f.close()
         except OSError:
@@ -53,17 +54,14 @@ class logging_controller:
             self.exit_control(255)
 
     def dump_full_log(self):
-        print("Full log could be found at "+ str(self.log),flush=True)
+        print("Full log could be found at %s" % str(self.log), flush=True)
 
-
-    def exit_control(self,code):
+    def exit_control(self, code):
         self.dump_full_log()
         if not self.dont_compress:
             print("{{PROGRESS}} Compressing the gds files")
             # Compress project items.
-            run_prep_cmd = "cd {target_path}; make compress;".format(
-                target_path=self.target_path
-            )
+            run_prep_cmd = "cd {target_path}; make compress;".format(target_path=self.target_path)
             process = subprocess.Popen(run_prep_cmd, stdout=subprocess.PIPE, shell=True)
             process.communicate()[0].strip()
         else:

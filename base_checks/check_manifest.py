@@ -14,9 +14,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
+
 from utils.utils import *
 
 manifest_file_name = "manifest"
@@ -25,7 +26,7 @@ default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
 
-def check_manifest(target_path, output_file, git_url, lc=logging_controller(default_logger_path, default_target_path), call_path='/usr/local/bin/base_checks'):
+def check_manifest(target_path, output_file, git_url, lc=logger(default_logger_path, default_target_path), call_path='/usr/local/bin/base_checks'):
     path = Path(target_path)
     if not os.path.exists(path):
         return False, str(target_path) + " not found", list()
@@ -66,7 +67,7 @@ def check_manifest(target_path, output_file, git_url, lc=logging_controller(defa
         return False, "Manifest Check Failed. Make sure you mounted the docker or you're using the docker version that has sha1sum installed. Also, The manifest file might be deleted from caravel master at the moment.", list()
 
 
-def check_manifests(target_path, output_file, manifest_source="master", lc=logging_controller(default_logger_path, default_target_path), call_path='/usr/local/bin/base_checks'):
+def check_manifests(target_path, output_file, manifest_source="master", lc=logger(default_logger_path, default_target_path), call_path='/usr/local/bin/base_checks'):
     manifest_git_url = "https://raw.githubusercontent.com/efabless/caravel/{0}/manifest".format(manifest_source)
     total_check = True
     total_lines = []
