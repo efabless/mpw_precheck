@@ -15,18 +15,21 @@
 
 set -e
 
-: ${1?"Usage: $0 tech_file input.gds output.txt"}
-: ${2?"Usage: $0 tech_file input.gds output.txt"}
-: ${3?"Usage: $0 tech_file input.gds output.txt"}
+: ${1?"Usage: $0 tech_file input.gds output.txt output_dir"}
+: ${2?"Usage: $0 tech_file input.gds output.txt output_dir"}
+: ${3?"Usage: $0 tech_file input.gds output.txt output_dir"}
 
 echo "Using Techfile: $1"
 echo "Using GDS file: $2"
 echo "Output Report File: $3"
+echo "Output Directory: $4"
+
+OUT_DIR=$4
 # The -a here is necessary to handle race conditions.
 # This limits the max number of possible jobs to 100.
 xvfb-run -a klayout -b \
     -rd input=$2 \
     -rd report=$3 \
-    -r $1
+    -r $1 |& tee "$OUT_DIR/klayout_drc.log"
 
 exit 0
