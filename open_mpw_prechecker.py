@@ -40,9 +40,9 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logger
     userlvl_extension = os.path.splitext(user_level_netlist)[1]
 
     if str(toplvl_extension) == '.v' and str(userlvl_extension) == '.v':
-        verilog_netlist = ['%s/%s%s/%s' % (target_path, top_level_netlist, target_path, user_level_netlist)]
+        verilog_netlist = ['%s/%s' % (target_path, top_level_netlist), '%s/%s' % (target_path, user_level_netlist)]
     elif str(toplvl_extension) == '.spice' and str(userlvl_extension) == '.spice':
-        spice_netlist = ['%s/%s%s/%s' % (target_path, top_level_netlist, target_path, user_level_netlist)]
+        spice_netlist =   ['%s/%s' % (target_path, top_level_netlist), '%s/%s' % (target_path, user_level_netlist)]
     else:
         lc.print_control("{{FAIL}} The provided top and user level netlists are neither .spice or .v files. Please adhere to the required input types.")
         lc.exit_control(2)
