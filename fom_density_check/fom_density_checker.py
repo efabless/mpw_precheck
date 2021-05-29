@@ -2,19 +2,40 @@ import os
 import sys
 import argparse
 import subprocess
+import re
 from pathlib import Path
 from utils.utils import *
 from xml.etree import ElementTree
 
-def fom_density_checker(gds_input, density_check_drc, report_file):
-    print("Reading from %s" % gds_input)
-    print("Writing report to %s" % report_file)
+def fom_density_checker(gds_input, report_file):
     parent_path = os.path.dirname(os.path.realpath(__file__))
+    print("Reading from %s" % gds_input)
+    print("Reporting to %s" % report_file)
+    print("Running FOM fill density check .....")
     sh_process = subprocess.Popen(["sh", "%s/fom_density_checker.sh" % parent_path,
                                     gds_input, report_file],
                                     stderr=subprocess.PIPE,
-                                    stdout=subprocess.PIPE).wait()
+                                    stdout=subprocess.PIPE)
+
+
     # os.system('sh %s/fom_density_checker.sh %s %s ' % (parent_path, gds_input, report_file))
+    # sh_process = subprocess.Popen(["klayout", "-b", "-r", "%s/fom_density.lydrc"%parent_path,
+    #                                 "-rd", gds_input,
+    #                                 "-rd", report_file,
+    #                                 "-zz"],
+    #                                 stderr=subprocess.PIPE,
+    #                                 stdout=subprocess.PIPE, shell=True).wait()
+
+    while True:
+        line = sh_process.stdout.readline()
+        match = re.search(r"(\d+)\/(\d+)", line.decode("utf-8"))
+        # print(match)
+        if match:
+            count = int(match.groups()[0])
+            total = int(match.groups()[1])
+            print("\tProgress: %d %% ( %d / %d) "%((count/total) * 100, count, total), end='\r')
+        if not line:
+            break
     malformed_xml = open(report_file, 'r')
     xml_lines = malformed_xml.readlines()
     xml_lines.insert(1, "<root>")

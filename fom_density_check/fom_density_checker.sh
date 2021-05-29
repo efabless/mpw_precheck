@@ -17,8 +17,8 @@ set -e
 echo "Design Name: $1"
 echo "Output GDS will be: $2"
 
-xvfb-run -a klayout -r $(dirname $0)/density_check.lydrc \
+klayout -b -r $(dirname $0)/fom_density.lydrc \
     -rd gds_input=$1 \
     -rd report_file=$2 \
     -zz
-exit
+exit 0
