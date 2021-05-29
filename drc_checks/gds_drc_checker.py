@@ -113,7 +113,9 @@ def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, 
                          '%s/run_drc_klayout.sh' % call_path,
                          '%s/sky130A/libs.tech/klayout/sky130A.drc' % pdk_root,
                          '%s/%s.gds' % (target_path, design_name),
-                         '%s > %s.log' % (output_file, output_file)]
+                         output_file,
+                         output_directory
+                         ]
 
     lc.print_control("{{PROGRESS}} Running Klayout DRC Checks...")
 
