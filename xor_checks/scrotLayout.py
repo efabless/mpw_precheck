@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pya
-import re
 import os
+
+import pya
 
 WIDTH = 2048
 HEIGHT = 2048

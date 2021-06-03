@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 Efabless Corporation
+# Copyright 2020 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# SPDX-License-Identifier: Apache-2.0
 
+import re
 import os
 
 # Banned Keywords
@@ -56,10 +56,10 @@ def checkInclusiveLang(file):
 
 
 def checkDocumentation(target_path):
-    found = os.path.exists(target_path + "/README")
+    found = os.path.exists(target_path+"/README")
     if found == False:
         for ext in DOC_EXTS:
-            if os.path.exists(target_path + "/README" + str(ext)):
+            if os.path.exists(target_path+"/README"+str(ext)):
                 found = True
                 break
     if found:
@@ -69,7 +69,7 @@ def checkDocumentation(target_path):
             if extension in DOC_EXTS:
                 check, reason = checkInclusiveLang(f)
                 if check == False:
-                    return False, "The documentation file " + str(f) + " contains non-inclusive language: " + reason
+                    return False, "The documentation file " + str(f) + " contains non-inclusive language: "+reason
         return True, ""
     else:
         return False, "Documentation Not Found"

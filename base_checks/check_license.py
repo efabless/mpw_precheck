@@ -15,27 +15,26 @@
 
 import os
 from pathlib import Path
+
 from strsimpy.sorensen_dice import SorensenDice
 
 # Default value for file headers, names, and paths
-_license_filename = 'LICENSE'
 _lib_license_filename = 'LICENSE'
+_license_filename = 'LICENSE'
 _approved_licenses_path = 'base_checks/_licenses/_approved_licenses'
 _prohibited_licenses_path = 'base_checks/_licenses/_prohibited_licenses'
 
-_spdx_license_header = 'SPDX-License-Identifier'
 _spdx_copyright_header = 'SPDX-FileCopyrightText'
+_spdx_license_header = 'SPDX-License-Identifier'
 
 # Directories ignored for license check
 IGNORED_DIRS = ['.git', 'gl', 'third_party']
 
+# File extensions to be ignored for license check
+IGNORED_EXTS = ['.cfg', '.csv', '.def', '.drc', '.gds', '.hex', '.jpg', '.lef', '.log', '.mag', '.out', '.pdf', '.png', '.pyc', '.rdb', '.spice', '.svg', '.txt', '.vcd']
+
 # Files ignored for license check
 IGNORED_FILES = ['.git', '.gitignore', '.gitmodules', 'manifest', 'info.yaml', 'LICENSE', 'PDK_SOURCES', 'OPENLANE_VERSION']
-
-# File extensions to be ignored for license check
-IGNORED_EXTS = ['.cfg', '.csv', '.def', '.gds', '.lef', '.mag',
-                '.pdf', '.png', '.pyc', '.log', '.drc', '.rdb',
-                '.out', '.hex', '.spice', '.svg', '.txt', '.vcd']
 
 
 def check_license(user_license_path, licenses_path):
@@ -46,10 +45,7 @@ def check_license(user_license_path, licenses_path):
         confidence = 100 * (1 - SorensenDice().distance(license_content.strip(), user_license_content.strip()))
         confidence_map.append({"license_key": license_file.stem, "confidence": confidence})
     license_check_result = max(confidence_map, key=lambda x: x["confidence"])
-    if license_check_result["confidence"] > 95:
-        return license_check_result["license_key"]
-    else:
-        return None
+    return license_check_result["license_key"] if license_check_result["confidence"] > 95 else None
 
 
 def check_main_license(path):
@@ -60,10 +56,7 @@ def check_main_license(path):
             return {"approved": False, "license_key": result}
         else:
             result = check_license(path, _approved_licenses_path)
-            if result:
-                return {"approved": True, "license_key": result}
-            else:
-                return {"approved": True, "license_key": None}
+            return {"approved": True, "license_key": result} if result else {"approved": True, "license_key": None}
     except OSError as e:
         print("MAIN LICENSE OS ERROR: %s" % e)
         return None
@@ -110,9 +103,7 @@ def check_file_spdx_compliance(file_path, license_key):
     global _spdx_license_header
     _spdx_license_header = '%s: %s' % ('SPDX-License-Identifier', license_key) if license_key else _spdx_license_header
 
-    spdx_compliant = False
-    spdx_cp_compliant = False
-    spdx_ls_compliant = False
+    spdx_compliant = spdx_cp_compliant = spdx_ls_compliant = False
 
     # Filter out ignored files and extensions
     file_base = os.path.basename(file_path)
@@ -149,10 +140,8 @@ def check_file_spdx_compliance(file_path, license_key):
 if __name__ == "__main__":
     _prohibited_licenses_path = '_licenses/_prohibited_licenses'
     _approved_licenses_path = '_licenses/_approved_licenses'
-    if check_main_license('.'):
-        print("{{RESULT}} License there! ")
-    else:
-        print("{{FAIL}} License not there or empty!")
+
+    print("{{RESULT}} License there! ") if check_main_license('.') else print("{{FAIL}} License not there or empty!")
 
     spdx_non_compliant_list = check_dir_spdx_compliance([], '.')
     if spdx_non_compliant_list:

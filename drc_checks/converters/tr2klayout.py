@@ -15,8 +15,8 @@
 
 import argparse
 import re
-import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
+import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser(
     description='Converts a TritonRoute DRC Report to a KLayout database')
@@ -43,6 +43,7 @@ RE_VIOLATION = re.compile(r'violation type: (?P<type>\S+)\s+'
                           r'\( (?P<urx>\S+), (?P<ury>\S+) \) '
                           r'on Layer (?P<layer>\S+)', re.M)
 
+
 def prettify(elem):
     """
     Return a pretty-printed XML string for the Element.
@@ -51,13 +52,14 @@ def prettify(elem):
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="    ",
                                 newl="\n")
-                                # encoding='utf-8')
+    # encoding='utf-8')
+
 
 with open(input_file_name, 'r') as f:
     content = f.read()
 
 cnt = 0
-vio_dict  = {}
+vio_dict = {}
 for match in RE_VIOLATION.finditer(content):
     cnt += 1
     type_ = match.group('type')

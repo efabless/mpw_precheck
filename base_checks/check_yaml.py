@@ -14,8 +14,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-import yaml
 from typing import NamedTuple
+
+import yaml
 
 _yaml_filename = 'info.yaml'
 

@@ -13,24 +13,26 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-import sys
 import argparse
+import os
 import subprocess
-import config
+import sys
 from pathlib import Path
+
+import config
 from utils.utils import *
 
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
 
-def gds_xor_check(target_path, pdk_root, output_directory, lc=logging_controller(default_logger_path, default_target_path), call_path='/usr/local/bin/xor_checks'):
+
+def gds_xor_check(target_path, pdk_root, output_directory, lc=logger(default_logger_path, default_target_path), call_path='/usr/local/bin/xor_checks'):
     gds_path = target_path + "/" + config.user_module + ".gds"
     if not os.path.exists(Path(gds_path)):
         return False, "GDS not found"
-    
+
     golden_wrapper_gds = config.golden_wrapper + ".gds"
-    link_prefix_gds    = config.link_prefix + "/gds"
+    link_prefix_gds = config.link_prefix + "/gds"
 
     call_path = os.path.abspath(call_path)
     run_xor_check_cmd = ['sh', '%s/run_xor_checks.sh' % call_path, target_path, '%s.gds' % config.user_module, golden_wrapper_gds, link_prefix_gds, config.user_module, output_directory, pdk_root, call_path]
@@ -90,4 +92,4 @@ if __name__ == "__main__":
     else:
         output_directory = args.output_directory
 
-    print("{{RESULT}} ", gds_xor_check(target_path, design_name, output_directory, logging_controller(str(output_directory) + '/full_log.log', target_path), '.'))
+    print("{{RESULT}} ", gds_xor_check(target_path, design_name, output_directory, logger(str(output_directory) + '/full_log.log', target_path), '.'))
