@@ -13,7 +13,16 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
-gds read $::env(DESIGN_NAME).gds
+if { [info exists ::env(HAS_SRAM)] } {
+    # lef read $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/lef/$::env(SRAM).lef
+    gds noduplicates yes 
+    # load /home/nofal/os_eda/pdks/sky130A/libs.ref/sky130_sram_macros/maglef/sram_1rw1r_32_256_8_sky130.mag
+    # load /home/nofal/os_eda/open_pdks/pdks/sky130A/libs.ref/sky130_sram_macros/maglef/$::env(SRAM).mag 
+    load $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/maglef/$::env(SRAM).mag 
+    
+}
+gds read gds/$::env(DESIGN_NAME).gds
+puts "we are here in the magic_drc_check.tcl"
 
 set fout [open $::env(OUT_DIR)/$::env(DESIGN_NAME).magic.drc w]
 set oscale [cif scale out]

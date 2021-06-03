@@ -94,8 +94,11 @@ def magic_gds_drc_check(target_path,
                     lc.print_control("Violation Message \"" + str(key.strip()) + " \"found " + str(val) + " Times.")
                 return False, "Total # of DRC violations is " + str(cnt)
     except FileNotFoundError:
+
+        lc.print_control("{{ERROR}} FILENOTFOUNDERROR")
         return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: " + str(output_directory) + "/magic_drc.log"
     except OSError:
+        lc.print_control("{{ERROR}} OSError")
         return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: " + str(output_directory) + "/magic_drc.log"
 
 

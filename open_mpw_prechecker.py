@@ -52,7 +52,9 @@ def parse_netlists(target_path,
         lc.exit_control(2)
     return verilog_netlist, spice_netlist
 
-def get_project_type(top_level_netlist, user_level_netlist, lc=logging_controller(default_logger_path, default_target_path)):
+def get_project_type(top_level_netlist,
+        user_level_netlist,
+        lc=logging_controller(default_logger_path, default_target_path)):
     if "caravel.v" in top_level_netlist and "user_project_wrapper.v" in user_level_netlist:
         project_type = "digital"
     elif "caravan.v" in top_level_netlist and "user_analog_project_wrapper.v" in user_level_netlist:

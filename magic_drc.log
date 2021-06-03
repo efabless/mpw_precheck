@@ -1,0 +1,9 @@
+
+Magic 8.2 revision 157 - Compiled on Thu, 07 Nov 2019 21:14:45 +0100.
+Starting magic under Tcl interpreter
+Using the terminal as the console.
+Using NULL graphics device.
+Processing system .magicrc file
+Loading "/home/nofal/magic_drc_check.tcl" from command line.
+Error parsing "/home/nofal/magic_drc_check.tcl": couldn't read file "/home/nofal/magic_drc_check.tcl": no such file or directory
+Using technology "minimum", version 0.0

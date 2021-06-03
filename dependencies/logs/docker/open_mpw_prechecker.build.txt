@@ -3,69 +3,69 @@ Step 1/23 : FROM centos:centos7 as build
  ---> 8652b9f0cb4c
 Step 2/23 : RUN yum -y install centos-release-scl &&     	yum -y install devtoolset-8 devtoolset-8-libatomic-devel &&         yum clean all &&         rm -rf /var/cache/yum
  ---> Using cache
- ---> 3cc8d65a7ebf
+ ---> 2af37260f609
 Step 3/23 : RUN yum install -y https://repo.ius.io/ius-release-el7.rpm &&         yum clean all &&         rm -rf /var/cache/yum
  ---> Using cache
- ---> 58f19a07ef19
+ ---> 97d793ef600e
 Step 4/23 : RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-tkinter &&         yum clean all &&         rm -rf /var/cache/yum
  ---> Using cache
- ---> ed3a49a8f0bd
+ ---> 014dc8e49bb7
 Step 5/23 : RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
  ---> Using cache
- ---> 466844d552eb
+ ---> 236aca76a2be
 Step 6/23 : RUN pip3.6 install --no-cache-dir --upgrade pip &&     pip install --no-cache-dir                 pyyaml                 awscli                 requests                 boto3                 strsimpy
  ---> Using cache
- ---> d0ab7d0383ab
+ ---> f56866d56aae
 Step 7/23 : RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
  ---> Using cache
- ---> 3518f4164604
+ ---> 7e46d1264162
 Step 8/23 : RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch && 	yum clean all && 	rm -rf /var/cache/yum
  ---> Using cache
- ---> bdf7da1663ee
+ ---> dfb39fff1d9a
 Step 9/23 : RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x86_64.rpm &&         yum clean all &&         rm -rf /var/cache/yum
  ---> Using cache
- ---> 4c3b2bde5199
+ ---> d46d8b9cc122
 Step 10/23 : RUN git clone https://github.com/RTimothyEdwards/magic.git magic_24032021
  ---> Using cache
- ---> e27d7a12618a
+ ---> 7f910e499fd6
 Step 11/23 : WORKDIR magic_24032021
  ---> Using cache
- ---> ede460e2f1db
+ ---> 6b3b45b8726a
 Step 12/23 : RUN git checkout e152deb97bb963684dee5fd053724e976971d861
  ---> Using cache
- ---> 8349858ae3e9
+ ---> 1230d2ac1965
 Step 13/23 : RUN ./configure --prefix=/build &&     make -j4 &&     make install
  ---> Using cache
- ---> f1cfc2e267b7
+ ---> bba260002b8e
 Step 14/23 : ENV PRECHECKER_ROOT=/usr/local/bin/
  ---> Using cache
- ---> 44b92be60370
+ ---> 7e2f30af0eb7
 Step 15/23 : ENV BUILD_PATH=/build/
  ---> Using cache
- ---> 579d9f32d336
+ ---> 605c146f7a07
 Step 16/23 : ENV PATH=$PRECHECKER_ROOT:$PRECHECKER_ROOT/scripts:$BUILD_PATH/bin:$BUILD_PATH/bin/Linux-x86_64:$BUILD_PATH/pdn/scripts:$PATH
  ---> Using cache
- ---> 61d431777a17
+ ---> a5077f86c35f
 Step 17/23 : ENV LD_LIBRARY_PATH=$BUILD_PATH/lib:$BUILD_PATH/lib/Linux-x86_64:$LD_LIBRARY_PATH
  ---> Using cache
- ---> fac884b56a0e
+ ---> 6df2a8297b7b
 Step 18/23 : ENV MANPATH=$BUILD_PATH/share/man:$MANPATH
  ---> Using cache
- ---> b917953569ff
+ ---> 63d7c3387693
 Step 19/23 : RUN mkdir -p /build/version/
  ---> Using cache
- ---> 74261b550fc8
+ ---> 344b0ef930b9
 Step 20/23 : RUN date +"Build Timestamp: %Y-%m-%d_%H-%M-%S" > /build/version/magic.version
  ---> Using cache
- ---> a373c846c9c2
+ ---> 8c57f7379685
 Step 21/23 : RUN git rev-parse HEAD >> /build/version/magic.version
  ---> Using cache
- ---> 40975017f1fa
+ ---> 3fe2d8606b4c
 Step 22/23 : RUN tar -czf /build.tar.gz /build
  ---> Using cache
- ---> 1b638a8e7001
+ ---> 13efedeeb08d
 Step 23/23 : WORKDIR $PRECHECKER_ROOT
  ---> Using cache
- ---> 20c9d79a5661
-Successfully built 20c9d79a5661
+ ---> e6a1b557a052
+Successfully built e6a1b557a052
 Successfully tagged efabless/open_mpw_precheck:latest
