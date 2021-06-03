@@ -16,16 +16,16 @@
 
 # To call: ./run_drc_magic.sh <target_path> <design_name> <pdk_root> <output_path>
 
-export TARGET_DIR=$1
-export DESIGN_NAME=$2
-export PDK_ROOT=$3
-export OUT_DIR=$4
-export SCRIPTS_ROOT=${5:-$(pwd)}
+export TARGET_DIR=${TARGET_DIR:-$1}
+export DESIGN_NAME=${DESIGN_NAME:-$2}
+export PDK_ROOT=${PDK_ROOT:-$3}
+export OUT_DIR=${OUT_DIR:-$4}
+export SCRIPTS_ROOT=${SCRIPTS_ROOT:-${5:-$(pwd)}}
 
-if ! [[ -d "$OUT_DIR" ]]
-then
-    mkdir "$OUT_DIR"
-fi
+echo "SCRIPTS_ROOT is "
+echo $SCRIPTS_ROOT
+
+mkdir -p "$OUT_DIR"
 echo "Running Magic..."
 cp /usr/local/bin/tech-files/sky130A.magicrc $TARGET_DIR/.magicrc
 export MAGTYPE=mag
@@ -70,12 +70,22 @@ magic \
 TEST=$OUT_DIR/$DESIGN_NAME.magic.drc
 
 crashSignal=$(find $TEST)
-if ! [[ $crashSignal ]]; then echo "DRC Check FAILED"; exit -1; fi
+if ! [[ $crashSignal ]];
+then
+    echo "DRC Check FAILED";
+    exit -1;
+fi
 
 
 Test_Magic_violations=$(grep "COUNT: " $TEST -s | tail -1 | sed -r 's/[^0-9]*//g')
-if ! [[ $Test_Magic_violations ]]; then Test_Magic_violations=-1; fi
-if [ $Test_Magic_violations -ne -1 ]; then Test_Magic_violations=$(((Test_Magic_violations+3)/4)); fi
+if ! [[ $Test_Magic_violations ]];
+then
+    Test_Magic_violations=-1;
+fi
+if [ $Test_Magic_violations -ne -1 ];
+then
+    Test_Magic_violations=$(((Test_Magic_violations+3)/4));
+fi
 
 echo "Test # of DRC Violations: $Test_Magic_violations"
 

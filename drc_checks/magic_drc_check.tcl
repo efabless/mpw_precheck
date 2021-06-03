@@ -15,8 +15,6 @@
 
 if { [info exists ::env(HAS_SRAM)] } {
     gds noduplicates yes 
-    # load /home/nofal/os_eda/pdks/sky130A/libs.ref/sky130_sram_macros/maglef/sram_1rw1r_32_256_8_sky130.mag
-    # load /home/nofal/os_eda/open_pdks/pdks/sky130A/libs.ref/sky130_sram_macros/maglef/$::env(SRAM).mag 
     puts "Detected an SRAM module"
     puts "Pre-loading a maglef of the SRAM block"
     load $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/maglef/$::env(SRAM).mag 
