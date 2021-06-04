@@ -31,6 +31,35 @@ cp /usr/local/bin/tech-files/sky130A.magicrc $TARGET_DIR/.magicrc
 export MAGTYPE=mag
 cd $TARGET_DIR
 ulimit -c unlimited
+
+# Retrieve all sram modules maglefs installed as an array separated with spaces
+SRAM_MODULES=$(ls -1 $PDK_ROOT/sky130A/libs.ref/sky130_sram_macros/maglef | sed -e 's/\..*$//' | sed -e ':a;N;$!ba;s/\n/ /g')
+echo $SRAM_MODULES
+
+# SRAM_MODULES=( sky130_sram_1kbyte_1rw1r_32x256_8
+#     sky130_sram_1kbyte_1rw1r_8x1024_8
+#     sky130_sram_2kbyte_1rw1r_32x512_8
+#     sky130_sram_4kbyte_1rw1r_32x1024_8
+#     sky130_sram_8kbyte_1rw1r_32x2048_8
+#     sram_1rw1r_32_256_8_sky130 )
+
+if zgrep sram $DESIGN_NAME.gds ;
+then
+    export HAS_SRAM=1
+    for SRAM in ${SRAM_MODULES[@]};
+    do
+        if zgrep $SRAM $DESIGN_NAME.gds ;
+        then
+            export SRAM=$SRAM
+            echo "module has "
+            echo $SRAM
+            break
+        fi
+    done
+else
+    echo "No SRAM found"
+fi
+
 magic \
     -noconsole \
     -dnull \
