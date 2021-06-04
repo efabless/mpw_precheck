@@ -51,7 +51,7 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logger
 
 def get_project_type(top_level_netlist,
         user_level_netlist,
-        lc=logging_controller(default_logger_path, default_target_path)):
+        lc=logger(default_logger_path, default_target_path)):
     if "caravel.v" in top_level_netlist and "user_project_wrapper.v" in user_level_netlist:
         project_type = "digital"
         return project_type
