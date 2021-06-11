@@ -1,0 +1,32 @@
+Sending build context to Docker daemon  14.34kB
+Step 1/23 : FROM centos:centos7 as build
+ ---> 8652b9f0cb4c
+Step 2/23 : RUN yum -y install centos-release-scl &&     	yum -y install devtoolset-8 devtoolset-8-libatomic-devel &&         yum clean all &&         rm -rf /var/cache/yum
+ ---> Using cache
+ ---> e6fd1b3ec06b
+Step 3/23 : RUN yum install -y https://repo.ius.io/ius-release-el7.rpm &&         yum clean all &&         rm -rf /var/cache/yum
+ ---> Using cache
+ ---> fae70386f9b2
+Step 4/23 : RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-tkinter &&         yum clean all &&         rm -rf /var/cache/yum
+ ---> Using cache
+ ---> 40aea6171451
+Step 5/23 : RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
+ ---> Using cache
+ ---> f1faa4b5cf49
+Step 6/23 : RUN pip3.6 install --no-cache-dir --upgrade pip &&     pip install --no-cache-dir                 pyyaml                 awscli                 requests                 boto3                 strsimpy
+ ---> Using cache
+ ---> b226910f49b3
+Step 7/23 : RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
+ ---> Using cache
+ ---> dda411cd8a94
+Step 8/23 : RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch && 	yum clean all && 	rm -rf /var/cache/yum
+ ---> Using cache
+ ---> 33508bf67d78
+Step 9/23 : RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x86_64.rpm &&         yum clean all &&         rm -rf /var/cache/yum
+ ---> Using cache
+ ---> 0fc93f1fdb1d
+Step 10/23 : RUN git clone https://github.com/RTimothyEdwards/magic ./magic_36f61ca
+ ---> Running in ffdde274ad08
+Cloning into './magic_36f61ca'...
+[91mfatal: unable to access 'https://github.com/RTimothyEdwards/magic/': Could not resolve host: github.com; Unknown error
+[0m
