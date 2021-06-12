@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description/>
+ <version/>
+ <category>drc</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>drc_scripts</group-name>
+ <menu-path>tools_menu.drc.end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text>
+
+source($gds_input)
+report("Density Checks", $report_file)
+
+verbose(true)
+
+# switch checks here
+FOM = true
+
+diff_wildcard = "65/20"
+tap_wildcard = "65/44"
+fomfill_wildcard = "65,23/28"
+fommk_wildcard = "23/0"
+
+chip_boundary = input(235,4)
+
+fom_shapes = input(235,4) + input(diff_wildcard) + input(tap_wildcard) + input(fomfill_wildcard) + input(fommk_wildcard)
+
+bbox = fom_shapes.bbox
+
+puts "bbox=" + bbox.to_s
+puts "diffbbox=" + input(diff_wildcard).bbox.to_s
+puts "tapbbox=" + input(tap_wildcard).bbox.to_s
+puts "fomfillbbox=" + input(fomfill_wildcard).bbox.to_s
+puts "fommkbbox=" + input(fommk_wildcard).bbox.to_s
+
+step = 70.um
+size = 700.um
+
+density = 0.33 .. 0.57 # for my pattern
+
+# compute minimum number of tiles and a good offset
+nx = ((bbox.width - (size - step)) / step).to_i
+ny = ((bbox.height - (size - step)) / step).to_i
+ox = bbox.left + (size - step) / 2
+oy = bbox.bottom + (size - step) / 2
+puts "nx=" + nx.to_s + ", ny=" + ny.to_s
+puts "ox=" + ox.to_s + ", oy=" + oy.to_s
+
+bad_density = fom_shapes.without_density(density, tile_size(size), tile_step(step), tile_origin(ox, oy), tile_count(nx, ny))
+good_density = fom_shapes.with_density(density, tile_size(size), tile_step(step), tile_origin(ox, oy), tile_count(nx, ny))
+target('output.gds')
+bad_density.output(100, 0, "Wrong Density")
+good_density.output(101, 0, "Correct Density")
+
+</text>
+</klayout-macro>
