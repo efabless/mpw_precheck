@@ -336,4 +336,4 @@ if __name__ == "__main__":
     skip_xor = args.skip_xor
     target_path = args.target_path
 
-    run_check_sequence(target_path, caravel_root, pdk_root, output_directory, run_fuzzy_checks, run_gds_fc, skip_drc, skip_xor, drc_only, dont_compress, manifest_source, run_klayout_fom_density_check, run_klayout_drc)
+    run_check_sequence(target_path, caravel_root, pdk_root, output_directory, run_fuzzy_checks, run_gds_fc, skip_drc, skip_xor, drc_only, dont_compress, manifest_source, run_klayout_drc, run_klayout_fom_density_check, private)
