@@ -14,6 +14,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import textdistance
+# Banned DEFAULTS
+BANNED_DEFAULTS = ["fill in"]
 
 # Banned Keywords
 BANNED_LIST = ["blacklist", "slave", "whitelist"]
@@ -23,7 +26,6 @@ DOC_EXTS = [".doc", ".docx", ".html", ".md", ".odt", ".rst"]
 
 # Directories ignored for documentation check
 IGNORED_DIRS = [".git", "third_party"]
-
 
 def getListOfFiles(dirName):
     # create a list of file and sub directories
@@ -43,7 +45,6 @@ def getListOfFiles(dirName):
             allFiles.append(fullPath)
     return allFiles
 
-
 def checkInclusiveLang(file):
     docOpener = open(file, 'r', encoding='utf-8')
     if docOpener.mode == 'r':
@@ -53,7 +54,6 @@ def checkInclusiveLang(file):
         if docContent.find(word) != -1:
             return False, word
     return True, ""
-
 
 def checkDocumentation(target_path):
     found = os.path.exists(target_path + "/README")

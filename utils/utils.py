@@ -24,12 +24,14 @@ class logger:
         self.log = log
         self.target_path = target_path
         self.dont_compress = dont_compress
+        self.internal_log = ""
 
     def switch_log(self, log):
         self.log = log
 
     def print_control(self, message):
         if re.search(r'{{(\w+)}}(.*)', str(message)):
+            self.internal_log += message
             print(str(message), flush=True)
             message = str(message).split("}}")[1]
         try:

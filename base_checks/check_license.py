@@ -36,7 +36,6 @@ IGNORED_EXTS = ['.cfg', '.csv', '.def', '.drc', '.gds', '.hex', '.jpg', '.lef', 
 # Files ignored for license check
 IGNORED_FILES = ['.git', '.gitignore', '.gitmodules', 'manifest', 'info.yaml', 'LICENSE', 'PDK_SOURCES', 'OPENLANE_VERSION']
 
-
 def check_license(user_license_path, licenses_path):
     confidence_map = []
     user_license_content = user_license_path.open(encoding="utf-8").read()
@@ -47,16 +46,15 @@ def check_license(user_license_path, licenses_path):
     license_check_result = max(confidence_map, key=lambda x: x["confidence"])
     return license_check_result["license_key"] if license_check_result["confidence"] > 95 else None
 
-
 def check_main_license(path):
     path = Path(os.path.join(path, _license_filename))
     try:
         result = check_license(path, _prohibited_licenses_path)
         if result:
-            return {"approved": False, "license_key": result}
+            return {"approved": False, "license_key": result, "path":path}
         else:
             result = check_license(path, _approved_licenses_path)
-            return {"approved": True, "license_key": result} if result else {"approved": True, "license_key": None}
+            return {"approved": True, "license_key": result, "path":path} if result else {"approved": True, "license_key": None, "path":path}
     except OSError as e:
         print("MAIN LICENSE OS ERROR: %s" % e)
         return None
@@ -69,11 +67,9 @@ def check_lib_license(path):
     libs = []
     if os.path.exists(path):
         for lib_path in next(os.walk(path))[1]:
-            try:
-                size = os.path.getsize(os.path.join(lib_path, _lib_license_filename))
-                libs.append((lib_path, bool(size)))
-            except OSError:
-                libs.append((lib_path, False))
+            result = check_main_license(os.path.join(path, lib_path))
+            if result:
+                libs.append(result)
     return libs
 
 
@@ -114,7 +110,7 @@ def check_file_spdx_compliance(file_path, license_key):
         return None
 
     try:
-        with open(file_path, "tr") as f:
+        with open(file_path, "tr", encoding="utf-8") as f:
             lines = [x.rstrip() for x in f.readlines()]
         f.close()
         if lines and list(filter(None, lines)):
@@ -136,6 +132,16 @@ def check_file_spdx_compliance(file_path, license_key):
         print("FILE (%s) ERROR: %s" % (file_path, e))
     return None
 
+def check_submodules_license(path):
+    licenses_approval = []
+
+    for root, dirs, files in os.walk(path):
+        if ".git" not in dirs or root == path:
+            continue
+        result = check_main_license(root)
+        if result:
+            licenses_approval.append(result)
+    return licenses_approval
 
 if __name__ == "__main__":
     _prohibited_licenses_path = '_licenses/_prohibited_licenses'
