@@ -37,7 +37,8 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
                 awscli \
                 requests \
                 boto3 \
-                strsimpy
+                strsimpy \
+                textdistance
 
 # magic dependencies
 RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
@@ -63,6 +64,10 @@ RUN git checkout 36f61ca6010cc1d46ffec07606213b990a865235
 RUN ./configure --prefix=/build && \
     make -j4 && \
     make install
+
+# Grab default user_project 
+ENV DEFAULT=/tmp/caravel_user_project
+RUN git clone https://github.com/efabless/caravel_user_project $DEFAULT
 
 
 ENV PRECHECKER_ROOT=/usr/local/bin/

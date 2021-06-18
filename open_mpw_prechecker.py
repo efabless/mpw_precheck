@@ -23,6 +23,7 @@ import base_checks.check_license as check_license
 import base_checks.check_makefile as check_makefile
 import base_checks.check_manifest as check_manifest
 import base_checks.check_yaml as check_yaml
+import base_checks.check_defaults as check_defaults
 import config
 import consistency_checks.consistency_checker as consistency_checker
 import fom_density_check.fom_density_checker as fom_density_checker
@@ -46,7 +47,6 @@ def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logger
         spice_netlist =   ['%s/%s' % (target_path, top_level_netlist), '%s/%s' % (target_path, user_level_netlist)]
     else:
         lc.print_control("{{FAIL}} The provided top and user level netlists are neither .spice or .v files. Please adhere to the required input types.")
-        lc.exit_control(2)
 
     return verilog_netlist, spice_netlist
 
@@ -63,7 +63,6 @@ def get_project_type(top_level_netlist, user_level_netlist, lc=logger(default_lo
             "{{FAIL}} the provided top level and user level netlists are not correct. \n \
             The top level netlist should point to caravel.v if your project is digital or caravan.v if your project is analog. \n \
             The user_level_netlist should point to user_project_wrapper.v if your project is digital or user_analog_project_wrapper.v if your project is analog.")
-        lc.exit_control(2)
 
 
 def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None, run_fuzzy_checks=False, run_gds_fc=False, skip_drc=False, skip_xor=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False, run_klayout_fom_density_check=False,
@@ -106,7 +105,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                 if not lcr["approved"]:
                     lc.print_control("{{LICENSE COMPLIANCE FAILED}} A prohibited LICENSE (%s) was found in project root." % lcr["license_key"])
                     lc.print_control("TEST FAILED AT STEP %s" % stp_cnt)
-                    lc.exit_control(2)
                 elif lcr["approved"]:
                     if lcr["license_key"]:
                         lc.print_control("{{LICENSE COMPLIANCE PASSED}} %s LICENSE file was found in project root" % lcr["license_key"])
@@ -115,23 +113,40 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             else:
                 lc.print_control("{{LICENSE COMPLIANCE FAILED}} A LICENSE file was not found in project root.")
                 lc.print_control("TEST FAILED AT STEP %s" % stp_cnt)
-                lc.exit_control(2)
 
-            third_party_licenses = check_license.check_lib_license('%s/third-party/' % target_path)
+            submodules_licenses = check_license.check_submodules_license('%s' % target_path)
+            for asubmodule_license in submodules_licenses:
+                license_approved = asubmodule_license["approved"]
+                license_key = asubmodule_license["license_key"]
+                submodule = os.path.dirname(asubmodule_license["path"])
+                if not license_approved:
+                    lc.print_control("{{ERROR}} A prohibited LICENSE (%s) was found in submodule %s." % (license_key, submodule))
+                    lc.print_control("TEST FAILED AT STEP %s" % stp_cnt)
+                elif license_approved:
+                    if license_key:
+                        lc.print_control("{{PROGRESS}} %s compilant LICENSE file was found in submodule %s" %(license_key, submodule))
+                    else:
+                        lc.print_control("{{WARNING}} A unidentified LICENSE file was found in submodule %s" %submodule)
 
-            if len(third_party_licenses):
-                for key in third_party_licenses:
-                    if not third_party_licenses[key]:
-                        lc.print_control("{{FAIL}} Third Party %s License Not Found\nTEST FAILED AT STEP %s" % (key, stp_cnt))
-                        lc.exit_control(2)
-                lc.print_control("{{PROGRESS}} Third Party Licenses Found.\nStep %s done without fatal errors." % stp_cnt)
-            else:
-                lc.print_control("{{PROGRESS}} No third party libraries found.\nStep %s done without fatal errors." % stp_cnt)
+            third_party_licenses = check_license.check_lib_license('%s/third_party/' % target_path)
+
+            for athird_party_license in third_party_licenses:
+                license_approved = athird_party_license["approved"]
+                license_key = athird_party_license["license_key"]
+                third_party_lib = os.path.dirname(athird_party_license["path"])
+                if not license_approved:
+                    lc.print_control("{{ERROR}} A prohibited LICENSE (%s) was found in third_party lib %s." % (license_key, third_party_lib))
+                    lc.print_control("TEST FAILED AT STEP %s" % stp_cnt)
+                elif license_approved:
+                    if license_key:
+                        lc.print_control("{{PROGRESS}} %s compilant LICENSE file was found in third_party lib %s" %(license_key, third_party_lib))
+                    else:
+                        lc.print_control("{{WARNING}} A unidentified LICENSE file was found in third_party lib %s" %third_party_lib)
 
             spdx_non_compliant_list = check_license.check_dir_spdx_compliance([], target_path, lcr["license_key"])
             if spdx_non_compliant_list:
                 paths = spdx_non_compliant_list[:20] if spdx_non_compliant_list.__len__() >= 20 else spdx_non_compliant_list
-                lc.print_control("{{SPDX COMPLIANCE WARNING}} Found %s non-compliant files with the SPDX Standard. "
+                lc.print_control("{{WARNING}} SPDX COMPLIANCE Found %s non-compliant files with the SPDX Standard. "
                                  "Check full log for more information" % spdx_non_compliant_list.__len__())
                 lc.print_control("SPDX COMPLIANCE: NON-COMPLIANT FILES PREVIEW: %s" % paths)
 
@@ -141,7 +156,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                 [lc.print_control(x) for x in spdx_non_compliant_list]
                 lc.switch_log('%s/full_log.log' % output_directory)
             else:
-                lc.print_control("{{SPDX COMPLIANCE PASSED}} Project is compliant with SPDX Standard")
+                lc.print_control("{{PROGRESS}} SPDX COMPLIANCE PASSED Project is compliant with SPDX Standard")
 
             stp_cnt += 1
 
@@ -152,7 +167,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.print_control("{{PROGRESS}} YAML file valid!\nStep %s done without fatal errors." % stp_cnt)
         else:
             lc.print_control("{{FAIL}} YAML file not valid in target path, please check the README.md for more info on the structure\nTEST FAILED AT STEP %s" % stp_cnt)
-            lc.exit_control(2)
         stp_cnt += 1
 
         verilog_netlist, spice_netlist = parse_netlists(target_path, top_level_netlist, user_level_netlist, lc)
@@ -171,7 +185,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         else:
             lc.print_control("{{FAIL}} %s" % reason)
             lc.print_control("\n".join(fail_lines))
-            lc.exit_control(2)
 
         # Makefile Checks:
         makefileCheck, makefileReason = check_makefile.checkMakefile(target_path)
@@ -179,7 +192,22 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.print_control("{{PROGRESS}} Makefile Checks Passed.")
         else:
             lc.print_control("{{FAIL}} Makefile checks failed because: %s" % makefileReason)
-            lc.exit_control(2)
+
+        default_README, reason = check_defaults.has_default_README()
+        if default_README:
+            lc.print_control("{{WARNING}} Default README.md checks failed because: %s" % reason)
+
+        empty_documentation, reason = check_defaults.has_empty_documentation()
+        if empty_documentation:
+            lc.print_control("{{FAIL}} README checks failed because: %s" % reason)
+
+        default_config, reason = check_defaults.has_default_project_config()
+        if default_config:
+            lc.print_control("{{FAIL}} Default config checks failed because: %s" % reason)
+
+        default_content, reason = check_defaults.has_default_content(lc)
+        if default_content:
+            lc.print_control("{{FAIL}} Default Content checks failed because: %s" % reason)
 
         if not private:
             # Documentation Checks:
@@ -188,7 +216,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                 lc.print_control("{{PROGRESS}} Documentation Checks Passed.")
             else:
                 lc.print_control("{{FAIL}} Documentation checks failed because: %s" % reason)
-                lc.exit_control(2)
 
         stp_cnt += 1
 
@@ -218,7 +245,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                 lc.print_control("{{PROGRESS}} XOR Checks on User Project GDS Passed!\nStep %s done without fatal errors." % stp_cnt)
             else:
                 lc.print_control("{{FAIL}} XOR Checks on GDS Failed, Reason: %s\nTEST FAILED AT STEP %s" % (reason, stp_cnt))
-                lc.exit_control(2)  # Removing the first `#` from this line will make the XOR test a fail/success condition
             stp_cnt += 1
 
     # NOTE: Step 6: Perform DRC checks on the GDS.
@@ -231,14 +257,12 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         user_wrapper_path = Path("%s/gds/%s.gds" % (target_path, config.user_module))
         if not os.path.exists(user_wrapper_path):
             lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/%s.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP %s" % (config.user_module, stp_cnt))
-            lc.exit_control(2)
         else:
             check, reason = gds_drc_checker.magic_gds_drc_check('%s/gds/' % target_path, config.user_module, pdk_root, output_directory, lc)
             if check:
                 lc.print_control("{{PROGRESS}} DRC Checks on User Project GDS Passed!\nStep %s done without fatal errors." % stp_cnt)
             else:
                 lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: %s\nTEST FAILED AT STEP %s" % (reason, stp_cnt))
-                lc.exit_control(2)
 
         stp_cnt += 1
 
@@ -247,14 +271,12 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.print_control("{{PROGRESS}} Executing Step %s of %s: KLayout DRC Violations Check" % (stp_cnt, steps))
             if not os.path.exists(user_wrapper_path):
                 lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: ./gds/%s.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP %s" % (config.user_module, stp_cnt))
-                lc.exit_control(2)
             else:
                 check, reason = gds_drc_checker.klayout_gds_drc_check('%s/gds/' % target_path, config.user_module, pdk_root, output_directory, lc)
                 if check:
                     lc.print_control("{{PROGRESS}} Klayout DRC Checks on User Project GDS Passed!\nStep %s done without fatal errors." % stp_cnt)
                 else:
                     lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: %s\nTEST FAILED AT STEP %s" % (reason, stp_cnt))
-                    lc.exit_control(2)
             stp_cnt += 1
 
     if run_klayout_fom_density_check:
@@ -267,11 +289,13 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.print_control("{{PROGRESS}} Klayout FOM density Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
             lc.print_control("{{FAIL}} Klayout FOM density Checks on GDS Failed, Reason: \n" + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
-            lc.exit_control(2)
 
             stp_cnt += 1
     # NOTE: Step 8: Not Yet Implemented.
-    lc.print_control("{{SUCCESS}} All Checks PASSED !!!")
+    if "FAIL" not in lc.internal_log:
+        lc.print_control("{{SUCCESS}} All Checks PASSED !!!")
+    else:
+        lc.print_control("{{FAIL}} SOME Checks FAILED !!!")
     lc.dump_full_log()
 
 
