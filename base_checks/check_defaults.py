@@ -42,6 +42,7 @@ def has_default_README():
                     return (True, "README.md has not been changed")
     except FileNotFoundError as notFound:
         return (True, "Could not open file %s"%notFound.filename)
+    return (failed, errors)
 
 def has_default_project_config():
     errors = ""
