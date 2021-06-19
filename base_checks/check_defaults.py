@@ -15,7 +15,7 @@ views = ['gds', 'lef', 'def', 'mag',
 excludes = ['user_project_wrapper']
 
 must_change = ['owner', 'orgranization', 'organization_url',
-                'description', 'git_url', 'project_name', 'project_id']
+                'description', 'git_url', 'project_name']
 def view(name, directory):
     return glob(str(Path(directory, name, '*')))
 
@@ -40,6 +40,8 @@ def has_default_README():
                     failed = True
                     errors += "\nREADME.md has not been changed"
                     return (True, "README.md has not been changed")
+                else:
+                    return (False, "")
     except FileNotFoundError as notFound:
         return (True, "Could not open file %s"%notFound.filename)
 
