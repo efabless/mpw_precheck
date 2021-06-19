@@ -193,23 +193,24 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         else:
             lc.print_control("{{FAIL}} Makefile checks failed because: %s" % makefileReason)
 
-        default_README, reason = check_defaults.has_default_README()
-        if default_README:
-            lc.print_control("{{WARNING}} Default README.md checks failed because: %s" % reason)
-
-        empty_documentation, reason = check_defaults.has_empty_documentation()
-        if empty_documentation:
-            lc.print_control("{{FAIL}} README checks failed because: %s" % reason)
-
-        default_config, reason = check_defaults.has_default_project_config()
-        if default_config:
-            lc.print_control("{{FAIL}} Default config checks failed because: %s" % reason)
-
-        default_content, reason = check_defaults.has_default_content(lc)
-        if default_content:
-            lc.print_control("{{FAIL}} Default Content checks failed because: %s" % reason)
-
         if not private:
+
+            default_README, reason = check_defaults.has_default_README()
+            if default_README:
+                lc.print_control("{{WARNING}} Default README.md checks failed because: %s" % reason)
+
+            empty_documentation, reason = check_defaults.has_empty_documentation()
+            if empty_documentation:
+                lc.print_control("{{FAIL}} README checks failed because: %s" % reason)
+
+            default_config, reason = check_defaults.has_default_project_config()
+            if default_config:
+                lc.print_control("{{FAIL}} Default config checks failed because: %s" % reason)
+
+            default_content, reason = check_defaults.has_default_content(lc)
+            if default_content:
+                lc.print_control("{{FAIL}} Default Content checks failed because: %s" % reason)
+
             # Documentation Checks:
             documentationCheck, reason = check_documentation.checkDocumentation(target_path)
             if documentationCheck:
