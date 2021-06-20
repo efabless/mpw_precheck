@@ -103,6 +103,8 @@ def has_default_content(lc):
                     adefault_file = Path(adefault_file)
                     if excluded(adefault_file) or excluded(anupdated_file):
                         continue
+                    if adefault_file.is_dir() or anupdated_file.is_dir():
+                        continue
                     with open(adefault_file, 'rb') as default, \
                         open(anupdated_file, 'rb') as updated:
                         if too_similar(str(default.read()), str(updated.read())):
