@@ -98,7 +98,7 @@ def has_default_content(lc):
         try:
             for anupdated_file in updated_view(name):
                 anupdated_file = Path(anupdated_file)
-                lc.print_control("{{PROGRESS}} Check if %s is default "%anupdated_file.name)
+                # lc.print_control("{{PROGRESS}} Check if %s is default "%anupdated_file.name)
                 for adefault_file in default_view(name):
                     adefault_file = Path(adefault_file)
                     if excluded(adefault_file) or excluded(anupdated_file):
