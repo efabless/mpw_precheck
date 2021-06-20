@@ -47,14 +47,14 @@ echo $SRAM_MODULES
 if zgrep sram $DESIGN_NAME.gds ;
 then
     export HAS_SRAM=1
-    for SRAM in ${SRAM_MODULES[@]};
+    SRAM=""
+    for _SRAM in ${SRAM_MODULES[@]};
     do
-        if zgrep $SRAM $DESIGN_NAME.gds ;
+        if zgrep $_SRAM $DESIGN_NAME.gds ;
         then
-            export SRAM=$SRAM
+            export SRAM="$SRAM $_SRAM"
             echo "module has "
-            echo $SRAM
-            break
+            echo $_SRAM
         fi
     done
 else
