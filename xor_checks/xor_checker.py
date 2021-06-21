@@ -53,7 +53,7 @@ def gds_xor_check(target_path, pdk_root, output_directory, lc=logger(default_log
 
     output = process.communicate()[0]
     if process.returncode == 99:
-        return False, "Top cell name not found."
+        return False, "Top cell name %s not found." % config.user_module
 
     try:
         xorFileOpener = open(output_directory + '/xor_total.txt')
