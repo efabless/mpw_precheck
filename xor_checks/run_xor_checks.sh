@@ -29,7 +29,7 @@ fi
 
 { if ! ${SCRIPTS_ROOT}/gdsSize.rb ${TARGET_PATH}/${USER_GDS} ${DESIGN_NAME} &> /dev/null ; then
   echo "{{ ERROR }} top cell name ${DESIGN_NAME} not found."
-  exit 2
+  exit 99
 fi } &> $OUT_DIR/xor.log
 
 wget --header='Accept-Encoding: gzip' $FILE_URL
