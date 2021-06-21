@@ -27,6 +27,11 @@ then
     mkdir -p "$OUT_DIR"
 fi
 
+if ! gdsSize.rb ${USER_GDS} ${DESIGN_NAME} ; then
+  echo "{{ ERROR }} top cell name ${DESIGN_NAME} not found."
+  exit 2
+fi
+
 wget --header='Accept-Encoding: gzip' $FILE_URL
 mv $GOLDEN_GDS.gz $OUT_DIR/$GOLDEN_GDS.gz
 rm -rf $OUT_DIR/$GOLDEN_GDS
