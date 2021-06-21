@@ -51,6 +51,7 @@ def gds_xor_check(target_path, pdk_root, output_directory, lc=logger(default_log
         error_msg = e.stderr.decode(sys.getfilesystemencoding())
         return False, str(error_msg)
 
+    output = process.communicate()[0]
     if process.returncode == 99:
         return False, "Top cell name not found."
 
