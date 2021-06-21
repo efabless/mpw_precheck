@@ -27,10 +27,10 @@ then
     mkdir -p "$OUT_DIR"
 fi
 
-if ! $SCRIPTS_ROOT/gdsSize.rb ${USER_GDS} ${DESIGN_NAME} &> /dev/null ; then
+(if ! $SCRIPTS_ROOT/gdsSize.rb ${USER_GDS} ${DESIGN_NAME} &> /dev/null ; then
   echo "{{ ERROR }} top cell name ${DESIGN_NAME} not found."
   exit 2
-fi
+fi) &> $OUT_DIR/xor.log
 
 wget --header='Accept-Encoding: gzip' $FILE_URL
 mv $GOLDEN_GDS.gz $OUT_DIR/$GOLDEN_GDS.gz
