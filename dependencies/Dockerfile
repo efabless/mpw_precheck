@@ -44,7 +44,7 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
 RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
 
 # General utils
-RUN yum install -y tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch && \
+RUN yum install -y ruby tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch && \
 	yum clean all && \
 	rm -rf /var/cache/yum
 
