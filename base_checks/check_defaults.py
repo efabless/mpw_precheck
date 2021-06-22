@@ -5,8 +5,8 @@ import textdistance
 from glob import glob
 from pathlib import Path
 
-default_path = os.getenv('DEFAULT')
-target_path = os.getenv('TARGET_PATH')
+# caravel_user_project_path = os.getenv('DEFAULT')
+# target_path = os.getenv('TARGET_PATH')
 
 views = ['gds', 'lef', 'def', 'mag',
         'maglef','verilog/rtl', 'verilog/gl',
@@ -19,38 +19,37 @@ must_change = ['owner', 'orgranization', 'organization_url',
 def view(name, directory):
     return glob(str(Path(directory, name, '*')))
 
-def default_view(name):
-    return view(name, default_path)
+def default_view(caravel_user_project_path, name):
+    return view(name, caravel_user_project_path)
 
-def updated_view(name):
+def updated_view(target_path, name):
     return view(name, target_path)
 
 def too_similar(default_txt, txt):
     return textdistance.hamming.normalized_similarity(default_txt, txt) > 0.8
 
-def has_default_README():
+def has_default_README(target_path, caravel_user_project_path):
     errors = ""
     failed = False
     try:
         with open('%s/README.md'%target_path, 'r') as readme, \
-             open('%s/README.md'%default_path, 'r') as default_readme:
+             open('%s/README.md'%caravel_user_project_path, 'r') as default_readme:
                 txt = readme.read()
                 default_txt = default_readme.read()
                 if too_similar(default_txt, txt):
                     failed = True
                     errors += "\nREADME.md has not been changed"
-                    return (True, "README.md has not been changed")
-                else:
-                    return (False, "")
     except FileNotFoundError as notFound:
-        return (True, "Could not open file %s"%notFound.filename)
+        failed = True
+        errors += "\nCould not open file %s"%notFound.filename
+    return (failed, errors)
 
-def has_default_project_config():
+def has_default_project_config(target_path, caravel_user_project_path):
     errors = ""
     failed = False
     try:
         with open('%s/info.yaml'%target_path, 'r') as config_file, \
-            open('%s/info.yaml'%default_path, 'r') as default_config_file:
+            open('%s/info.yaml'%caravel_user_project_path, 'r') as default_config_file:
             user_prj_config = yaml.safe_load(config_file)['project']
             default_config = yaml.safe_load(default_config_file)['project']
             for key in user_prj_config.keys():
@@ -63,8 +62,7 @@ def has_default_project_config():
         errors += "\nCould not open file %s" % not_found.filename
     return (failed, errors)
 
-
-def has_empty_documentation():
+def has_empty_documentation(target_path, caravel_user_project_path):
     errors = ""
     failed = False
     try:
@@ -74,18 +72,18 @@ def has_empty_documentation():
             readme_txt = readme.read()
             doc = None
             if "Documentation" in readme_txt:
-                header_level = re.search(r'(#*)[ *]Documentation', readme_txt)[1]
-                doc = re.search(r"(#+)[ *]Documentation(.*)%s"%(header_level), readme_txt, flags=re.DOTALL)[2]
+                header_level = len(re.search(r'(#*)[ *]Documentation', readme_txt)[1])
+                doc = re.search(r"(#+)[ *]Documentation(.*)%s"%(header_level * '#'), readme_txt, flags=re.DOTALL)[2]
             if not doc or doc.isspace():
                 failed = True
                 errors += "\nDocumentation is empty"
     except FileNotFoundError :
         failed = True
-        errors +=  "\nCould not open %s/README.md"%directory
+        errors +=  "\nCould not open %s/README.md"%target_path
 
     return (failed, errors)
 
-def has_default_content(lc):
+def has_default_content(target_path, caravel_user_project_path):
     def excluded(filename):
         filename = str(filename)
         is_in_anexclude = False
@@ -96,10 +94,9 @@ def has_default_content(lc):
     errors = ""
     for name in views:
         try:
-            for anupdated_file in updated_view(name):
+            for anupdated_file in updated_view(target_path, name):
                 anupdated_file = Path(anupdated_file)
-                # lc.print_control("{{PROGRESS}} Check if %s is default "%anupdated_file.name)
-                for adefault_file in default_view(name):
+                for adefault_file in default_view(caravel_user_project_path, name):
                     adefault_file = Path(adefault_file)
                     if excluded(adefault_file) or excluded(anupdated_file):
                         continue

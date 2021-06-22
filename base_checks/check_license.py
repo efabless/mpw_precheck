@@ -31,7 +31,7 @@ _spdx_license_header = 'SPDX-License-Identifier'
 IGNORED_DIRS = ['.git', 'gl', 'third_party']
 
 # File extensions to be ignored for license check
-IGNORED_EXTS = ['.cfg', '.csv', '.def', '.drc', '.gds', '.hex', '.jpg', '.lef', '.log', '.mag', '.out', '.pdf', '.png', '.pyc', '.rdb', '.spice', '.svg', '.txt', '.vcd']
+IGNORED_EXTS = ['.cfg', '.csv', '.def', '.drc', '.gds', '.hex', '.jpg', '.lef', '.log', '.mag', '.out', '.pdf', '.png', '.pyc', '.rdb', '.spice', '.svg', '.txt', '.vcd', '.xml']
 
 # Files ignored for license check
 IGNORED_FILES = ['.git', '.gitignore', '.gitmodules', 'manifest', 'info.yaml', 'LICENSE', 'PDK_SOURCES', 'OPENLANE_VERSION']
