@@ -15,17 +15,17 @@ export PDK=sky130A
 export MAGIC_MAGICRC=$PDK_ROOT/$PDK/libs.tech/magic/$PDK.magicrc
 
 MAGTYPE=mag magic -rcfile $MAGIC_MAGICRC -dnull -noconsole  <<EOF
-echo $MAGTYPE
+drc off
 tech unlock *
+cif istyle sky130(vendor)
 gds read $1
+load $7
+select top cell
+flatten -nolabels xor_target
+load xor_target
 box $2um $3um $4um $5um
 erase
-select area
-delete
-#### REVISE THIS:
-select top cell
-erase labels
-####
 gds write $6
+quit -noprompt
 EOF
 ls $6
