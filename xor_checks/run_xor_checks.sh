@@ -45,10 +45,10 @@ sh $SCRIPTS_ROOT/erase_box.sh $OUT_DIR/$GOLDEN_GDS 0 0 2920 3520 $OUT_DIR/${GOLD
 # XOR the two resulting layouts
 sh $SCRIPTS_ROOT/xor.sh \
     $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $OUT_DIR/${USER_GDS%.*}_erased.gds \
-    $DESIGN_NAME $OUT_DIR/$DESIGN_NAME.xor.xml
+    xor_target $OUT_DIR/$DESIGN_NAME.xor.xml
 sh $SCRIPTS_ROOT/xor.sh \
     $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $OUT_DIR/${USER_GDS%.*}_erased.gds \
-    $DESIGN_NAME $OUT_DIR/$DESIGN_NAME.xor.gds > $OUT_DIR/xor.log
+    xor_target $OUT_DIR/$DESIGN_NAME.xor.gds > $OUT_DIR/xor.log
 
 python $SCRIPTS_ROOT/parse_klayout_xor_log.py \
     -l "$OUT_DIR/xor.log" \
