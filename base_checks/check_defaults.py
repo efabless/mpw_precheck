@@ -5,7 +5,7 @@ import textdistance
 from glob import glob
 from pathlib import Path
 
-# caravel_user_project_path = os.getenv('DEFAULT')
+# default_content_path = os.getenv('DEFAULT')
 # target_path = os.getenv('TARGET_PATH')
 
 views = ['gds', 'lef', 'def', 'mag',
@@ -19,8 +19,8 @@ must_change = ['owner', 'orgranization', 'organization_url',
 def view(name, directory):
     return glob(str(Path(directory, name, '*')))
 
-def default_view(caravel_user_project_path, name):
-    return view(name, caravel_user_project_path)
+def default_view(default_content_path, name):
+    return view(name, default_content_path)
 
 def updated_view(target_path, name):
     return view(name, target_path)
@@ -28,12 +28,12 @@ def updated_view(target_path, name):
 def too_similar(default_txt, txt):
     return textdistance.hamming.normalized_similarity(default_txt, txt) > 0.8
 
-def has_default_README(target_path, caravel_user_project_path):
+def has_default_README(target_path, default_content_path):
     errors = ""
     failed = False
     try:
         with open('%s/README.md'%target_path, 'r') as readme, \
-             open('%s/README.md'%caravel_user_project_path, 'r') as default_readme:
+             open('%s/README.md'%default_content_path, 'r') as default_readme:
                 txt = readme.read()
                 default_txt = default_readme.read()
                 if too_similar(default_txt, txt):
@@ -44,12 +44,12 @@ def has_default_README(target_path, caravel_user_project_path):
         errors += "\nCould not open file %s"%notFound.filename
     return (failed, errors)
 
-def has_default_project_config(target_path, caravel_user_project_path):
+def has_default_project_config(target_path, default_content_path):
     errors = ""
     failed = False
     try:
         with open('%s/info.yaml'%target_path, 'r') as config_file, \
-            open('%s/info.yaml'%caravel_user_project_path, 'r') as default_config_file:
+            open('%s/info.yaml'%default_content_path, 'r') as default_config_file:
             user_prj_config = yaml.safe_load(config_file)['project']
             default_config = yaml.safe_load(default_config_file)['project']
             for key in user_prj_config.keys():
@@ -62,7 +62,7 @@ def has_default_project_config(target_path, caravel_user_project_path):
         errors += "\nCould not open file %s" % not_found.filename
     return (failed, errors)
 
-def has_empty_documentation(target_path, caravel_user_project_path):
+def has_empty_documentation(target_path, default_content_path):
     errors = ""
     failed = False
     try:
@@ -83,7 +83,7 @@ def has_empty_documentation(target_path, caravel_user_project_path):
 
     return (failed, errors)
 
-def has_default_content(target_path, caravel_user_project_path):
+def has_default_content(target_path, default_content_path):
     def excluded(filename):
         filename = str(filename)
         is_in_anexclude = False
@@ -96,7 +96,7 @@ def has_default_content(target_path, caravel_user_project_path):
         try:
             for anupdated_file in updated_view(target_path, name):
                 anupdated_file = Path(anupdated_file)
-                for adefault_file in default_view(caravel_user_project_path, name):
+                for adefault_file in default_view(default_content_path, name):
                     adefault_file = Path(adefault_file)
                     if excluded(adefault_file) or excluded(anupdated_file):
                         continue

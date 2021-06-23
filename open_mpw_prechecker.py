@@ -33,6 +33,7 @@ from utils.utils import logger
 
 default_logger_path = '/usr/local/bin/full_log.log'
 default_target_path = '/usr/local/bin/caravel/'
+default_content_path = './base_checks/_default_content'
 
 
 def parse_netlists(target_path, top_level_netlist, user_level_netlist, lc=logger(default_logger_path, default_target_path)):
@@ -65,7 +66,7 @@ def get_project_type(top_level_netlist, user_level_netlist, lc=logger(default_lo
             The user_level_netlist should point to user_project_wrapper.v if your project is digital or user_analog_project_wrapper.v if your project is analog.")
 
 
-def run_check_sequence(target_path, caravel_root, pdk_root, caravel_user_project_path,output_directory=None,  run_fuzzy_checks=False, run_gds_fc=False, skip_drc=False, skip_xor=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False, run_klayout_fom_density_check=False,
+def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None,  run_fuzzy_checks=False, run_gds_fc=False, skip_drc=False, skip_xor=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False, run_klayout_fom_density_check=False,
                        private=False):
     if not output_directory:
         output_directory = str(target_path) + '/checks'
@@ -195,22 +196,22 @@ def run_check_sequence(target_path, caravel_root, pdk_root, caravel_user_project
 
         if not private:
             default_README, reason = check_defaults.has_default_README(target_path,
-                                                                        caravel_user_project_path)
+                                                                        default_content_path)
             if default_README:
                 lc.print_control("{{WARNING}} Default README.md checks failed because: %s" % reason)
 
             empty_documentation, reason = check_defaults.has_empty_documentation(target_path,
-                                                                                caravel_user_project_path)
+                                                                                default_content_path)
             if empty_documentation:
                 lc.print_control("{{FAIL}} README checks failed because: %s" % reason)
 
             default_config, reason = check_defaults.has_default_project_config(target_path,
-                                                                                caravel_user_project_path)
+                                                                                default_content_path)
             if default_config:
                 lc.print_control("{{FAIL}} Default config checks failed because: %s" % reason)
 
             default_content, reason = check_defaults.has_default_content(target_path,
-                                                                        caravel_user_project_path)
+                                                                        default_content_path)
             if default_content:
                 lc.print_control("{{FAIL}} Default Content checks failed because: %s" % reason)
             # Documentation Checks:
@@ -298,9 +299,12 @@ def run_check_sequence(target_path, caravel_root, pdk_root, caravel_user_project
     # NOTE: Step 8: Not Yet Implemented.
     if "FAIL" not in lc.internal_log:
         lc.print_control("{{SUCCESS}} All Checks PASSED !!!")
+        exit_code = 0
     else:
         lc.print_control("{{FAIL}} SOME Checks FAILED !!!")
+        exit_code = 2
     lc.dump_full_log()
+    lc.exit_control(exit_code)
 
 
 if __name__ == "__main__":
@@ -319,9 +323,6 @@ if __name__ == "__main__":
                         help='PDK_ROOT, points to pdk installation path')
 
     # This is different a bit because it might be inside the container
-    parser.add_argument('--caravel_user_project_path', '-cupp', required=False, default=os.environ['CARAVEL_USER_PROJECT_PATH'],
-                        help='caravel_user_project directory, defaults to /tmp/caravel_user_project')
-
     parser.add_argument('--manifest_source', '-ms', default="master",
                         help='The manifest files source branch: master or develop. Defaults to master')
 
@@ -367,6 +368,5 @@ if __name__ == "__main__":
     skip_drc = args.skip_drc
     skip_xor = args.skip_xor
     target_path = args.target_path
-    caravel_user_project_path = args.caravel_user_project_path
 
-    run_check_sequence(target_path, caravel_root, pdk_root, caravel_user_project_path, output_directory,  run_fuzzy_checks, run_gds_fc, skip_drc, skip_xor, drc_only, dont_compress, manifest_source, run_klayout_drc, run_klayout_fom_density_check, private)
+    run_check_sequence(target_path, caravel_root, pdk_root, output_directory,  run_fuzzy_checks, run_gds_fc, skip_drc, skip_xor, drc_only, dont_compress, manifest_source, run_klayout_drc, run_klayout_fom_density_check, private)
