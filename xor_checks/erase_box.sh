@@ -11,7 +11,7 @@ export PDK=sky130A
 
 export MAGIC_MAGICRC
 
-MAGTYPE=mag magic -rcfile $MAGIC_MAGICRC -dnull -noconsole  <<EOF
+MAGTYPE=mag magic -dnull -noconsole -rcfile $MAGIC_MAGICRC <<EOF
 drc off
 undo disable
 tech unlock *
