@@ -9,7 +9,7 @@ echo "$1 $2 $3"
 
 export PDK=sky130A
 
-export MAGIC_MAGICRC=/usr/local/bin/tech-files/sky130A.magicrc
+export MAGIC_MAGICRC=$PDK_ROOT/$PDK/libs.tech/magic/$PDK.magicrc
 
 MAGTYPE=mag magic -dnull -noconsole -rcfile $MAGIC_MAGICRC <<EOF
 drc off
