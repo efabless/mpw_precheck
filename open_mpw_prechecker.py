@@ -200,11 +200,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             if default_README:
                 lc.print_control("{{WARNING}} Default README.md checks failed because: %s" % reason)
 
-            empty_documentation, reason = check_defaults.has_empty_documentation(target_path,
-                                                                                default_content_path)
-            if empty_documentation:
-                lc.print_control("{{FAIL}} README checks failed because: %s" % reason)
-
             default_config, reason = check_defaults.has_default_project_config(target_path,
                                                                                 default_content_path)
             if default_config:

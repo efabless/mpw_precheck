@@ -62,27 +62,6 @@ def has_default_project_config(target_path, default_content_path):
         errors += "\nCould not open file %s" % not_found.filename
     return (failed, errors)
 
-def has_empty_documentation(target_path, default_content_path):
-    errors = ""
-    failed = False
-    try:
-        with open('%s/README.md'%target_path, 'r') as readme:
-            # between ###Documentation and the next header of the same
-            # level
-            readme_txt = readme.read()
-            doc = None
-            if "Documentation" in readme_txt:
-                header_level = len(re.search(r'(#*)[ *]Documentation', readme_txt)[1])
-                doc = re.search(r"(#+)[ *]Documentation(.*)%s"%(header_level * '#'), readme_txt, flags=re.DOTALL)[2]
-            if not doc or doc.isspace():
-                failed = True
-                errors += "\nDocumentation is empty"
-    except FileNotFoundError :
-        failed = True
-        errors +=  "\nCould not open %s/README.md"%target_path
-
-    return (failed, errors)
-
 def has_default_content(target_path, default_content_path):
     def excluded(filename):
         filename = str(filename)
