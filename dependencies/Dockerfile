@@ -65,11 +65,7 @@ RUN ./configure --prefix=/build && \
     make -j4 && \
     make install
 
-# Grab default user_project 
-ENV DEFAULT=/tmp/caravel_user_project
-RUN git clone https://github.com/efabless/caravel_user_project $DEFAULT
-
-
+# ENV CARAVEL_USER_PROJECT_PATH=/tmp/caravel_user_project
 ENV PRECHECKER_ROOT=/usr/local/bin/
 ENV BUILD_PATH=/build/
 
@@ -77,6 +73,8 @@ ENV PATH=$PRECHECKER_ROOT:$PRECHECKER_ROOT/scripts:$BUILD_PATH/bin:$BUILD_PATH/b
 ENV LD_LIBRARY_PATH=$BUILD_PATH/lib:$BUILD_PATH/lib/Linux-x86_64:$LD_LIBRARY_PATH
 ENV MANPATH=$BUILD_PATH/share/man:$MANPATH
 
+# Grab default user_project 
+# RUN git clone https://github.com/efabless/caravel_user_project $CARAVEL_USER_PROJECT_PATH
 
 RUN mkdir -p /build/version/
 

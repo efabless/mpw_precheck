@@ -102,10 +102,11 @@ sh docker-mount.sh
 Run the following command:
 
 ```
-python3 open_mpw_prechecker.py [-h] --target_path TARGET_PATH
-                              --caravel_root CARAVEL_ROOT
+python3 open_mpw_prechecker.py [-h] --target_path $TARGET_PATH
+                              --caravel_root $CARAVEL_ROOT
                               [--output_directory OUTPUT_DIRECTORY] --pdk_root
-                              PDK_ROOT [--manifest_source MANIFEST_SOURCE]
+                              $PDK_ROOT [--manifest_source MANIFEST_SOURCE] --carave_user_project_path
+                              $CARAVE_USER_PROJECT_PATH
                               [--run_fuzzy_checks] [--skip_drc] [--drc_only]
                               [--dont_compress] [--run_klayout_drc]
 
