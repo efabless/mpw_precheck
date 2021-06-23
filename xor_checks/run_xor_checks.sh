@@ -39,9 +39,11 @@ mv $GOLDEN_GDS.gz $OUT_DIR/$GOLDEN_GDS.gz
 rm -rf $OUT_DIR/$GOLDEN_GDS
 gzip -d $OUT_DIR/$GOLDEN_GDS.gz
 # first erase the user's user_project_wrapper.gds 
-sh $SCRIPTS_ROOT/erase_box.sh $TARGET_PATH/$USER_GDS 0 0 2920 3520 $OUT_DIR/${USER_GDS%.*}_erased.gds $5 > $OUT_DIR/erase_box_$USER_GDS.log
+#sh $SCRIPTS_ROOT/erase_box.sh $TARGET_PATH/$USER_GDS 0 0 2920 3520 $OUT_DIR/${USER_GDS%.*}_erased.gds $5 > $OUT_DIR/erase_box_$USER_GDS.log
+sh $SCRIPTS_ROOT/erase_box.sh $TARGET_PATH/$USER_GDS $OUT_DIR/${USER_GDS%.*}_erased.gds $5 > $OUT_DIR/erase_box_$USER_GDS.log
 # do the same for the empty wrapper
-sh $SCRIPTS_ROOT/erase_box.sh $OUT_DIR/$GOLDEN_GDS 0 0 2920 3520 $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $5 > $OUT_DIR/erase_box_$GOLDEN_GDS.log
+#sh $SCRIPTS_ROOT/erase_box.sh $OUT_DIR/$GOLDEN_GDS 0 0 2920 3520 $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $5 > $OUT_DIR/erase_box_$GOLDEN_GDS.log
+sh $SCRIPTS_ROOT/erase_box.sh $OUT_DIR/$GOLDEN_GDS $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $5 > $OUT_DIR/erase_box_$GOLDEN_GDS.log
 # XOR the two resulting layouts
 sh $SCRIPTS_ROOT/xor.sh \
     $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $OUT_DIR/${USER_GDS%.*}_erased.gds \
