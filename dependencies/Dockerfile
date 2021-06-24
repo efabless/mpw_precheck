@@ -40,11 +40,6 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
                 strsimpy \
                 textdistance
 
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-ENV LC_CTYPE en_US.UTF-8
-ENV LANG C.UTF-8
-
 # magic dependencies
 RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
 
