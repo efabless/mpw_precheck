@@ -40,9 +40,17 @@ def check_license(user_license_path, licenses_path):
     confidence_map = []
     user_license_content = user_license_path.open(encoding="utf-8").read()
     for license_file in Path(licenses_path).iterdir():
-        license_content = license_file.open(encoding="utf-8").read()
-        confidence = 100 * (1 - SorensenDice().distance(license_content.strip(), user_license_content.strip()))
-        confidence_map.append({"license_key": license_file.stem, "confidence": confidence})
+        try:
+            license_content = license_file.open(encoding="utf-8").read()
+            confidence = 100 * (1 - SorensenDice().distance(license_content.strip(), user_license_content.strip()))
+            confidence_map.append({"license_key": license_file.stem, "confidence": confidence})
+        except UnicodeDecodeError:
+            continue
+        except FileNotFoundError as not_found:
+            if not os.path.islink(not_found.filename):
+                print("FILE (%s) ERROR: %s" % (not_found.filename, e))
+            continue
+
     license_check_result = max(confidence_map, key=lambda x: x["confidence"])
     return license_check_result["license_key"] if license_check_result["confidence"] > 95 else None
 
@@ -127,6 +135,10 @@ def check_file_spdx_compliance(file_path, license_key):
             return file_path if not spdx_compliant else None
     except UnicodeDecodeError as e:
         print("FILE (%s) UD ERROR: %s" % (file_path, e))
+        pass
+    except FileNotFoundError as not_found:
+        if not os.path.islink(not_found.filename):
+            print("FILE (%s) ERROR: %s" % (not_found.filename, e))
         pass
     except Exception as e:
         print("FILE (%s) ERROR: %s" % (file_path, e))
