@@ -40,11 +40,6 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
                 strsimpy \
                 textdistance
 
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-ENV LC_CTYPE en_US.UTF-8
-ENV LANG C.UTF-8
-
 # magic dependencies
 RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
 
@@ -59,12 +54,11 @@ RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x
         rm -rf /var/cache/yum
 
 # Install Magic
-# RUN git clone https://github.com/RTimothyEdwards/magic ./magic_b0ed7f0
-RUN git clone git://opencircuitdesign.com/magic ./magic_b0ed7f0
+RUN git clone https://github.com/RTimothyEdwards/magic ./magic_36f61ca
 
-WORKDIR magic_b0ed7f0
+WORKDIR magic_36f61ca
 
-RUN git checkout b0ed7f09a915681caa89490adc8f3eb625bbdd9c
+RUN git checkout 36f61ca6010cc1d46ffec07606213b990a865235
 
 # build
 RUN ./configure --prefix=/build && \

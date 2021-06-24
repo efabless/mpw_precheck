@@ -1,34 +1,31 @@
 #!/bin/bash
 
-: ${1?"Usage: $0 file.gds out_file.gds cellname"}
-: ${2?"Usage: $0 file.gds out_file.gds cellname"}
-: ${3?"Usage: $0 file.gds out_file.gds cellname"}
+: ${1?"Usage: $0 file.gds llx lly urx ury out_file.gds"}
+: ${2?"Usage: $0 file.gds llx lly urx ury out_file.gds"}
+: ${3?"Usage: $0 file.gds llx lly urx ury out_file.gds"}
+: ${4?"Usage: $0 file.gds llx lly urx ury out_file.gds"}
+: ${5?"Usage: $0 file.gds llx lly urx ury out_file.gds"}
+: ${6?"Usage: $0 file.gds llx lly urx ury out_file.gds"}
 : ${PDK_ROOT?"You need to export PDK_ROOT"}
 
-echo "$1 $2 $3"
+echo "$1 $2 $3 $4 $5 $6"
 
 export PDK=sky130A
 
 export MAGIC_MAGICRC=$PDK_ROOT/$PDK/libs.tech/magic/$PDK.magicrc
 
-MAGTYPE=mag magic -dnull -noconsole -rcfile $MAGIC_MAGICRC <<EOF
-drc off
-undo disable
+MAGTYPE=mag magic -rcfile $MAGIC_MAGICRC -dnull -noconsole  <<EOF
+echo $MAGTYPE
 tech unlock *
-cif istyle sky130(vendor)
 gds read $1
-load $3
+box $2um $3um $4um $5um
+erase
+select area
+delete
+#### REVISE THIS:
 select top cell
-box -20um 0 0 3520um
-flatten -nolabels -dobox xor_target
-box 2920um 0 2940um 3520um
-flatten -nolabels -dobox xor_target
-box -20um -20um 2940um 0
-flatten -nolabels -dobox xor_target
-box -20um 3520um 2940um 3540um
-flatten -nolabels -dobox xor_target
-load xor_target
-gds write $2
-quit -noprompt
+erase labels
+####
+gds write $6
 EOF
-ls $2
+ls $6

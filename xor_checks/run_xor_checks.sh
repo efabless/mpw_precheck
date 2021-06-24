@@ -22,8 +22,6 @@ OUT_DIR=$6
 export PDK_ROOT=$7
 export SCRIPTS_ROOT=${8:-$(pwd)}
 
-set -e
-
 if ! [[ -d "$OUT_DIR" ]]
 then
     mkdir -p "$OUT_DIR"
@@ -39,28 +37,24 @@ mv $GOLDEN_GDS.gz $OUT_DIR/$GOLDEN_GDS.gz
 rm -rf $OUT_DIR/$GOLDEN_GDS
 gzip -d $OUT_DIR/$GOLDEN_GDS.gz
 # first erase the user's user_project_wrapper.gds 
-#sh $SCRIPTS_ROOT/erase_box.sh $TARGET_PATH/$USER_GDS 0 0 2920 3520 $OUT_DIR/${USER_GDS%.*}_erased.gds $5 > $OUT_DIR/erase_box_$USER_GDS.log
-sh $SCRIPTS_ROOT/erase_box.sh $TARGET_PATH/$USER_GDS $OUT_DIR/${USER_GDS%.*}_erased.gds $5 &> $OUT_DIR/erase_box_$USER_GDS.log
+sh $SCRIPTS_ROOT/erase_box.sh $TARGET_PATH/$USER_GDS 0 0 2920 3520 $OUT_DIR/${USER_GDS%.*}_erased.gds > $OUT_DIR/erase_box_$USER_GDS.log
 # do the same for the empty wrapper
-#sh $SCRIPTS_ROOT/erase_box.sh $OUT_DIR/$GOLDEN_GDS 0 0 2920 3520 $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $5 > $OUT_DIR/erase_box_$GOLDEN_GDS.log
-sh $SCRIPTS_ROOT/erase_box.sh $OUT_DIR/$GOLDEN_GDS $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $5 &> $OUT_DIR/erase_box_$GOLDEN_GDS.log
+sh $SCRIPTS_ROOT/erase_box.sh $OUT_DIR/$GOLDEN_GDS 0 0 2920 3520 $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds > $OUT_DIR/erase_box_$GOLDEN_GDS.log
 # XOR the two resulting layouts
-
 sh $SCRIPTS_ROOT/xor.sh \
     $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $OUT_DIR/${USER_GDS%.*}_erased.gds \
-    xor_target $OUT_DIR/$DESIGN_NAME.xor.gds &> $OUT_DIR/xor.log
-
-#sh $SCRIPTS_ROOT/xor.sh \
-#    $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $OUT_DIR/${USER_GDS%.*}_erased.gds \
-#    xor_target $OUT_DIR/$DESIGN_NAME.xor.xml
+    $DESIGN_NAME $OUT_DIR/$DESIGN_NAME.xor.xml
+sh $SCRIPTS_ROOT/xor.sh \
+    $OUT_DIR/${GOLDEN_GDS%.*}_erased.gds $OUT_DIR/${USER_GDS%.*}_erased.gds \
+    $DESIGN_NAME $OUT_DIR/$DESIGN_NAME.xor.gds > $OUT_DIR/xor.log
 
 python $SCRIPTS_ROOT/parse_klayout_xor_log.py \
     -l "$OUT_DIR/xor.log" \
     -o "$OUT_DIR/xor_total.txt"
 
 # screenshot the result for convenience
-#sh $SCRIPTS_ROOT/scrotLayout.sh \
-#    $PDK_ROOT/sky130A/libs.tech/klayout/sky130A.lyt \
-#    $OUT_DIR/$DESIGN_NAME.xor.gds
+sh $SCRIPTS_ROOT/scrotLayout.sh \
+    $PDK_ROOT/sky130A/libs.tech/klayout/sky130A.lyt \
+    $OUT_DIR/$DESIGN_NAME.xor.gds
 
 cat $OUT_DIR/xor_total.txt
