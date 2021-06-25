@@ -28,7 +28,7 @@ _spdx_copyright_header = 'SPDX-FileCopyrightText'
 _spdx_license_header = 'SPDX-License-Identifier'
 
 # Directories ignored for license check
-IGNORED_DIRS = ['.git', 'gl', 'third_party']
+IGNORED_DIRS = ['.git', '.github', 'gl', 'third_party', 'caravel'] # Added .github and caravel because it is not related to usprj
 
 # File extensions to be ignored for license check
 IGNORED_EXTS = ['.cfg', '.csv', '.def', '.drc', '.gds', '.hex', '.jpg', '.lef', '.log', '.mag', '.out', '.pdf', '.png', '.pyc', '.rdb', '.spice', '.svg', '.txt', '.vcd', '.xml']
