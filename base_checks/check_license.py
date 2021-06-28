@@ -134,7 +134,6 @@ def check_file_spdx_compliance(file_path, license_key):
                     break
             return file_path if not spdx_compliant else None
     except UnicodeDecodeError as e:
-        print("FILE (%s) UD ERROR: %s" % (file_path, e))
         pass
     except FileNotFoundError as not_found:
         if not os.path.islink(not_found.filename):
