@@ -13,6 +13,14 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
+
+if { [info exists ::env(HAS_SIGNAL_5_SYM_HV_LOCAL_5TERM)] } {
+    gds noduplicates yes
+    puts "Detected an ESD FET module"
+    puts "Pre-loading a maglef of: $::env(ESD_FET)"
+    load $::env(PDK_ROOT)/sky130A/libs.ref/sky130_fd_io/maglef/$::env(ESD_FET).mag
+}
+
 if { [info exists ::env(HAS_SRAM)] } {
     gds noduplicates yes
     puts "Detected an SRAM module"
@@ -20,8 +28,6 @@ if { [info exists ::env(HAS_SRAM)] } {
     foreach x $::env(SRAM) {
         load $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/maglef/${x}.mag
     }
-    # lef read $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/lef/$::env(SRAM).lef
-    # lef read $::env(TARGET_PATH)/lef/$::env(SRAM).lef
 }
 gds read $::env(DESIGN_NAME).gds
 

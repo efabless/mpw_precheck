@@ -43,6 +43,11 @@ echo $SRAM_MODULES
 #     sky130_sram_4kbyte_1rw1r_32x1024_8
 #     sky130_sram_8kbyte_1rw1r_32x2048_8
 #     sram_1rw1r_32_256_8_sky130 )
+if zgrep sky130_fd_io__signal_5_sym_hv_local_5term $DESIGN_NAME.gds ;
+then
+    export HAS_SIGNAL_5_SYM_HV_LOCAL_5TERM=1
+    export ESD_FET=sky130_fd_io__signal_5_sym_hv_local_5term
+fi
 
 if zgrep sram $DESIGN_NAME.gds ;
 then
@@ -53,12 +58,8 @@ then
         if zgrep $_SRAM $DESIGN_NAME.gds ;
         then
             export SRAM="$SRAM $_SRAM"
-            echo "module has "
-            echo $_SRAM
         fi
     done
-else
-    echo "No SRAM found"
 fi
 
 
