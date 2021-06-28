@@ -19,15 +19,32 @@ cif istyle sky130(vendor)
 gds read $1
 load $3
 select top cell
-box -20um 0 0 3520um
+#
+# flatten perimeter outside of PR boundary including power rings
+#
+box -42.88um 0 0 3520um
 flatten -nolabels -dobox xor_target
-box 2920um 0 2940um 3520um
+box 2920um 0 2962.5um 3520um
 flatten -nolabels -dobox xor_target
-box -20um -20um 2940um 0
+box -42.88um -37.53um 2962.5um 0
 flatten -nolabels -dobox xor_target
-box -20um 3520um 2940um 3540um
+box -42.88um 3520um 2962.5um 3557.21um
 flatten -nolabels -dobox xor_target
+#
+# load new cell and erase power straps from user_project_area
+*
 load xor_target
+box values -42.88um 0 0 3520um
+erase metal5,via4
+box values 0 3520um 2920um 3557.21um
+erase metal4,via4
+box values 2920um 0 2962.5um 3520um
+erase metal5,via4
+box values 0 -37.53um 2920um 0
+erase metal4,via4
+#
+# write gds
+#
 gds write $2
 quit -noprompt
 EOF
