@@ -71,6 +71,7 @@ The steps are as follows:
 
 ## Extra Optional Checks
 
+### Fuzzy Consistency Checks
 If you have already integrated your design into caravel, then you can enable the fuzzy consistency checks to make sure that the integration went well. Check the [How To Run](#how-to-run) section below for more details.
 
 - Step #4: Consistency Checks on the netlists (spice or verilog) and the GDS. Caravel is the benchmark.
@@ -136,3 +137,5 @@ optional arguments:
   --run_klayout_drc, -rkd
                         Specifies whether or not to run Klayout DRC checks. Default: False
 ```
+
+# Having issues with your precheck :( ? Here is how to [debug](./debug_precheck.md) them?

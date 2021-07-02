@@ -18,6 +18,8 @@ makefileTargets = ["verify", "clean"]
 
 
 def checkMakefile(target_path):
+    succeeded = True
+    errors = ""
     try:
         makefileOpener = open(target_path + "/Makefile")
         if makefileOpener.mode == "r":
@@ -26,11 +28,14 @@ def checkMakefile(target_path):
 
         for target in makefileTargets:
             if makefileContent.count(target + ":") == 0:
-                return False, "Makefile missing target: " + target + ":"
+                succeeded = False
+                errors += "Makefile missing target: " + target + ":"
             if target == "compress":
                 if makefileContent.count(target + ":") < 2:
-                    return False, "Makefile missing target: " + target + ":"
-
-        return True, ""
+                    succeeded = False
+                    errors += "Makefile missing target: " + target + ":"
     except OSError:
-        return False, "Makefile not found at top level"
+        succeeded = False
+        errors += "Makefile not found at top level"
+
+    return succeeded, errors
