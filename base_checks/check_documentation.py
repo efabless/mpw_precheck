@@ -15,8 +15,6 @@
 
 import os
 import textdistance
-# Banned DEFAULTS
-BANNED_DEFAULTS = ["fill in"]
 
 # Banned Keywords
 BANNED_LIST = ["blacklist", "slave", "whitelist"]
