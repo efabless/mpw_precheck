@@ -138,6 +138,6 @@ optional arguments:
                         Specifies whether or not to run Klayout DRC checks. Default: False
 ```
 
-## How to troubleshoot issues with your precheck 
+## How to Troubleshoot Issues with Precheck 
 
-See the following document for guidance on troubleshooting issues with precheck [troubleshooting](./debug_precheck.md)
+See the following [document](./debug_precheck.md) for guidance on troubleshooting issues with precheck.
