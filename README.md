@@ -85,7 +85,7 @@ If you have already integrated your design into caravel, then you can enable the
 
 ## Current Assumptions
 
-- The user module name is `user_project_wrapper`
+- The user module name is `user_project_wrapper` (or `user_analog_project_wrapper' for caravel_user_project_analog)
 - Caravel is submoduled inside the user project or installed at a different path specified by CARAVEL_ROOT.
 
 ## How To Run
