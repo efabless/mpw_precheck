@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description/>
+ <version/>
+ <category>drc</category>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name>drc_scripts</group-name>
+ <menu-path>tools_menu.drc.end</menu-path>
+ <interpreter>dsl</interpreter>
+ <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
+ <text>
+
+source($gds_input)
+report("Density Checks", $report_file)
+
+verbose(true)
+
+li1_wildcard = "67/20"
+li1_fill_wildcard = "56/28"
+
+chip_boundary = input(235,4)
+li1_density = polygons(li1_wildcard, li1_fill_wildcard).area / chip_boundary.area
+li1_density = 1 - li1_density
+
+if li1_density &lt; 0.4   
+     chip_boundary.output("li1.pd.1d", "0.4 min li1 pattern density, li1 density is #{li1_density}")
+end
+if li1_density &gt; 0.65 
+     chip_boundary.output("li1.pd.1e", "0.65 max li1 pattern density, li1 density is #{li1_density}")
+end
+
+</text>
+</klayout-macro>
