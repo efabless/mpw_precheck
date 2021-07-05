@@ -104,8 +104,9 @@ if [ 0 -ne $Test_Magic_violations ]; then
     echo "[Info] Converting errors to Klayout XML format..."
     python3 $SCRIPTS_ROOT/converters/tr2klayout.py \
         --input $OUT_DIR/$DESIGN_NAME.tr.drc \
-        --output $OUT_DIR/$DESIGN_NAME.klayout.xml \
+        --output $OUT_DIR/$DESIGN_NAME.klayout_raw.xml \
         --design-name $DESIGN_NAME
+    sed -e "s%<category>\([^\"'].*\)</category>%<category>\"\1\"</category>%" < $OUT_DIR/$DESIGN_NAME.klayout_raw.xml > $OUT_DIR/$DESIGN_NAME.klayout.xml
     echo "[Info] Converted errors to Klayout XML format"
 
     echo "DRC Check FAILED";
