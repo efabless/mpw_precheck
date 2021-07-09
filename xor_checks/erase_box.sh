@@ -35,13 +35,13 @@ flatten -nolabels -dobox xor_target
 *
 load xor_target
 box values -42.88um 0 0 3520um
-erase metal5,via4
+erase metal5
 box values 0 3520um 2920um 3557.21um
-erase metal4,via4
+erase metal4
 box values 2920um 0 2962.5um 3520um
-erase metal5,via4
+erase metal5
 box values 0 -37.53um 2920um 0
-erase metal4,via4
+erase metal4
 #
 # write gds
 #
