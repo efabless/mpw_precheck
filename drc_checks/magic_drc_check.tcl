@@ -24,9 +24,11 @@ if { [info exists ::env(HAS_SIGNAL_5_SYM_HV_LOCAL_5TERM)] } {
 if { [info exists ::env(HAS_SRAM)] } {
     gds noduplicates yes
     puts "Detected an SRAM module"
-    puts "Pre-loading a maglef of the SRAM block(s): $::env(SRAM)"
-    foreach x $::env(SRAM) {
-        load $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/maglef/${x}.mag
+    if {[info exists ::env(SRAM)]} {
+        foreach x $::env(SRAM) {
+            puts "Pre-loading a maglef of the SRAM block: ${x}"
+            load $::env(PDK_ROOT)/sky130A/libs.ref/sky130_sram_macros/maglef/${x}.mag
+        }
     }
 }
 gds read $::env(DESIGN_NAME).gds
