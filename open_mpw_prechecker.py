@@ -27,6 +27,7 @@ import base_checks.check_defaults as check_defaults
 import config
 import consistency_checks.consistency_checker as consistency_checker
 import fom_density_check.fom_density_checker as fom_density_checker
+import klayout_drc_checks.klayout_drc_checker as klayout_drc_checker
 import drc_checks.gds_drc_checker as gds_drc_checker
 import xor_checks.xor_checker as xor_checker
 from utils.utils import logger
@@ -96,6 +97,8 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
 
     lc.print_control("Step %s done without fatal errors." % stp_cnt)
     stp_cnt += 1
+
+
 
     if not drc_only:
         if not private:
@@ -279,18 +282,29 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                     lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: %s\nTEST FAILED AT STEP %s" % (reason, stp_cnt))
             stp_cnt += 1
 
+        lc.print_control("{{PROGRESS}} Executing Klayout off grid check.")
+        user_wrapper_path = Path(str(target_path)) / "gds" / ("%s.gds" % config.user_module)
+        report_file = Path(output_directory) / "off_grid_check.xml"
+        failed, errors, warnings = klayout_drc_checker.off_grid_checker(user_wrapper_path,
+                                                                        report_file)
+        if not failed:
+            lc.print_control("{{PROGRESS}} Klayout off grid Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+        else:
+            lc.print_control("{{FAIL}} Klayout off grid Checks on GDS Failed, Check %s"%report_file)
+
     if run_klayout_fom_density_check:
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout FOM density.")
         user_wrapper_path = Path(str(target_path) + "/gds/" + config.user_module + ".gds")
-        report_file = Path(str(target_path) + "/checks/fom_density_check.xml")
+        report_file = Path(output_directory) / "fom_density_check.xml"
         check, reason = fom_density_checker.fom_density_checker(user_wrapper_path,
-                                                    report_file)
+                                                                report_file)
         if check:
             lc.print_control("{{PROGRESS}} Klayout FOM density Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
             lc.print_control("{{FAIL}} Klayout FOM density Checks on GDS Failed, Reason: \n" + reason + "\nTEST FAILED AT STEP " + str(stp_cnt))
 
             stp_cnt += 1
+
     # NOTE: Step 8: Not Yet Implemented.
     if "FAIL" not in lc.internal_log:
         lc.print_control("{{SUCCESS}} All Checks PASSED !!!")
