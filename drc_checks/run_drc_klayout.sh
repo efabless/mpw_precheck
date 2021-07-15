@@ -27,9 +27,10 @@ echo "Output Directory: $4"
 OUT_DIR=$4
 # The -a here is necessary to handle race conditions.
 # This limits the max number of possible jobs to 100.
-xvfb-run -a klayout -b \
+klayout -b \
     -rd input=$2 \
     -rd report=$3 \
+    -rd feol=true \
     -r $1 |& tee "$OUT_DIR/klayout_drc.log"
 
 exit 0

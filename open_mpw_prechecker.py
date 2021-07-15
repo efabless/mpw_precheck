@@ -353,8 +353,9 @@ if __name__ == "__main__":
     parser.add_argument('--dont_compress', '-dc', action='store_true', default=False,
                         help="If enabled, compression won't happen at the end of the run. Default: False")
 
-    parser.add_argument('--run_klayout_drc', '-rkd', action='store_true', default=False,
+    parser.add_argument('--run_klayout_drc', '-rkd', action='store_true', default=True,
                         help="Specifies whether or not to run Klayout DRC checks after Magic. Default: False")
+
     parser.add_argument('--run_klayout_fom_density_check', '-rkfdc', action='store_true', default=False,
                         help="Specifies whether or not to run Klayout metal fill density checks after Magic. Default: False")
 
