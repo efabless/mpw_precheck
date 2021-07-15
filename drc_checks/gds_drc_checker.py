@@ -105,7 +105,8 @@ def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, 
     )
     run_drc_check_cmd = ['sh',
                          '%s/run_drc_klayout.sh' % call_path,
-                         '%s/sky130A/libs.tech/klayout/sky130A.drc' % pdk_root,
+                         '%s/../tech-files/sky130A_mr.lydrc' % call_path,
+                         # '%s/sky130A/libs.tech/klayout/sky130A.drc' % pdk_root,
                          '%s/%s.gds' % (target_path, design_name),
                          output_file,
                          output_directory
