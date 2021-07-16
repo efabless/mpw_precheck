@@ -99,7 +99,7 @@ def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, 
         return False, "GDS not found"
 
     call_path = os.path.abspath(call_path)
-    output_file = "{output_directory}/{design_name}_klayout.lydrc".format(
+    output_file = "{output_directory}/{design_name}_klayout_drc.xml".format(
         design_name=design_name,
         output_directory=output_directory
     )
@@ -135,6 +135,8 @@ def klayout_gds_drc_check(target_path, design_name, pdk_root, output_directory, 
             return False, "No DRC report generated..."
         else:
             drc_count = drcContent.count('<item>')
+            with open('%s/klayout_drc_total.txt'%output_directory, 'w') as klayout_total:
+                klayout_total.write("%s"%drc_count)
             if drc_count == 0:
                 return True, "0 DRC Violations"
             else:
