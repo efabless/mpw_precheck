@@ -212,14 +212,14 @@ end
 
 # DRC section
 ########################
-log("{{ DRC section }}")
+log("DRC section")
 
 if FEOL
-log("{{ FEOL section }}")
+log("FEOL section")
 gate = diff &amp; poly
 
 #   dnwell
-log("{{ dnwell }}")
+log("dnwell")
 dnwell.width(3.0, euclidian).output("dnwell.2", "dnwell.2 : min. dnwell width : 3.0um")
 # dnwell.not(uhvi).not(areaid_po).isolated(6.3, euclidian).output("dnwell.3", "dnwell.3 : min. dnwell spacing : 6.3um")
 # dnwell.and(pnp).output("dnwell.4", "dnwell.4 : dnwell must not overlap pnp")
@@ -227,7 +227,7 @@ dnwell.width(3.0, euclidian).output("dnwell.2", "dnwell.2 : min. dnwell width : 
 # # dnwell.6 rue not coded
 
 #   nwell
-log("{{ nwell }}")
+log("nwell")
 nwell.width(0.84, euclidian).output("nwell.1", "nwell.1 : min. nwell width : 0.84um")
 nwell.isolated(1.27, euclidian).output("nwell.2a", "nwell.2a : min. nwell spacing (merged if less) : 1.27um")
 # rule nwell.4 is suitable for digital cells
@@ -246,7 +246,7 @@ nwell.isolated(1.27, euclidian).output("nwell.2a", "nwell.2a : min. nwell spacin
 # pwde.not(dnwell).output("pwdem.5", "pwdem.5 : pwde must be inside dnwell")
 
 #   hvtp
-log("{{ hvtp }}")
+log("hvtp")
 #hvtp.not(nwell).output("hvtp", "hvtp must inside nwell")
 hvtp.width(0.38, euclidian).output("hvtp.1", "hvtp.1 : min. hvtp width : 0.38um")
 hvtp.isolated(0.38, euclidian).output("hvtp.2", "hvtp.2 : min. hvtp spacing : 0.38um")
@@ -255,12 +255,12 @@ hvtp.isolated(0.38, euclidian).output("hvtp.2", "hvtp.2 : min. hvtp spacing : 0.
 # hvtp.with_area(0..0.265).output("hvtp.5", "hvtp.5 : min. hvtp area : 0.265um²")
 
 #   hvtr
-log("{{ htvr }}")
+log("htvr")
 hvtr.width(0.38, euclidian).output("hvtr.1", "hvtr.1 : min. hvtr width : 0.38um")
 hvtr.isolated(0.38, euclidian).output("hvtr.2", "hvtr.2 : min. hvtr spacing : 0.38um")
 
 #   lvtn
-log("{{ lvtn }}")
+log("lvtn")
 # lvtn.width(0.38, euclidian).output("lvtn.1", "lvtn.1 : min. lvtn width : 0.38um")
 lvtn.isolated(0.38, euclidian).output("lvtn.2", "lvtn.2 : min. lvtn spacing : 0.38um")
 # lvtn.separation(diff.and(poly).not(uhvi), 0.18, euclidian).output("lvtn.3a", "lvtn.3a : min. lvtn spacing to gate : 0.18um")
@@ -272,7 +272,7 @@ lvtn.isolated(0.38, euclidian).output("lvtn.2", "lvtn.2 : min. lvtn spacing : 0.
 # lvtn.with_area(0..0.265).output("lvtn.13", "lvtn.13 : min. lvtn area : 0.265um²")
 
 #   ncm
-log("{{ ncm }}")
+log("ncm")
 # ncm.and(tap.and(nwell).or(diff.not(nwell))).output("ncm.x.3", "ncm.x.3 : ncm must not overlap n+diff")
 ncm.width(0.38, euclidian).output("ncm.1", "ncm.1 : min. ncm width : 0.38um")
 # ncm.isolated(0.38, euclidian).output("ncm.2", "ncm.2 : min. ncm spacing manual merge if smaller : 0.38um")
@@ -282,10 +282,13 @@ ncm.width(0.38, euclidian).output("ncm.1", "ncm.1 : min. ncm width : 0.38um")
 # ncm.with_area(0..0.265).output("ncm.7", "ncm.13 : min. ncm area : 0.265um²")
 
 #   diff-tap
-log("{{ diff-tap }}")
+log("diff-tap")
 difftap = diff + tap
+
+# TODO: this rule needs to be reviewed to address sram
 difftap.width(0.15, euclidian).output("difftap.1", "difftap.1 : min. difftap width : 0.15um")
-# not_in_cell1 = layout(source.cell_obj).select("s8cell_ee_plus_sseln_a", "-s8cell_ee_plus_sseln_b", "-s8cell_ee_plus_sselp_a", "-s8cell_ee_plus_sselp_b" , "-s8fpls_pl8", "-s8fpls_rdrv4" , "-s8fpls_rdrv4f", "-s8fpls_rdrv8")
+
+# not_in_cell1 = layout(source.cell_obj).select("s8cell_ee_plus_sseln_a", "-s8cell_ee_plus_sseln_b", "-s8cell_ee_plus_sselp_a", "-s8cell_ee_plus_sselp_b", "-s8fpls_pl8", "-s8fpls_rdrv4", "-s8fpls_rdrv4f", "-s8fpls_rdrv8")
 # not_in_cell1_diff = not_in_cell1.input(65, 20)
 # not_in_cell1_diff.not(areaid_sc).not(poly).edges.and(gate.edges).with_length(0,0.42).output("difftap.2", "difftap.2: min. gate (exempt areaid.sc) width : 0.42um")
 # diff.and(areaid_sc).not(poly).edges.and(gate.edges).with_length(0,0.36).output("difftap.2", "difftap.2: min. gate inside areaid.sc width : 0.36um")
@@ -301,7 +304,7 @@ difftap.isolated(0.27, euclidian).output("difftap.3", "difftap.3 : min. difftap 
 # tap.not(uhvi).and(psdm).separation(nwell, 0.13, euclidian).output("difftap.11", "difftap.11 : min. p+tap spacing to nwell : 0.13um")
 
 #   tunm
-log("{{ tunm }}")
+log("tunm")
 tunm.width(0.41, euclidian).output("tunm.1", "tunm.1 : min. tunm width : 0.41um")
 tunm.isolated(0.5, euclidian).output("tunm.2", "tunm.2 : min. tunm spacing : 0.5um")
 # tunm.enclosing(gate, 0.095, euclidian).output("tunm.3", "tunm.3 : min. tunm beyond gate : 0.095um")
@@ -311,10 +314,14 @@ tunm.isolated(0.5, euclidian).output("tunm.2", "tunm.2 : min. tunm spacing : 0.5
 # tunm.with_area(0..0.672).output("tunm.7", "tunm.7 : min. tunm area : 0.672um²")
 
 #   poly
-log("{{ poly }}")
+log("poly")
 poly.width(0.15, euclidian).output("poly.1a", "poly.1a : min. poly width : 0.15um")
 # poly.not(diff).edges.and(gate.and(lvtn).edges).space(0.35, euclidian).output("poly.1b", "poly.1b: min. lvtn gate width : 0.35um")
-poly.isolated(0.21, euclidian).output("poly.2", "poly.2 : min. poly spacing : 0.21um")
+
+# updated for sram - jeffdi
+#poly.isolated(0.21, euclidian).output("poly.2", "poly.2 : min. poly spacing : 0.21um")
+poly.not(areaid_ce).isolated(0.21, euclidian).output("poly.2", "poly.2 : min. poly spacing : 0.21um")
+
 # poly.and(rpm.or(urpm).or(poly_rs)).width(0.33, euclidian).output("poly.3", "poly.3 : min. poly resistor width : 0.33um")
 # poly.not(gate).separation(diff, 0.075, projection).polygons.without_area(0).output("poly.4", "poly.4 : min. poly on field spacing to diff : 0.075um")
 # poly.not(gate).separation(tap, 0.055, euclidian).output("poly.5", "poly.5 : min. poly on field spacing to tap : 0.055um")
@@ -330,7 +337,7 @@ poly.isolated(0.21, euclidian).output("poly.2", "poly.2 : min. poly spacing : 0.
 # poly.and(diff_rs).output("poly.15", "poly.15 : poly must not overlap diff resistor")
 
 #   rpm
-log("{{ rpm }}")
+log("rpm")
 rpm.width(1.27, euclidian).output("rpm.1a", "rpm.1a : min. rpm width : 1.27um")
 rpm.isolated(0.84, euclidian).output("rpm.2", "rpm.2 : min. rpm spacing : 0.84um")
 # rpm.enclosing(poly.and(poly_rs).and(psdm), 0.2, euclidian).output("rpm.3", "rpm.3 : min. rpm enclosure of poly resistor : 0.2um")
@@ -364,7 +371,7 @@ rpm.isolated(0.84, euclidian).output("rpm.2", "rpm.2 : min. rpm spacing : 0.84um
 # photodiode.and(tap).edges.without_length(0.41).output("photo.10", "photo.10 : minimum/maximum width of tap inside photodiode : 0.41um")
 
 #   npc
-log("{{ npc }}")
+log("npc")
 npc.width(0.27, euclidian).output("npc.1", "npc.1 : min. npc width : 0.27um")
 npc.isolated(0.27, euclidian).output("npc.2", "npc.2 : min. npc spacing, should be mnually merge if less : 0.27um")
 # npc.separation(gate, 0.09, euclidian).output("npc.4", "npc.4 : min. npc spacing to gate : 0.09um")
@@ -386,7 +393,7 @@ npc.isolated(0.27, euclidian).output("npc.2", "npc.2 : min. npc spacing, should 
 # psdm.with_area(0..0.265).output("n/psdm.10b", "n/psdm.10b : min. psdm area : 0.265um²")
 
 #   licon
-log("{{ licon }}")
+log("licon")
 licon.not(poly.interacting(poly_rs)).edges.without_length(0.17).output("licon.1", "licon.1 : minimum/maximum width of licon : 0.17um")
 licon.and(poly.interacting(poly_rs)).not_interacting((licon.and(poly.interacting(poly_rs)).edges.with_length(0.19)).or(licon.and(poly.interacting(poly_rs)).edges.with_length(2.0))).output("licon.1b/c", "licon.1b/c : minimum/maximum width/length of licon inside poly resistor : 2.0/0.19um")
 # licon.isolated(0.17, euclidian).output("licon.2", "licon.2 : min. licon spacing : 0.17um")
@@ -394,7 +401,7 @@ licon.and(poly.interacting(poly_rs)).not_interacting((licon.and(poly.interacting
 # licon.interacting(licon.and(poly.interacting(poly_rs)).edges.with_length(2.0)).separation(licon.and(poly.interacting(poly_rs)), 0.51, euclidian).output("licon.2c", "licon.2c : min. licon 2.0um edge on resistor spacing : 0.51um")
 # licon.and(poly.interacting(poly_rs)).separation(licon.not(poly.interacting(poly_rs)), 0.51, euclidian).output("licon.2d", "licon.2d : min. licon on resistor spacing other licon : 0.51um")
 # rule licon.3 not coded
-# licon.not(li).not(poly.or(diff).or(tap)).output("licon.4", "licon.4 : min. licon must overlap li and (poly or tap or diff) ")
+# licon.not(li).not(poly.or(diff).or(tap)).output("licon.4", "licon.4 : min. licon must overlap li and (poly or tap or diff)")
 # diff.enclosing(licon, 0.04, euclidian).output("licon.5", "licon.5 : min. diff enclosure of licon : 0.04um")
 # tap.edges.and(diff.edges).separation(licon.and(tap).edges, 0.06, euclidian).output("licon.6", "licon.6 : min. abutting edge spacing to licon tap : 0.06um")
 # licon_edges_with_less_enclosure_tap = tap.enclosing(licon, 0.12, projection).second_edges
@@ -426,7 +433,7 @@ poly.and(tap).edges.not(tap.edges).output("licon.17", "licon.17 : tap must not s
 # npc.not_interacting(licon.and(poly)).output("licon.18", "licon.18 : npc mut enclosed one poly-licon")
 
 #   vpp
-log("{{ vpp }}")
+log("vpp")
 # vpp.width(1.43, euclidian).output("vpp.1", "vpp.1 : min. vpp width : 1.43um")
 # # rules 1.b, 1.c not coded
 # vpp.and(poly.or(difftap)).output("vpp.3", "vpp.3 : vpp must not overlapp poly or diff or tap")
@@ -446,7 +453,7 @@ log("{{ vpp }}")
 # end
 
 # CAPM
-log("{{ capm }}")
+log("capm")
 capm.width(1.0, euclidian).output("capm.1", "capm.1 : min. capm width : 1.0um")
 capm.isolated(0.84, euclidian).output("capm.2a", "capm.2a : min. capm spacing : 0.84um")
 m2.interacting(capm).isolated(1.2, euclidian).output("capm.2b", "capm.2b : min. capm spacing : 1.2um")
@@ -467,48 +474,47 @@ capm.separation(via2, 0.14, euclidian).output("capm.5", "capm.5 : min. capm spac
 end #FEOL
 
 if BEOL
-log("{{ BEOL section }}")
+log("BEOL section")
 
 #   li
-log("{{ li }}")
+log("li")
 
 not_in_cell5 = source.select("-s8rf2_xcmvpp_hd5_*")
 not_in_cell5_li = not_in_cell5.polygons(li_wildcard)
-not_in_cell5_li.width(0.17, euclidian).output("li.1", "li.1 : min. li width : 0.17um")
 
-log("{{ check 1 }}")
+# update for sram - jeffdi
+# not_in_cell5_li.width(0.17, euclidian).output("li.1", "li.1 : min. li width : 0.17um")
+li.not(areaid_ce).width(0.17, euclidian).output("li.1", "li.1 : min. li width : 0.17um")
 
 # in_cell5_li = li - not_in_cell5_li
 # in_cell5_li.width(0.14, euclidian).output("li.1a", "li.1a : min. li width for the cells s8rf2_xcmvpp_hd5_* : 0.14um")
 
 # rule li.2 not coded
 
-not_in_cell5_li.space(0.17, euclidian).output("li.3", "li.3 : min. li spacing : 0.17um")
+# updated for sram - jeffdi
+li.not(areaid_ce).space(0.17, euclidian).output("li.3", "li.3 : min. li spacing : 0.17um")
+#not_in_cell5_li.space(0.17, euclidian).output("li.3", "li.3 : min. li spacing : 0.17um")
+
 # in_cell5_li.space(0.14, euclidian).output("li.3a", "li.3a : min. li spacing for the cells s8rf2_xcmvpp_hd5_* : 0.14um")
 
-log("{{ check 2 }}")
-
-# this next rule is hanging
+# TODO: this next rule is hanging - it also needs to me updated to support sram
 # licon08 = licon.interacting(li.enclosing(licon, 0.08, euclidian).polygons)
-
 licon_edges_with_less_enclosure_li = li.enclosing(licon, 0.08, projection).second_edges
-
-log("{{ check 3 }}")
-
 opposite3 = (licon.edges - licon_edges_with_less_enclosure_li).width(0.17 + 1.dbu, projection).polygons
-
-log("{{ check 4 }}")
-
 # licon08.not_interacting(opposite3).output("li.5", "li.5 : min. li enclosure of licon of 2 opposite edges : 0.08um")
 
 li.with_area(0..0.0561).output("li.6", "li.6 : min. li area : 0.0561um²")
 
 #   ct
-log("{{ mcon }}")
+log("mcon")
 mcon.edges.without_length(0.17).output("ct.1", "ct.1 : minimum/maximum width of mcon : 0.17um")
 mcon.space(0.19, euclidian).output("ct.2", "ct.2 : min. mcon spacing : 0.19um")
 # rule ct.3 not coded
-mcon.not(li).output("ct.4", "ct.4 : mcon should covered by li")
+
+#updated for sram - jeffdi
+#mcon.not(li).output("ct.4", "ct.4 : mcon should covered by li")
+mcon.not(areaid_ce).not(li).output("ct.4", "ct.4 : mcon should covered by li")
+
 # if backend_flow = CU
 #   li.interacting(li.and(m1).not(mcon).with_holes(1,10)).enclosing(mcon, 0.2, euclidian).output("ct.irdrop.1", "ct.irdrop.1 : min. li enclsoure of 1..10 mcon : 0.2um")
 #   li.interacting(li.and(m1).not(mcon).with_holes(11,100)).enclosing(mcon, 0.3, euclidian).output("ct.irdrop.2", "ct.irdrop.2 : min. li enclsoure of 11..100 mcon : 0.3um")
@@ -516,7 +522,7 @@ mcon.not(li).output("ct.4", "ct.4 : mcon should covered by li")
 #
 
 #   m1
-log("{{ m1 }}")
+log("m1")
 m1.width(0.14, euclidian).output("m1.1", "m1.1 : min. m1 width : 0.14um")
 
 huge_m1 = m1.sized(-1.5).sized(1.5)
@@ -528,10 +534,13 @@ non_huge_m1.space(0.14, euclidian).output("m1.2", "m1.2 : min. m1 spacing : 0.14
 
 not_in_cell6 = layout(source.cell_obj).select("-s8cell_ee_plus_sseln_a", "-s8cell_ee_plus_sseln_b", "-s8cell_ee_plus_sselp_a", "-s8cell_ee_plus_sselp_b", "-s8fpls_pl8", "-s8fs_cmux4_fm")
 not_in_cell6_m1 = not_in_cell6.input(m1_wildcard)
-not_in_cell6_m1.enclosing(mcon, 0.03, euclidian).output("m1.4", "m1.4 : min. m1 enclosure of mcon : 0.03um")
+
+#updated for sram - jeffdi
+not_in_cell6_m1.enclosing(mcon.not(areaid_ce), 0.03, euclidian).output("m1.4", "m1.4 : min. m1 enclosure of mcon : 0.03um")
 in_cell6 = layout(source.cell_obj).select("+s8cell_ee_plus_sseln_a", "+s8cell_ee_plus_sseln_b", "+s8cell_ee_plus_sselp_a", "+s8cell_ee_plus_sselp_b", "+s8fpls_pl8", "+s8fs_cmux4_fm")
 in_cell6_m1 = in_cell6.input(m1_wildcard)
 in_cell6_m1.enclosing(mcon, 0.005, euclidian).output("m1.4a", "m1.4a : min. m1 enclosure of mcon for specific cells : 0.005um")
+
 m1.with_area(0..0.083).output("m1.6", "m1.6 : min. m1 area : 0.083um²")
 m1.holes.with_area(0..0.14).output("m1.7", "m1.7 : min. m1 holes area : 0.14um²")
 if backend_flow = AL
@@ -548,7 +557,7 @@ end
 #end
 
 #   via
-log("{{ via }}")
+log("via")
 #rule via.3 not coded
 # via.not(m1).output("via.4c.5c", "via.4c.5c : m1 must enclose all via")
 if backend_flow = AL
@@ -575,7 +584,7 @@ end
 # end
 
 #   m2
-log("{{ m2 }}")
+log("m2")
 m2.width(0.14, euclidian).output("m2.1", "m2.1 : min. m2 width : 0.14um")
 
 huge_m2 = m2.sized(-1.5).sized(1.5)
@@ -603,7 +612,7 @@ end
 # end
 
 #   via2
-log("{{ via2 }}")
+log("via2")
 #rule via233 not coded
 # via2.not(m2).output("via2", "via2 : m2 must enclose all via2")
 if backend_flow = AL
@@ -625,7 +634,7 @@ end
 # end
 
 #   m3
-log("{{ m3 }}")
+log("m3")
 m3.width(0.3, euclidian).output("m3.1", "m3.1 : min. m3 width : 0.3um")
 
 huge_m3 = m3.sized(-1.5).sized(1.5)
@@ -654,7 +663,7 @@ end
 # end
 
 #   via3
-log("{{ via3 }}")
+log("via3")
 #rule via3.3 not coded
 # via3.not(m3).output("via3", "via3 : m3 must enclose all via3")
 if backend_flow = AL
@@ -675,7 +684,7 @@ end
 # end
 
 #   m4
-log("{{ m4 }}")
+log("m4")
 m4.width(0.3, euclidian).output("m4.1", "m4.1 : min. m4 width : 0.3um")
 
 huge_m4 = m4.sized(-1.5).sized(1.5)
@@ -704,7 +713,7 @@ if bakend_flow = CU
 end
 
 #   via4
-log("{{ via4 }}")
+log("via4")
 via4.edges.without_length(0.8).output("via4.1a", "via4.1a : minimum/maximum width of via4 : 0.8um")
 via4.isolated(0.8, euclidian).output("via4.2", "via4.2 : min. via4 spacing : 0.8um")
 #rule via4.3 not coded
@@ -715,7 +724,7 @@ if backend_flow = CU
 end
 
 #   m5
-log("{{ m5 }}")
+log("m5")
 m5.width(1.6, euclidian).output("m5.1", "m5.1 : min. m5 width : 1.6um")
 
 m5.space(1.6, euclidian).output("m5.2", "m5.2 : min. m5 spacing : 1.6um")
@@ -750,13 +759,13 @@ m5.enclosing(via4, 0.31, euclidian).output("m5.3", "m4.3 : min. m5 enclosure of 
 # end
 
 #   pad
-log("{{ pad }}")
+log("pad")
 pad.isolated(1.27, euclidian).output("pad.2", "pad.2 : min. pad spacing : 1.27um")
 
 end #BEOL
 
 if FEOL
-log("{{ FEOL section }}")
+log("FEOL section")
 
 #   mf
 #mf.not_interacting(mf.edges.without_length(0.8)).output("mf.1", "mf.1 : minimum/maximum width of fuse : 0.8um")
@@ -765,7 +774,7 @@ log("{{ FEOL section }}")
 # fuses need more clarification on fuse_shield, fuse layers ...
 
 #   hvi
-log("{{ hvi }}")
+log("hvi")
 hvi.width(0.6, euclidian).output("hvi.1", "hvi.1 : min. hvi width : 0.6um")
 # hvi.isolated(0.7, euclidian).output("hvi.2", "hvi.2 : min. hvi spacing, merge if less : 0.7um")
 # hvi.and(tunm).output("hvi.4", "hvi.4 : hvi must not overlapp tunm")
@@ -791,7 +800,7 @@ hvi.width(0.6, euclidian).output("hvi.1", "hvi.1 : min. hvi width : 0.6um")
 # hvi.and(poly).edges.not(poly.edges).output("hvpoly.14", "hvpoly.14 : poly must not straddle hvi")
 
 #   hvntm
-log("{{ hvntm }}")
+log("hvntm")
 hvntm.width(0.7, euclidian).output("hvntm.1", "hvntm.1 : min. hvntm width : 0.7um")
 hvntm.isolated(0.7, euclidian).output("hvntm.2", "hvntm.2 : min. hvntm spacing : 0.7um")
 # hvntm.enclosing(diff.and(nwell).and(hvi), 0.185, euclidian).output("hvntm.3", "hvntm.3 : min. hvntm enclosure of hv n+diff : 0.185um")
@@ -895,7 +904,7 @@ hvntm.isolated(0.7, euclidian).output("hvntm.2", "hvntm.2 : min. hvntm spacing :
 end #FEOL
 
 if OFFGRID
-log("{{ OFFGRID-ANGLES section }}")
+log("OFFGRID-ANGLES section")
 
 dnwell.ongrid(0.005).output("dnwell_OFFGRID", "x.1b : OFFGRID vertex on dnwell")
 dnwell.with_angle(0 .. 45).output("dnwell_angle", "x.3a : non 45 degree angle dnwell")
