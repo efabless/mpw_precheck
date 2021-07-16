@@ -286,7 +286,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         user_wrapper_path = Path(str(target_path)) / "gds" / ("%s.gds" % config.user_module)
         if not no_klayout_offgrid_check:
             report_file = Path(output_directory) / "offgrid_check.xml"
-            lc.print_control("{{PROGRESS}} Executing Klayout off grid check.")
+            lc.print_control("{{PROGRESS}} Executing Klayout offgrid check.")
             failed, errors, warnings = klayout_drc_checker.offgrid_checker(user_wrapper_path,
                                                                         report_file, output_directory)
             if not failed:
