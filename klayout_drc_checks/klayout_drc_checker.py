@@ -5,48 +5,46 @@ import subprocess
 import re
 from pathlib import Path
 from utils.utils import *
-from xml.etree import ElementTree
 from time import sleep
 
-def legalize_xml(report_file):
-    malformed_xml = open(report_file, 'r')
-    xml_lines = malformed_xml.readlines()
-    xml_lines.insert(1, "<root>")
-    xml_lines.append("</root>")
-    malformed_xml.close()
-    with open(report_file, 'w') as fixed_xml_report:
-        fixed_xml_report.write(''.join(xml_lines))
+def violations_num(xml_file_path):
+    xml = ""
+    BSIZE = 1048576 # 1 MB
+    with open(xml_file_path, 'r') as marker_database_file:
+        while True:
+            chunk = marker_database_file.read(BSIZE)
+            if chunk == '':
+                break
+            xml += chunk
+    return xml.count('<item>')
 
-def drc_violations_from_legal_xml(xml_file_path):
-    dom = ElementTree.parse(xml_file_path)
-    violations = dom.findall('report-database/categories/category/description')
-    return violations
+def run_klayout_drc_script(gds_input, report_file, script_file):
+    parent_path = os.path.dirname(os.path.realpath(__file__))
+    klayout_cmd = ["klayout", "-b", "-r", "%s/%s" % (parent_path, script_file),
+                                    "-rd","input=%s"%gds_input, "-rd", "report=%s"%report_file]
+    subprocess.Popen(klayout_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE).wait()
+    # subprocess.Popen(klayout_cmd).wait()
 
-# klayout writes an illegal marker database xml file
-# It can not read legal xml files
-# need to remove <root> </root>
-def rewrite_illegal_xml(report_file, illegal_xml_report_lines):
-    with open(report_file, 'w') as legal_xml_marker_db:
-        legal_xml_marker_db.write(''.join(illegal_xml_report_lines))
-
-def off_grid_checker(gds_input, report_file):
+def offgrid_checker(gds_input, report_file):
     failed = False
     errors = []
     warnings = []
     parent_path = os.path.dirname(os.path.realpath(__file__))
-    sh_process = subprocess.Popen(["sh", "%s/off_grid_checker.sh" % parent_path,
-                                    gds_input, report_file],
-                                    stderr=subprocess.PIPE,
-                                    stdout=subprocess.PIPE).wait()
-    # This function call has sideeffects
-
-    with open(report_file, 'r') as malformed_xml_marker_db:
-        malformed_xml = malformed_xml_marker_db.readlines()
-    legalize_xml(report_file)
-    violations = drc_violations_from_legal_xml(report_file)
-    rewrite_illegal_xml(report_file, malformed_xml)
-    for violation in violations:
-        errors.append(violation.text)
-    if errors:
+    run_klayout_drc_script(gds_input, report_file, 'offgrid.lydrc')
+    n_violations = violations_num(report_file)
+    if n_violations:
+        errors.append("There are # %s offgrid DRC violations"%n_violations)
         failed = True
     return failed, errors, warnings
+
+def met_density_checker(gds_input, report_file):
+    failed = False
+    errors = []
+    warnings = []
+    run_klayout_drc_script(gds_input, report_file, 'met_min_ca_density.lydrc')
+    n_violations = violations_num(report_file)
+    if n_violations:
+        errors.append("There are # %s metal density DRC violations"%n_violations)
+        failed = True
+    return failed, errors, warnings
+
