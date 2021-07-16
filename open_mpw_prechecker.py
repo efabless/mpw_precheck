@@ -288,19 +288,19 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             report_file = Path(output_directory) / "offgrid_check.xml"
             lc.print_control("{{PROGRESS}} Executing Klayout off grid check.")
             failed, errors, warnings = klayout_drc_checker.offgrid_checker(user_wrapper_path,
-                                                                            report_file)
+                                                                        report_file, output_directory)
             if not failed:
                 lc.print_control("{{PROGRESS}} Klayout offgrid Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
                 lc.print_control("{{FAIL}} Klayout offgrid Checks on GDS Failed, Check %s"%report_file)
         if not no_klayout_metal_density_check:
-            report_file = Path(output_directory) / "met_density_check.xml"
-            failed, errors, warnings = klayout_drc_checker.met_density_checker(user_wrapper_path,
-                                                                            report_file)
+            report_file = Path(output_directory) / "met_min_ca_density_check.xml"
+            failed, errors, warnings = klayout_drc_checker.met_min_ca_density_checker(user_wrapper_path,
+                                                                        report_file, output_directory)
             if not failed:
-                lc.print_control("{{PROGRESS}} Klayout metal density Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+                lc.print_control("{{PROGRESS}} Klayout metal minimum clear area density Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
-                lc.print_control("{{FAIL}} Klayout metal density Checks on GDS Failed, Check %s"%report_file)
+                lc.print_control("{{FAIL}} Klayout metal minimum clear area density Checks on GDS Failed, Check %s"%report_file)
     if run_klayout_fom_density_check:
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout FOM density.")
         user_wrapper_path = Path(str(target_path) + "/gds/" + config.user_module + ".gds")
