@@ -286,7 +286,8 @@ log("diff-tap")
 difftap = diff + tap
 
 # TODO: this rule needs to be reviewed to address sram
-difftap.width(0.15, euclidian).output("difftap.1", "difftap.1 : min. difftap width : 0.15um")
+# this rule appears to be incorrect - it is flagging errors not identified by the Calibre MR deck
+# difftap.width(0.15, euclidian).output("difftap.1", "difftap.1 : min. difftap width : 0.15um")
 
 # not_in_cell1 = layout(source.cell_obj).select("s8cell_ee_plus_sseln_a", "-s8cell_ee_plus_sseln_b", "-s8cell_ee_plus_sselp_a", "-s8cell_ee_plus_sselp_b", "-s8fpls_pl8", "-s8fpls_rdrv4", "-s8fpls_rdrv4f", "-s8fpls_rdrv8")
 # not_in_cell1_diff = not_in_cell1.input(65, 20)
@@ -429,7 +430,10 @@ licon.and(diff.or(tap)).separation(npc, 0.09, euclidian).output("licon.13", "lic
 # rule licon.16 not applicable for the diff for the nmos of a nand gates or the pmos of a nor gates
 #diff.not(gate).not_interacting(licon).output("licon.16", "licon.16 : diff must enclose one licon")
 # tap.not(uhvi).not_interacting(licon).output("licon.16", "licon.16 : tap must enclose one licon")
-poly.and(tap).edges.not(tap.edges).output("licon.17", "licon.17 : tap must not straddle poly")
+
+# this rule appears to be incorrect - it is flagging errors not identified by the Calibre MR deck
+# poly.and(tap).edges.not(tap.edges).output("licon.17", "licon.17 : tap must not straddle poly")
+
 # npc.not_interacting(licon.and(poly)).output("licon.18", "licon.18 : npc mut enclosed one poly-licon")
 
 #   vpp
