@@ -70,3 +70,13 @@ class logger:
             print("{{WARNING}} Compression Skipped!")
 
         exit(code)
+
+def paths_checker(list_of_paths):
+    failed = False
+    errors = []
+    warnings = []
+    for apath in list_of_paths:
+        if not Path(apath).exists():
+            failed = True
+            errors.append("%s Does not exist"%apath)
+    return failed, errors, warnings
