@@ -291,7 +291,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             if not failed:
                 lc.print_control("{{PROGRESS}} Klayout offgrid Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
-                lc.print_control("{{FAIL}} Klayout offgrid Checks on GDS Failed, Check %s"%report_file)
+                lc.print_control("{{FAIL}} Klayout offgrid Checks on GDS Failed, Errors are: %s"%('\n'.join(errors)))
         if not no_klayout_metal_density_check:
             report_file = Path(output_directory) / "met_min_ca_density_check.xml"
             failed, errors, warnings = klayout_drc_checker.met_min_ca_density_checker(user_wrapper_path,
@@ -299,7 +299,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             if not failed:
                 lc.print_control("{{PROGRESS}} Klayout metal minimum clear area density Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
             else:
-                lc.print_control("{{FAIL}} Klayout metal minimum clear area density Checks on GDS Failed, Check %s"%report_file)
+                lc.print_control("{{FAIL}} Klayout metal minimum clear area density Checks on GDS Failed, Errors are: %s"%('\n'.join(errors)))
     if run_klayout_fom_density_check:
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout FOM density.")
         user_wrapper_path = Path(str(target_path) + "/gds/" + config.user_module + ".gds")
@@ -309,7 +309,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         if not failed:
             lc.print_control("{{PROGRESS}} Klayout FOM density Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
-            lc.print_control("{{FAIL}} Klayout FOM density Checks on GDS Failed, Check %s"%report_file)
+            lc.print_control("{{FAIL}} Klayout FOM density Checks on GDS Failed, Errors are: %s"%('\n'.join(errors)))
 
             stp_cnt += 1
 
