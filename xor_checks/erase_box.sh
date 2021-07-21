@@ -32,7 +32,6 @@ box -42.88um 3520um 2962.5um 3557.21um
 flatten -nolabels -dobox xor_target
 #
 # load new cell and erase power straps from user_project_area
-*
 load xor_target
 box values -42.88um 0 0 3520um
 erase metal5
