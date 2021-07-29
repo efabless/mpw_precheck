@@ -49,17 +49,16 @@ RUN yum install -y ruby tcllib git tcl tk libjpeg libgomp libXext libSM libXft l
 	rm -rf /var/cache/yum
 
 # Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x86_64.rpm && \
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.3-0.x86_64.rpm && \
         yum clean all && \
         rm -rf /var/cache/yum
 
 # Install Magic
-# RUN git clone https://github.com/RTimothyEdwards/magic ./magic_11c53bb
-RUN git clone git://opencircuitdesign.com/magic ./magic_11c53bb
-
-WORKDIR magic_11c53bb
-
-RUN git checkout 11c53bb6d58c6f6ef8b7c895e52846a2f6fcdfae
+# RUN git clone https://github.com/RTimothyEdwards/magic ./magic_55bf0eb
+RUN git clone git://opencircuitdesign.com/magic \
+         ./magic_55bf0eb
+WORKDIR    magic_55bf0eb
+RUN git checkout 55bf0ebd54ad068b4a19079c17fd56dff7c06d8f
 
 # build
 RUN ./configure --prefix=/build && \
