@@ -33,6 +33,8 @@ rm -f $OUT_DIR/$DESIGN_NAME.magic.drc
 rm -f $OUT_DIR/$DESIGN_NAME.magic.drc.mag
 cd $TARGET_DIR
 ulimit -c unlimited
+ulimit -s unlimited
+ulimit -a
 
 SRAM_MODULES=$(ls -1 $PDK_ROOT/sky130A/libs.ref/sky130_sram_macros/maglef | sed -e 's/\..*$//' | sed -e ':a;N;$!ba;s/\n/ /g')
 echo $SRAM_MODULES
@@ -62,7 +64,7 @@ then
     done
 fi
 
-
+set -o pipefail
 magic \
     -noconsole \
     -dnull \
@@ -70,10 +72,15 @@ magic \
     </dev/null \
     |& tee "$OUT_DIR/magic_drc.log"
 
+stat=$?
+set +o pipefail
+
+printf "magic_drc_check : exit-status: %s\n" $stat | tee -a "$OUT_DIR/magic_drc.log"
+
 TEST=$OUT_DIR/$DESIGN_NAME.magic.drc
 
 crashSignal=$(find $TEST)
-if ! [[ $crashSignal ]]; then echo "DRC Check FAILED"; exit -1; fi
+if ! [[ $crashSignal && "$stat" == 0 ]]; then echo "DRC Check FAILED (stat=$stat)"; exit -1; fi
 
 
 Test_Magic_violations=$(grep "COUNT: " $TEST -s | tail -1 | sed -r 's/[^0-9]*//g')
