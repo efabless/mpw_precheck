@@ -32,7 +32,7 @@ RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python
 RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
 
 RUN pip3.6 install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \ 
+    pip install --no-cache-dir \
                 pyyaml \
                 awscli \
                 requests \
@@ -44,22 +44,29 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
 RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
 
 # General utils
-RUN yum install -y ruby tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch && \
+RUN yum install -y ruby tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext \
+     Xvfb gcc-c++ patch time.x86_64 && \
+	yum clean all && \
+	rm -rf /var/cache/yum
+
+# uninstall current version of git and install latest version instead
+RUN yum -y remove git && yum -y remove git-* && \
+    yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.9-1.x86_64.rpm && \
+    yum -y install git && \
 	yum clean all && \
 	rm -rf /var/cache/yum
 
 # Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x86_64.rpm && \
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.3-0.x86_64.rpm && \
         yum clean all && \
         rm -rf /var/cache/yum
 
 # Install Magic
-# RUN git clone https://github.com/RTimothyEdwards/magic ./magic_b0ed7f0
-RUN git clone git://opencircuitdesign.com/magic ./magic_b0ed7f0
-
-WORKDIR magic_b0ed7f0
-
-RUN git checkout b0ed7f09a915681caa89490adc8f3eb625bbdd9c
+# RUN git clone https://github.com/RTimothyEdwards/magic ./magic_597ef48
+RUN git clone -n git://opencircuitdesign.com/magic \
+         ./magic_597ef48
+WORKDIR    magic_597ef48
+RUN git checkout 597ef4857a02f1d0748475dcff118801e91b0e88
 
 # build
 RUN ./configure --prefix=/build && \
@@ -77,7 +84,7 @@ ENV LC_ALL en_US.UTF-8
 ENV LC_CTYPE en_US.UTF-8
 ENV LANG C.UTF-8
 
-# Grab default user_project 
+# Grab default user_project
 # RUN git clone https://github.com/efabless/caravel_user_project $CARAVEL_USER_PROJECT_PATH
 
 RUN mkdir -p /build/version/
@@ -87,4 +94,3 @@ RUN git rev-parse HEAD >> /build/version/magic.version
 RUN tar -czf /build.tar.gz /build
 
 WORKDIR $PRECHECKER_ROOT
-
