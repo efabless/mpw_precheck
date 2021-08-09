@@ -13,6 +13,8 @@
 # limitations under the License.
 # SPDX-License-Identifier: Apache-2.0
 
+# Note: to get cores or use gdb start like:   docker run --ulimit core=-1 --cap-add SYS_PTRACE ...
+
 # syntax = docker/dockerfile:1.0-experimental
 FROM centos:centos7 as build
 
@@ -44,27 +46,32 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
 RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
 
 # General utils
-RUN yum install -y ruby tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch && \
+RUN yum install -y ruby tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch \
+        gdb.x86_64 file.x86_64 time.x86_64 && \
 	yum clean all && \
 	rm -rf /var/cache/yum
 
 # Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.26.9-0.x86_64.rpm && \
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.3-0.x86_64.rpm && \
         yum clean all && \
         rm -rf /var/cache/yum
 
 # Install Magic
-# RUN git clone https://github.com/RTimothyEdwards/magic ./magic_b0ed7f0
-RUN git clone git://opencircuitdesign.com/magic ./magic_b0ed7f0
-
-WORKDIR magic_b0ed7f0
-
-RUN git checkout b0ed7f09a915681caa89490adc8f3eb625bbdd9c
+# RUN git clone https://github.com/RTimothyEdwards/magic ./magic_597ef48
+RUN git clone -n git://opencircuitdesign.com/magic \
+         ./magic_597ef48
+WORKDIR    magic_597ef48
+RUN git checkout 597ef4857a02f1d0748475dcff118801e91b0e88
 
 # build
-RUN ./configure --prefix=/build && \
-    make -j4 && \
-    make install
+# '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
+# -g    : keep debugging info, incl. symbols.
+# --disable-locking : recommended by tim due to cell-depth of sky130A PDK cells.
+# scl enable devtoolset-8 --  : use the devtoolset-8 gcc-8.x (not the native gcc-4.x).
+# Note: to use gdb start like:   docker run --ulimit core=-1 --cap-add SYS_PTRACE ...
+RUN scl enable devtoolset-8 -- ./configure --disable-locking --prefix=/build CFLAGS='-g -O0 -m64 -fPIC' && \
+    scl enable devtoolset-8 -- make -j4 && \
+    scl enable devtoolset-8 -- make install
 
 # ENV CARAVEL_USER_PROJECT_PATH=/tmp/caravel_user_project
 ENV PRECHECKER_ROOT=/usr/local/bin/
