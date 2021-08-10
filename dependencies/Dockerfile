@@ -34,7 +34,7 @@ RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python
 RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
 
 RUN pip3.6 install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \ 
+    pip install --no-cache-dir \
                 pyyaml \
                 awscli \
                 requests \
@@ -48,6 +48,13 @@ RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurse
 # General utils
 RUN yum install -y ruby tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch \
         gdb.x86_64 file.x86_64 time.x86_64 && \
+	yum clean all && \
+	rm -rf /var/cache/yum
+
+# uninstall current version of git and install latest version instead
+RUN yum -y remove git && yum -y remove git-* && \
+    yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.9-1.x86_64.rpm && \
+    yum -y install git && \
 	yum clean all && \
 	rm -rf /var/cache/yum
 
@@ -84,7 +91,7 @@ ENV LC_ALL en_US.UTF-8
 ENV LC_CTYPE en_US.UTF-8
 ENV LANG C.UTF-8
 
-# Grab default user_project 
+# Grab default user_project
 # RUN git clone https://github.com/efabless/caravel_user_project $CARAVEL_USER_PROJECT_PATH
 
 RUN mkdir -p /build/version/
@@ -94,4 +101,3 @@ RUN git rev-parse HEAD >> /build/version/magic.version
 RUN tar -czf /build.tar.gz /build
 
 WORKDIR $PRECHECKER_ROOT
-
