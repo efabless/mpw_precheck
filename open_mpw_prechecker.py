@@ -68,7 +68,7 @@ def get_project_type(top_level_netlist, user_level_netlist, lc=logger(default_lo
 
 def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None,  run_fuzzy_checks=False, run_gds_fc=False,
         skip_drc=False, skip_xor=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False,
-        run_klayout_fom_density_check=False, no_klayout_offgrid_check=False, no_klayout_metal_density_check=False, private=False):
+        run_klayout_fom_density_check=False, no_klayout_offgrid_check=False, no_klayout_metal_density_check=False, no_klayout_drawing_overlapping_pin_check=False, private=False):
     if not output_directory:
         output_directory = str(target_path) + '/checks'
 
@@ -312,6 +312,21 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.print_control("{{FAIL}} Klayout FOM density Checks on GDS Failed, Errors are: %s"%('\n'.join(errors)))
 
             stp_cnt += 1
+    if not no_klayout_drawing_overlapping_pin_check:
+        lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking drawing overlapping pin purpose.")
+        drawing_overlapping_pin_check_cmd = ['bash', Path('./scripts/gdsSky130Apin1.drc'),
+                                            Path(f"{target_path}/gds/{config.user_module}.gds"), config.user_module,
+                                            Path(f"{target_path}/checks/drawing_overlapping_pin_check.xml")]
+        with open(lc.log, "w") as log:
+            process = subprocess.run(drawing_overlapping_pin_check_cmd, stdout=log, stderr=log)
+        failed = process.returncode
+        if not failed:
+            lc.print_control("{{PROGRESS}} Klayout Drawing overlapping pin purpose check on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+        else:
+            lc.print_control("{{FAIL}} Klayout Drawing overlapping pin purpose check on GDS Failed, Errors are: %s"%('\n'.join(errors)))
+
+            stp_cnt += 1
+
 
     # NOTE: Step 8: Not Yet Implemented.
     if "FAIL" not in lc.internal_log:
@@ -372,28 +387,16 @@ if __name__ == "__main__":
 
     parser.add_argument('--no_klayout_metal_density_check', '-nkmdc', action='store_true', default=False,
                         help="Specifies whether or not to run Klayout metal density checks. Default: False")
+
+    parser.add_argument('--no_klayout_drawing_overlapping_pin_check', '-nkdop', action='store_true', default=False,
+                        help="Specifies whether or not to run Klayout metal density checks. Default: False")
+
     parser.add_argument('--private', action='store_true', default=False,
                         help="Specifies whether or not to run licensing & readme checks. Default: False")
 
     args = parser.parse_args()
 
-    caravel_root = args.caravel_root
-    dont_compress = args.dont_compress
-    drc_only = args.drc_only
-    manifest_source = args.manifest_source
-    output_directory = args.output_directory
-    pdk_root = args.pdk_root
-    private = args.private
-    run_fuzzy_checks = args.run_fuzzy_checks
-    run_gds_fc = args.run_gds_fc
-    run_klayout_drc = args.run_klayout_drc
-    run_klayout_fom_density_check = args.run_klayout_fom_density_check
-    no_klayout_offgrid_check = args.no_klayout_offgrid_check
-    no_klayout_metal_density_check = args.no_klayout_metal_density_check
-    skip_drc = args.skip_drc
-    skip_xor = args.skip_xor
-    target_path = args.target_path
-
-    run_check_sequence(target_path, caravel_root, pdk_root, output_directory,  run_fuzzy_checks, run_gds_fc, skip_drc,
-            skip_xor, drc_only, dont_compress, manifest_source, run_klayout_drc, run_klayout_fom_density_check, no_klayout_offgrid_check,
-            no_klayout_metal_density_check, private)
+    run_check_sequence(args.target_path, args.caravel_root, args.pdk_root, args.output_directory,  args.run_fuzzy_checks,
+            args.run_gds_fc, args.skip_drc, args.skip_xor, args.drc_only, args.dont_compress, args.manifest_source, args.run_klayout_drc,
+            args.run_klayout_fom_density_check, args.no_klayout_offgrid_check, args.no_klayout_metal_density_check,
+            args.no_klayout_drawing_overlapping_pin_check, args.private)

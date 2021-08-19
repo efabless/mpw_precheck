@@ -5,6 +5,7 @@
 */__pycache__/
 */*/__pycache__/
 */*/*/__pycache__/__pycache__
+__pycache__/
 dependencies/logs/docker/open_mpw_prechecker.build.txt
 clone.sh
 process_file
