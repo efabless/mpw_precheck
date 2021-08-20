@@ -35,7 +35,6 @@ def is_compressed(filename):
         return f.read(2) == b'\x1f\x8b'
 
 def file_hash(filename):
-    print(filename)
     sha1 = hashlib.sha1()
     BSIZE = 65536
     if is_compressed(filename):
