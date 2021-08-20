@@ -35,6 +35,7 @@ def is_compressed(filename):
         return f.read(2) == b'\x1f\x8b'
 
 def file_hash(filename):
+    print(filename)
     sha1 = hashlib.sha1()
     BSIZE = 65536
     if is_compressed(filename):
@@ -42,10 +43,14 @@ def file_hash(filename):
     else:
         f = open(filename, 'rb')
     while True:
-        data = f.read(BSIZE)
-        if not data:
+        try:
+            data = f.read(BSIZE)
+            if not data:
+                break
+            sha1.update(data)
+        except EOFError:
+            # To handle split gds files during tapeout
             break
-        sha1.update(data)
     f.close()
     return sha1.hexdigest()
 
