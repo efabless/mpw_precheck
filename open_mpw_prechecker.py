@@ -75,15 +75,16 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
     # Create the logging controller
     lc = logger('%s/full_log.log' % output_directory, target_path, dont_compress)
     lc.create_full_log()
+    _, top_level_netlist, user_level_netlist = check_yaml.check_yaml(target_path)
+    project_type = get_project_type(top_level_netlist, user_level_netlist, lc)
+    config.init(project_type)
+    user_wrapper_path = Path(f"{target_path}/gds/{config.user_module}.gds")
 
     steps = 6
     if not private:
         steps += 1
     if drc_only:
         steps -= 4
-        _, top_level_netlist, user_level_netlist = check_yaml.check_yaml(target_path)
-        project_type = get_project_type(top_level_netlist, user_level_netlist, lc)
-        config.init(project_type)
     elif run_fuzzy_checks or run_klayout_drc:
         steps += int(run_fuzzy_checks) + int(run_klayout_drc)
     stp_cnt = 0
@@ -257,7 +258,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         stp_cnt += 1
     else:
         lc.print_control("{{PROGRESS}} Executing Step %s of %s: DRC Violations Checks" % (stp_cnt, steps))
-        user_wrapper_path = Path("%s/gds/%s.gds" % (target_path, config.user_module))
         if not os.path.exists(user_wrapper_path):
             lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/%s.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP %s" % (config.user_module, stp_cnt))
         else:
@@ -282,10 +282,9 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                     lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: %s\nTEST FAILED AT STEP %s" % (reason, stp_cnt))
             stp_cnt += 1
 
-        user_wrapper_path = Path(str(target_path)) / "gds" / ("%s.gds" % config.user_module)
         if not no_klayout_offgrid_check:
-            report_file = Path(output_directory) / "offgrid_check.xml"
             lc.print_control("{{PROGRESS}} Executing Klayout offgrid check.")
+            report_file = Path(output_directory) / "offgrid_check.xml"
             failed, errors, warnings = klayout_drc_checker.offgrid_checker(user_wrapper_path,
                                                                         report_file, output_directory)
             if not failed:
@@ -293,6 +292,7 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             else:
                 lc.print_control("{{FAIL}} Klayout offgrid Checks on GDS Failed, Errors are: %s"%('\n'.join(errors)))
         if not no_klayout_metal_density_check:
+            lc.print_control("{{PROGRESS}} Executing Klayout metal minimum clear area density check.")
             report_file = Path(output_directory) / "met_min_ca_density_check.xml"
             failed, errors, warnings = klayout_drc_checker.met_min_ca_density_checker(user_wrapper_path,
                                                                         report_file, output_directory)
@@ -302,7 +302,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                 lc.print_control("{{FAIL}} Klayout metal minimum clear area density Checks on GDS Failed, Errors are: %s"%('\n'.join(errors)))
     if run_klayout_fom_density_check:
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout FOM density.")
-        user_wrapper_path = Path(str(target_path) + "/gds/" + config.user_module + ".gds")
         report_file = Path(output_directory) / "fom_density_check.xml"
         failed, errors, warnings = klayout_drc_checker.fom_density_checker(user_wrapper_path,
                                                                 report_file, output_directory)
@@ -314,16 +313,23 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             stp_cnt += 1
     if not no_klayout_drawing_overlapping_pin_check:
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking drawing overlapping pin purpose.")
+        drawing_overlapping_pin_check_xml_report_path = Path(f"{output_directory}/drawing_overlapping_pin_check.xml")
+        drawing_overlapping_pin_check_total_path = Path(f"{output_directory}/drawing_overlapping_pin_check_total.txt")
         drawing_overlapping_pin_check_cmd = ['bash', Path('./scripts/gdsSky130Apin1.drc'),
-                                            Path(f"{target_path}/gds/{config.user_module}.gds"), config.user_module,
-                                            Path(f"{target_path}/checks/drawing_overlapping_pin_check.xml")]
+                                            user_wrapper_path, config.user_module,
+                                            drawing_overlapping_pin_check_xml_report_path]
         with open(lc.log, "w") as log:
             process = subprocess.run(drawing_overlapping_pin_check_cmd, stdout=log, stderr=log)
-        failed = process.returncode
+        failed = (process.returncode != 0)
+        with open(drawing_overlapping_pin_check_xml_report_path) as drawing_overlapping_pin_check_xml_report, open(drawing_overlapping_pin_check_total_path, "w") as total_file_path:
+            xml_content = drawing_overlapping_pin_check_xml_report.read()
+            drawing_overlapping_pin_check_error_count = xml_content.count("<item>")
+            total_file_path.write(str(drawing_overlapping_pin_check_error_count))
+
         if not failed:
             lc.print_control("{{PROGRESS}} Klayout Drawing overlapping pin purpose check on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
-            lc.print_control("{{FAIL}} Klayout Drawing overlapping pin purpose check on GDS Failed, Errors are: %s"%('\n'.join(errors)))
+            lc.print_control("{{FAIL}} Klayout Drawing overlapping pin purpose check on GDS Failed")
 
             stp_cnt += 1
 
