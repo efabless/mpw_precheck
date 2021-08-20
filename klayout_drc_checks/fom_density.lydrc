@@ -16,8 +16,8 @@
  <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
  <text>
 
-source($gds_input)
-report("Density Checks", $report_file)
+source($input)
+report("Density Checks", $report)
 
 verbose(true)
 
