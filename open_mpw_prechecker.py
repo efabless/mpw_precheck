@@ -68,22 +68,22 @@ def get_project_type(top_level_netlist, user_level_netlist, lc=logger(default_lo
 
 def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=None,  run_fuzzy_checks=False, run_gds_fc=False,
         skip_drc=False, skip_xor=False, drc_only=False, dont_compress=False, manifest_source="master", run_klayout_drc=False,
-        run_klayout_fom_density_check=False, no_klayout_offgrid_check=False, no_klayout_metal_density_check=False, private=False):
+        run_klayout_fom_density_check=False, no_klayout_offgrid_check=False, no_klayout_metal_density_check=False, no_klayout_zero_area_check=False, private=False):
     if not output_directory:
         output_directory = str(target_path) + '/checks'
 
     # Create the logging controller
     lc = logger('%s/full_log.log' % output_directory, target_path, dont_compress)
     lc.create_full_log()
-
+    _, top_level_netlist, user_level_netlist = check_yaml.check_yaml(target_path)
+    project_type = get_project_type(top_level_netlist, user_level_netlist, lc)
+    config.init(project_type)
+    user_wrapper_path = Path(f"{target_path}/gds/{config.user_module}.gds")
     steps = 6
     if not private:
         steps += 1
     if drc_only:
         steps -= 4
-        _, top_level_netlist, user_level_netlist = check_yaml.check_yaml(target_path)
-        project_type = get_project_type(top_level_netlist, user_level_netlist, lc)
-        config.init(project_type)
     elif run_fuzzy_checks or run_klayout_drc:
         steps += int(run_fuzzy_checks) + int(run_klayout_drc)
     stp_cnt = 0
@@ -257,7 +257,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
         stp_cnt += 1
     else:
         lc.print_control("{{PROGRESS}} Executing Step %s of %s: DRC Violations Checks" % (stp_cnt, steps))
-        user_wrapper_path = Path("%s/gds/%s.gds" % (target_path, config.user_module))
         if not os.path.exists(user_wrapper_path):
             lc.print_control("{{FAIL}} DRC Checks on GDS Failed, Reason: ./gds/%s.gds(.gz) not found can't run DRC\nTEST FAILED AT STEP %s" % (config.user_module, stp_cnt))
         else:
@@ -282,7 +281,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                     lc.print_control("{{FAIL}} Klayout DRC Checks on GDS Failed, Reason: %s\nTEST FAILED AT STEP %s" % (reason, stp_cnt))
             stp_cnt += 1
 
-        user_wrapper_path = Path(str(target_path)) / "gds" / ("%s.gds" % config.user_module)
         if not no_klayout_offgrid_check:
             report_file = Path(output_directory) / "offgrid_check.xml"
             lc.print_control("{{PROGRESS}} Executing Klayout offgrid check.")
@@ -302,7 +300,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
                 lc.print_control("{{FAIL}} Klayout metal minimum clear area density Checks on GDS Failed, Errors are: %s"%('\n'.join(errors)))
     if run_klayout_fom_density_check:
         lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking Klayout FOM density.")
-        user_wrapper_path = Path(str(target_path) + "/gds/" + config.user_module + ".gds")
         report_file = Path(output_directory) / "fom_density_check.xml"
         failed, errors, warnings = klayout_drc_checker.fom_density_checker(user_wrapper_path,
                                                                 report_file, output_directory)
@@ -310,6 +307,25 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
             lc.print_control("{{PROGRESS}} Klayout FOM density Checks on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
         else:
             lc.print_control("{{FAIL}} Klayout FOM density Checks on GDS Failed, Errors are: %s"%('\n'.join(errors)))
+
+            stp_cnt += 1
+    if not no_klayout_zero_area_check:
+        lc.print_control("{{PROGRESS}} Executing Step " + str(stp_cnt) + " of " + str(steps) + ": Checking zero area shapes in GDS.")
+        zero_area_check_xml_report_path = Path(f"{output_directory}/zero_area_check.xml")
+        zero_area_check_total_path = Path(f"{output_directory}/zero_area_check_total.txt")
+        zero_area_check_cmd = ['bash', Path('./scripts/gdsArea0.rb'), user_wrapper_path, zero_area_check_xml_report_path]
+        with open(lc.log, "w") as log:
+            process = subprocess.run(zero_area_check_cmd, stdout=log, stderr=log)
+        failed = (process.returncode != 0)
+        with open(zero_area_check_xml_report_path) as zero_area_check_xml_report, open(zero_area_check_total_path, "w") as total_file_path:
+            xml_content = zero_area_check_xml_report.read()
+            zero_area_check_error_count = xml_content.count("<item>")
+            total_file_path.write(str(zero_area_check_error_count))
+
+        if not failed:
+            lc.print_control("{{PROGRESS}} Klayout Zero Area check on User Project GDS Passed!\nStep " + str(stp_cnt) + " done without fatal errors.")
+        else:
+            lc.print_control("{{FAIL}} Klayout Zero Area check on GDS Failed. Read report database %s using klayout" % zero_area_check_xml_report_path)
 
             stp_cnt += 1
 
@@ -320,7 +336,6 @@ def run_check_sequence(target_path, caravel_root, pdk_root, output_directory=Non
     else:
         lc.print_control("{{FAIL}} SOME Checks FAILED !!!")
         exit_code = 2
-    lc.dump_full_log()
     lc.exit_control(exit_code)
 
 
@@ -372,28 +387,16 @@ if __name__ == "__main__":
 
     parser.add_argument('--no_klayout_metal_density_check', '-nkmdc', action='store_true', default=False,
                         help="Specifies whether or not to run Klayout metal density checks. Default: False")
+
+    parser.add_argument('--no_klayout_zero_area_check', '-nkza', action='store_true', default=False,
+                        help="Specifies whether or not to run Klayout Zero Area Checks. Default: False")
+
     parser.add_argument('--private', action='store_true', default=False,
                         help="Specifies whether or not to run licensing & readme checks. Default: False")
 
     args = parser.parse_args()
 
-    caravel_root = args.caravel_root
-    dont_compress = args.dont_compress
-    drc_only = args.drc_only
-    manifest_source = args.manifest_source
-    output_directory = args.output_directory
-    pdk_root = args.pdk_root
-    private = args.private
-    run_fuzzy_checks = args.run_fuzzy_checks
-    run_gds_fc = args.run_gds_fc
-    run_klayout_drc = args.run_klayout_drc
-    run_klayout_fom_density_check = args.run_klayout_fom_density_check
-    no_klayout_offgrid_check = args.no_klayout_offgrid_check
-    no_klayout_metal_density_check = args.no_klayout_metal_density_check
-    skip_drc = args.skip_drc
-    skip_xor = args.skip_xor
-    target_path = args.target_path
-
-    run_check_sequence(target_path, caravel_root, pdk_root, output_directory,  run_fuzzy_checks, run_gds_fc, skip_drc,
-            skip_xor, drc_only, dont_compress, manifest_source, run_klayout_drc, run_klayout_fom_density_check, no_klayout_offgrid_check,
-            no_klayout_metal_density_check, private)
+    run_check_sequence(args.target_path, args.caravel_root, args.pdk_root, args.output_directory, args.run_fuzzy_checks,
+            args.run_gds_fc, args.skip_drc, args.skip_xor, args.drc_only, args.dont_compress, args.manifest_source,
+            args.run_klayout_drc, args.run_klayout_fom_density_check, args.no_klayout_offgrid_check, args.no_klayout_metal_density_check,
+            args.no_klayout_zero_area_check, args.private)
