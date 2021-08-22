@@ -12,8 +12,8 @@ class KlayoutDRCCheck:
         self.gds_input_file_path = Path(gds_input_file_path)
         self.output_directory = Path(output_directory)
         self.report_file_path = Path(self.output_directory) / ('%s_check.xml'%self.__ref__)
-        self.total_file_path = Path(self.output_directory) / ('%s_check.txt'%self.__ref__)
-        self.log_file_path = Path(self.output_directory) / ('%s_total.log'%self.__ref__)
+        self.log_file_path = Path(self.output_directory) / ('%s_check.log'%self.__ref__)
+        self.total_file_path = Path(self.output_directory) / ('%s_total.txt'%self.__ref__)
         self.n_violations = 0
         self.failed = False
 
