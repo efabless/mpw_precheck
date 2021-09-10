@@ -14,86 +14,106 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import gzip
+import logging
 import os
+import shutil
 import subprocess
-import sys
 from pathlib import Path
 
-import config
-from utils.utils import *
-
-default_logger_path = '/usr/local/bin/full_log.log'
-default_target_path = '/usr/local/bin/caravel/'
+import requests
 
 
-def gds_xor_check(target_path, pdk_root, output_directory, lc=logger(default_logger_path, default_target_path), call_path='/usr/local/bin/xor_checks'):
-    gds_path = target_path + "/" + config.user_module + ".gds"
-    if not os.path.exists(Path(gds_path)):
-        return False, "GDS not found"
+def download_gzip_file_from_url(target_url, download_path):
+    with open(download_path, 'wb') as f:
+        status_code = None
+        while status_code != 200:
+            logging.info(f"Trying to get file {target_url}")
+            response = requests.get(target_url, headers={'accept-encoding': 'gzip'}, stream=True)
+            status_code = response.status_code
+        logging.info(f"Got file {target_url}")
+        gzip_file = gzip.GzipFile(fileobj=response.raw)
+        shutil.copyfileobj(gzip_file, f)
 
-    golden_wrapper_gds = config.golden_wrapper + ".gds"
-    link_prefix_gds = config.link_prefix + "/gds"
 
-    call_path = os.path.abspath(call_path)
-    run_xor_check_cmd = ['sh', '%s/run_xor_checks.sh' % call_path, target_path, '%s.gds' % config.user_module, golden_wrapper_gds, link_prefix_gds, config.user_module, output_directory, pdk_root, call_path]
+def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_golden_wrapper_file_path, project_config):
+    parent_directory = Path(__file__).parent
+    root_directory = parent_directory.parent
+    logs_directory = output_directory / 'logs'
+    outputs_directory = output_directory / 'outputs'
 
-    lc.print_control("{{PROGRESS}} Running XOR Checks...")
+    # magicrc_file_path = root_directory / 'tech-files' / 'sky130A.magicrc'
+    gds_ut_path = input_directory / 'gds' / f"{project_config['user_module']}.gds"  # gds_ut : gds under test
+    xor_log_file_path = logs_directory / 'xor_check.log'
 
-    process = subprocess.Popen(run_xor_check_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    if not gds_ut_path.exists():
+        logging.error("GDS not found")
+        return False
+
+    with open(xor_log_file_path, 'w') as xor_log:
+        rb_gds_size_file_path = parent_directory / 'gds_size.rb'
+        rb_gds_size_cmd = [rb_gds_size_file_path, gds_ut_path, project_config['user_module']]
+        rb_gds_size_process = subprocess.run(rb_gds_size_cmd, stderr=xor_log, stdout=xor_log)
+        if rb_gds_size_process.returncode != 0:
+            logging.error(f"Top cell name {project_config['user_module']} not found.")
+            return False
+
+        # TODO: Try to pass the MAGTYPE as a commandline argument
+        os.environ['MAGTYPE'] = 'mag'
+
+        # Erase box
+        gds_ut_box_erased_path = outputs_directory / f"{project_config['user_module']}_erased.gds"
+        tcl_erase_box_file_path = parent_directory / 'erase_box.tcl'
+        magic_gds_erase_box_ut_cmd = ['magic', '-dnull', '-noconsole', '-rcfile', magicrc_file_path, tcl_erase_box_file_path,
+                                      gds_ut_path, gds_ut_box_erased_path, project_config['user_module']]
+        subprocess.run(magic_gds_erase_box_ut_cmd, stderr=xor_log, stdout=xor_log)
+        gds_golden_wrapper_box_erased_file_path = outputs_directory / f"{project_config['golden_wrapper']}_erased.gds"
+        magic_gds_erase_box_golden_wrapper_cmd = ['magic', '-dnull', '-noconsole', '-rcfile', magicrc_file_path,
+                                                  tcl_erase_box_file_path, gds_golden_wrapper_file_path,
+                                                  gds_golden_wrapper_box_erased_file_path, project_config['user_module']]
+        subprocess.run(magic_gds_erase_box_golden_wrapper_cmd, stderr=xor_log, stdout=xor_log)
+
+        # Check if the two resulting GDSes have any differences and write them to a file
+        klayout_rb_drc_xor_file_path = parent_directory / 'xor.rb.drc'
+        xor_resulting_shapes_gds_file_path = outputs_directory / f"{project_config['user_module']}.xor.gds"
+        xor_total_file_path = logs_directory / 'xor_check.total'
+        klayout_xor_command = ['klayout', '-b', '-r', klayout_rb_drc_xor_file_path,
+                               '-rd', 'top_cell=xor_target', '-rd', 'a=%s' % gds_ut_box_erased_path, '-rd', 'b=%s' % gds_golden_wrapper_box_erased_file_path,
+                               '-rd', 'thr=%s' % os.cpu_count(), '-rd', 'ol=%s' % xor_resulting_shapes_gds_file_path,
+                               '-rd', 'o=%s' % xor_resulting_shapes_gds_file_path, '-rd', 'ext=%s' % 'gds',
+                               '-rd', 'xor_total_file_path=%s' % xor_total_file_path]
+        subprocess.run(klayout_xor_command, stderr=xor_log, stdout=xor_log)
+
     try:
-        while True:
-            output = process.stdout.readline()
-            if not output:
-                break
-            if output:
-                continue
-    except subprocess.CalledProcessError as e:
-        error_msg = e.stderr.decode(sys.getfilesystemencoding())
-        return False, str(error_msg)
-
-    output = process.communicate()[0]
-    if process.returncode == 99:
-        return False, "Top cell name %s not found." % config.user_module
-
-    try:
-        xorFileOpener = open(output_directory + '/xor_total.txt')
-        if xorFileOpener.mode == 'r':
-            xorContent = xorFileOpener.read()
-        xorFileOpener.close()
-        lc.print_control(xorContent)
-        if len(xorContent):
-            xor_cnt = xorContent.split('=')[1].strip()
-            if xor_cnt == '0':
-                return True, "XOR Checks Passed"
-            else:
-                return False, "XOR Differences count is {0}. Please view {1}/*.xor.* for more details.".format(xor_cnt, output_directory)
+        with open(xor_total_file_path) as xor_total:
+            xor_cnt = xor_total.read()
+        logging.info(f"{{XOR CHECK UPDATE}} Total XOR differences: {xor_cnt}, for more details view {xor_resulting_shapes_gds_file_path}")
+        if xor_cnt == '0':
+            return True
         else:
-            return False, "No xor Result retreived. Please view the full_log.log and xor.log for more details."
+            return False
     except FileNotFoundError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: " + str(output_directory) + "/magic_xor.log"
-    except OSError:
-        return False, "Either you didn't mount the docker, or you ran out of RAM. Otherwise, magic is broken and it segfaulted. Please check: " + str(output_directory) + "/magic_xor.log"
+        logging.error(f"XOR CHECK FILE NOT FOUND in {xor_total_file_path}")
+        return False
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Runs a magic xor check on a given GDS.')
-
-    parser.add_argument('--target_path', '-t', required=True,
-                        help='Design Path')
-
-    parser.add_argument('--design_name', '-d', required=True,
-                        help='Design Name')
-
-    parser.add_argument('--output_directory', '-o', required=False,
-                        help='Output Directory')
-
+    logging.basicConfig(level=logging.DEBUG, format=f"%(message)s")
+    parser = argparse.ArgumentParser(description='Runs a magic xor check on a given GDS.')
+    parser.add_argument('--input_directory', '-i', required=True, help='Design Path')
+    parser.add_argument('--output_directory', '-o', required=False, help='Output Directory')
+    parser.add_argument('--magicrc_file_path', '-mrc', required=True, help='magicrc file path')
     args = parser.parse_args()
-    target_path = args.target_path
-    design_name = args.design_name
-    if args.output_directory is None:
-        output_directory = str(target_path) + '/xor_checks'
-    else:
-        output_directory = args.output_directory
 
-    print("{{RESULT}} ", gds_xor_check(target_path, design_name, output_directory, logger(str(output_directory) + '/full_log.log', target_path), '.'))
+    output_directory = Path(args.output_directory) if args.output_directory else Path(args.input_directory) / 'checks'
+
+    # TODO OMLA: fix broken utils import and run xor_check outside precheck
+    # project_config = get_project_config(Path(args.input_directory))
+    project_config = {}
+    empty_wrapper_url = f"{project_config['link_prefix']}/gds/{project_config['golden_wrapper']}.gds.gz"
+    gds_golden_wrapper_file_path = output_directory / 'outputs' / f"{project_config['golden_wrapper']}.gds"
+    download_gzip_file_from_url(empty_wrapper_url, gds_golden_wrapper_file_path)
+    if gds_xor_check(Path(args.input_directory), output_directory, Path(args.magicrc_file_path), gds_golden_wrapper_file_path, project_config):
+        logging.info("XOR Check Clean")
+    else:
+        logging.info("XOR Check Dirty")
