@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 open_mpw_prechecker.py -dc --pdk_root $PDK_ROOT --target_path $TARGET_PATH -c $CARAVEL_ROOT $@
+python3 mpw_precheck.py --input_directory $INPUT_DIRECTORY -cr $CARAVEL_ROOT --pdk_root $PDK_ROOT $@

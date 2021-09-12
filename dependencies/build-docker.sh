@@ -15,5 +15,4 @@
 
 mkdir -p logs/docker
 echo "dir created"
-docker build --rm -t efabless/open_mpw_precheck:latest . | tee logs/docker/open_mpw_prechecker.build.txt
-
+docker build --rm -t efabless/mpw_precheck:latest . | tee logs/docker/mpw_precheck.build.txt

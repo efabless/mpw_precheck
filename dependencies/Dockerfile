@@ -20,57 +20,59 @@ FROM centos:centos7 as build
 
 # Common development tools and libraries (kitchen sink approach)
 RUN yum -y install centos-release-scl && \
-    	yum -y install devtoolset-8 devtoolset-8-libatomic-devel && \
-        yum clean all && \
-        rm -rf /var/cache/yum
+    yum -y install devtoolset-8 devtoolset-8-libatomic-devel && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 
-# python 3.6
+# Python 3.6
 RUN yum install -y https://repo.ius.io/ius-release-el7.rpm && \
-        yum clean all && \
-        rm -rf /var/cache/yum
-RUN yum install -y python36u python36u-libs python36u-devel python36u-pip python36u-tkinter && \
-        yum clean all && \
-        rm -rf /var/cache/yum
+    yum clean all && \
+    rm -rf /var/cache/yum
+RUN yum install -y python36u python36u-devel python36u-libs python36u-pip python36u-tkinter && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
+RUN pip3.6 install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir awscli boto3 colorama coloredlogs klayout numpy pyyaml requests strsimpy
 
-RUN pip3.6 install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir \
-                pyyaml \
-                awscli \
-                requests \
-                boto3 \
-                strsimpy \
-                textdistance
+# Install pyverilog & pyspice
+RUN pip install --no-cache-dir https://github.com/PyHDI/Pyverilog/archive/develop.zip && \
+    pip install --no-cache-dir pyspice
 
-# magic dependencies
-RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel
-
-# General utils
+# General Utils
 RUN yum install -y ruby tcllib git tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ patch \
-        gdb.x86_64 file.x86_64 time.x86_64 && \
-	yum clean all && \
-	rm -rf /var/cache/yum
+    gdb.x86_64 file.x86_64 time.x86_64 && \
+    yum clean all && \
+    rm -rf /var/cache/yum
 
 # uninstall current version of git and install latest version instead
 RUN yum -y remove git && yum -y remove git-* && \
     yum -y install https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.9-1.x86_64.rpm && \
     yum -y install git && \
-	yum clean all && \
-	rm -rf /var/cache/yum
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+# Install iverilog
+RUN yum install -y iverilog && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+# Magic Dependencies
+RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurses-devel \
+    yum clean all && \
+    rm -rf /var/cache/yum
 
 # Install Klayout
 RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.3-0.x86_64.rpm && \
-        yum clean all && \
-        rm -rf /var/cache/yum
+    yum clean all && \
+    rm -rf /var/cache/yum
 
-# Install Magic
-# RUN git clone https://github.com/RTimothyEdwards/magic ./magic_597ef48
-RUN git clone -n git://opencircuitdesign.com/magic \
-         ./magic_597ef48
-WORKDIR    magic_597ef48
+# Clone Magic
+RUN git clone https://github.com/RTimothyEdwards/magic ./magic_597ef48
+#RUN git clone git://opencircuitdesign.com/magic ./magic_597ef48
+WORKDIR magic_597ef48
 RUN git checkout 597ef4857a02f1d0748475dcff118801e91b0e88
-
-# build
+# Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
 # -g    : keep debugging info, incl. symbols.
 # --disable-locking : recommended by tim due to cell-depth of sky130A PDK cells.
@@ -80,8 +82,7 @@ RUN scl enable devtoolset-8 -- ./configure --disable-locking --prefix=/build CFL
     scl enable devtoolset-8 -- make -j4 && \
     scl enable devtoolset-8 -- make install
 
-# ENV CARAVEL_USER_PROJECT_PATH=/tmp/caravel_user_project
-ENV PRECHECKER_ROOT=/usr/local/bin/
+ENV PRECHECKER_ROOT=/opt/
 ENV BUILD_PATH=/build/
 ENV PATH=$PRECHECKER_ROOT:$PRECHECKER_ROOT/scripts:$BUILD_PATH/bin:$BUILD_PATH/bin/Linux-x86_64:$BUILD_PATH/pdn/scripts:$PATH
 ENV LD_LIBRARY_PATH=$BUILD_PATH/lib:$BUILD_PATH/lib/Linux-x86_64:$LD_LIBRARY_PATH
@@ -89,15 +90,4 @@ ENV MANPATH=$BUILD_PATH/share/man:$MANPATH
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV LC_CTYPE en_US.UTF-8
-ENV LANG C.UTF-8
-
-# Grab default user_project
-# RUN git clone https://github.com/efabless/caravel_user_project $CARAVEL_USER_PROJECT_PATH
-
-RUN mkdir -p /build/version/
-
-RUN date +"Build Timestamp: %Y-%m-%d_%H-%M-%S" > /build/version/magic.version
-RUN git rev-parse HEAD >> /build/version/magic.version
-RUN tar -czf /build.tar.gz /build
-
 WORKDIR $PRECHECKER_ROOT

@@ -16,10 +16,10 @@
 
 # exit when any command fails
 export RUN_ROOT=$(pwd)
-export IMAGE_NAME=efabless/open_mpw_precheck:latest
-echo $PDK_ROOT
+export IMAGE_NAME=efabless/mpw_precheck:latest
 echo $RUN_ROOT
+echo $PDK_ROOT
 make skywater-pdk
-make skywater-library;
+make skywater-library
 make open_pdks
-docker run -v $(pwd)/..:/usr/local/bin -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) $IMAGE_NAME bash -c "cd /usr/local/bin/dependencies; make build-pdk"
+docker run -v $(pwd)/..:/opt -v $PDK_ROOT:$PDK_ROOT -e PDK_ROOT=$PDK_ROOT -u $(id -u $USER):$(id -g $USER) $IMAGE_NAME bash -c "cd /opt/dependencies; make build-pdk"

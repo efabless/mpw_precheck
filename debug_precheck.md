@@ -1,9 +1,10 @@
-### Always check the $TARGET_PATH/checks folder for relevant log files
+### Always check the $INPUT_DIRECTORY/checks folder for relevant log files
 
 # What to do if:
+
 #### License check failed
 
-Include a LICENSE file in 
+Include a LICENSE file in
 
 - The root directory in your project
 - each directory under  `third_party`
@@ -13,12 +14,11 @@ Make sure it is one of the [approved licenses](base_checks/_licenses/_approved_l
 
 #### SPDX Compliance failed
 
-check the `$TARGET_PATH/checks/spdx_compliance_report.log` for the non-compliant files.
-Then add SPDX header in the beginning of all of those files.
+check the `$INPUT_DIRECTORY/checks/spdx_compliance_report.log` for the non-compliant files. Then add SPDX header in the beginning of all of those files.
 
 #### Manifest check failed
 
-Pull and checkout the master branch in your caravel directory 
+Pull and checkout the master branch in your caravel directory
 
 #### Compliance Check failed
 
@@ -31,13 +31,11 @@ Pull and checkout the master branch in your caravel directory
 
 #### Fuzzy consistency check failed
 
-This indicates a serious issue with the design please 
-check [information about fuzzy checks in README.md](README.md#fuzzy-consistency-checks)
-    
+This indicates a serious issue with the design please check [information about fuzzy checks in README.md](README.md#fuzzy-consistency-checks)
+
 #### XOR check failed
 
-- Load `$TARGET_PATH/checks/<design_name>.xor.gds` into [klayout](#how-to-view-a-gds) and then 
-you can see where exactly your design violates the boundary set for the user project 
+- Load `$INPUT_DIRECTORY/checks/<design_name>.xor.gds` into [klayout](#how-to-view-a-gds) and then you can see where exactly your design violates the boundary set for the user project
 
 - Read xor.log and check the specific coordiantes of your violations
 
@@ -47,36 +45,30 @@ you can see where exactly your design violates the boundary set for the user pro
 
 ###### Magic drc check
 
-To debug drc errors you can open up the `$TARGET_PATH/checks/magic_drc.log` folder and
-you can view them via the .magic.drc.mag file which is loadable in magic
+To debug drc errors you can open up the `$INPUT_DIRECTORY/checks/magic_drc.log` folder and you can view them via the .magic.drc.mag file which is loadable in magic
 
-Also there is a listing of all the failed parts of the design in $TARGET_PATH/checks/<design_name>.magic.drc
+Also there is a listing of all the failed parts of the design in $INPUT_DIRECTORY/checks/<design_name>.magic.drc
 
-If you are having a huge number of DRC violations there is a good chance you are using
-an SRAM block that is not the latest version in efabless/sram_sky130_macros . Just pull
-the master branch and include one of those updated macros instead
+If you are having a huge number of DRC violations there is a good chance you are using an SRAM block that is not the latest version in efabless/sram_sky130_macros . Just pull the master branch and include one of those updated macros instead
 
 ###### Klayout drc check (DISABLED BY DEFAULT)
 
-Load marker databases provided by the drc check into klayout (Or whichever layout 
-editor/viewer you wish to use) along with the gds file (user_project_wrapper.gds) 
-and you can view the violations on top of your design layout 
+Load marker databases provided by the drc check into klayout (Or whichever layout editor/viewer you wish to use) along with the gds file (user_project_wrapper.gds)
+and you can view the violations on top of your design layout
 [using klayout](#how-to-load-marker-database-files)
 
-Investigate the specific coordinates of the failures in the design gds.
-Use `$TARGET_PATH/checks/<design_name>_klayout.lydrc` file as a marker database file loadable
-in [klayout](#how-to-load-marker-database-files)
+Investigate the specific coordinates of the failures in the design gds. Use `$INPUT_DIRECTORY/checks/<design_name>_klayout.lydrc` file as a marker database file loadable in [klayout](#how-to-load-marker-database-files)
+
 #### Klayout FOM density check failed
 
-Investigate the specific coordinates and types of the violations via loading 
-the marker database file `$TARGET_PATH/checks/fom_density_check.xml` into [ klayout ](#how-to-load-marker-database-files)
+Investigate the specific coordinates and types of the violations via loading the marker database file `$INPUT_DIRECTORY/checks/fom_density_check.xml` into [ klayout ](#how-to-load-marker-database-files)
 along with the design
 
 [use klayout](#how-to-load-marker-database-files) to view the marker database file which is in checks directory
 
 #### Default content check failed
 
-Use non-default values in info.yaml for the following fields 
+Use non-default values in info.yaml for the following fields
 
 - owner
 - orgranization
@@ -85,7 +77,7 @@ Use non-default values in info.yaml for the following fields
 - git_url
 - project_name
 
-Submit content other than the default content 
+Submit content other than the default content
 
 - gds
 - lef
@@ -93,12 +85,12 @@ Submit content other than the default content
 - mag
 - maglef
 - verilog/rtl
-- verilog/gl 
-- spi/lvs 
+- verilog/gl
+- spi/lvs
 
 ### Errors specific to running precheck on efabless platform:
 
-#### exception code 254 
+#### exception code 254
 
 There is a problem cloning your git repo using the provided git repo url
 
@@ -107,16 +99,12 @@ Common mistakes
 - Using ssh as a git url
 - Including private submodules that require credentials to get cloned
 
-#### exception code 1 
+#### exception code 1
 
-there is a problem with your project's name,
-the project's name is supposed to not have a space
-in it. You should create another project with a name
-that does not contain spaces and point your mpw-two request to
-the new one instead.
-
+there is a problem with your project's name, the project's name is supposed to not have a space in it. You should create another project with a name that does not contain spaces and point your mpw-two request to the new one instead.
 
 ## Using klayout:
+
 ### How to view a gds
 
     klayout <gds_file>
