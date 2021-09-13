@@ -1,4 +1,4 @@
-# usage: 
+# usage:
 # klayout -r pin_label_purposes_overlapping_drawing <-rd threads=THREADS_NUM> <-rd tile=TILE_SIZE> <-rd flat_mode=true> <-rd check_pwell=true> <gdsFile> <topcellName> <markerReportOutFileName>
 #
 # Flag pin.not(drawing) for all known pin/label layers in sky130A.
