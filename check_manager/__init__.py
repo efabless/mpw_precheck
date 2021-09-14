@@ -193,8 +193,8 @@ class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
     __ref__ = 'klayout_pin_label_purposes_overlapping_drawing'
     __surname__ = 'Klayout Pin Label Purposes Overlapping Drawing'
 
-    def __init__(self, gds_input_path, output_directory):
-        super().__init__(gds_input_path, output_directory)
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/pin_label_purposes_overlapping_drawing.rb.drc"
         self.klayout_cmd_extra_args = ['-rd',f'top_cell_name={self.project_config["user_module"]}']
 
