@@ -1,12 +1,7 @@
+**/__pycache__
 /build/
 /venv/
 /.idea/
 /.vscode/
-*/__pycache__/
-*/*/__pycache__/
-*/*/*/__pycache__/__pycache__
 dependencies/logs/docker/mpw_precheck.build.txt
-clone.sh
-process_file
-untar.sh
-worker.py
+parsetab.py
