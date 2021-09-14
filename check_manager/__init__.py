@@ -203,9 +203,10 @@ class KlayoutZeroArea(KlayoutDRC):
     __ref__ = 'klayout_zeroarea'
     __surname__ = 'Klayout ZeroArea'
 
-    def __init__(self, gds_input_path, output_directory):
-        super().__init__(gds_input_path, output_directory)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/zeroarea.drc"
+    def __init__(self, precheck_config, project_config):
+        super().__init__(project_config, project_config)
+        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/zeroarea.rb.drc"
+        self.klayout_cmd_extra_args = ["-rd", f"""cleaned_output={self.precheck_config['output_directory'] / 'outputs' / f"{self.gds_input_file_path.stem}_no_zero_areas.gds"}"""]
 
 
 class License(CheckManager):
