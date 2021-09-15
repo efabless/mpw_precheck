@@ -204,7 +204,7 @@ class KlayoutZeroArea(KlayoutDRC):
     __surname__ = 'Klayout ZeroArea'
 
     def __init__(self, precheck_config, project_config):
-        super().__init__(project_config, project_config)
+        super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/zeroarea.rb.drc"
         self.klayout_cmd_extra_args = ["-rd", f"""cleaned_output={self.precheck_config['output_directory'] / 'outputs' / f"{self.gds_input_file_path.stem}_no_zero_areas.gds"}"""]
 
