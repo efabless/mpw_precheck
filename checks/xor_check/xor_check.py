@@ -36,7 +36,7 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
 
     with open(xor_log_file_path, 'w') as xor_log:
         rb_gds_size_file_path = parent_directory / 'gds_size.rb'
-        rb_gds_size_cmd = ["ruby", rb_gds_size_file_path, gds_ut_path, project_config['user_module']]
+        rb_gds_size_cmd = ['ruby', rb_gds_size_file_path, gds_ut_path, project_config['user_module']]
         rb_gds_size_process = subprocess.run(rb_gds_size_cmd, stderr=xor_log, stdout=xor_log)
         if rb_gds_size_process.returncode != 0:
             logging.error(f"Top cell name {project_config['user_module']} not found.")
