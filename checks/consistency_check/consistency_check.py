@@ -48,7 +48,6 @@ def main(*args, **kwargs):
     project_config = kwargs["project_config"]
     golden_wrapper_netlist = kwargs["golden_wrapper_netlist"]
     defines_file_path = kwargs["defines_file_path"]
-    run_gds_fc = kwargs.get("run_gds_fc", False)
 
     for path in [input_directory, project_config['user_netlist'], project_config['top_netlist'], golden_wrapper_netlist, defines_file_path]:
         if not path.exists():
@@ -102,23 +101,6 @@ def main(*args, **kwargs):
                                                   submodule_power=USER_POWER_PINS, submodule_banned_power=USER_BANNED_POWER)
     user_netlist_check = user_netlist_checker.check(checks=user_module_checks, min_instances=1,
                                                     power_nets=USER_POWER_PINS, ignored_instances=user_module_ignored_cells)
-
-    # Integrated Caravel GDS Consistency Checks
-    # This is not a user enabled check since users don't run make ship/make truck
-    # TODO: discuss and coordinate removing the check with Manar
-    # if run_gds_fc:
-    #     top_netlist_gds = input_directory / "gds" / f"{top_module}.gds"
-    #     try:
-    #         top_layout_parser = LayoutParser(top_netlist_gds, top_module)
-    #     except (DataError, RuntimeError) as e:
-    #         logging.fatal(f"{{{{PARSING LAYOUT FAILED}}}} The {top_module} layout fails parsing because: {str(e)}")
-    #         return False
-    #
-    #     top_gds_check = top_netlist_checker.check_layout(top_layout_parser, ignored_cells=IGNORED_TEXT_BLOCKS + IGNORED_POWER_CELLS)
-    #     top_subcell_gds_check = top_netlist_checker.check_layout_subcell(user_module, top_layout_parser, user_netlist_parser)
-    #
-    #     if not top_gds_check or not top_subcell_gds_check:
-    #         return False
 
     result = top_netlist_check and user_netlist_check
     return result

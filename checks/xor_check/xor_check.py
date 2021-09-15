@@ -14,36 +14,20 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import gzip
 import logging
 import os
-import shutil
 import subprocess
 from pathlib import Path
 
-import requests
-
-
-def download_gzip_file_from_url(target_url, download_path):
-    with open(download_path, 'wb') as f:
-        status_code = None
-        while status_code != 200:
-            logging.info(f"Trying to get file {target_url}")
-            response = requests.get(target_url, headers={'accept-encoding': 'gzip'}, stream=True)
-            status_code = response.status_code
-        logging.info(f"Got file {target_url}")
-        gzip_file = gzip.GzipFile(fileobj=response.raw)
-        shutil.copyfileobj(gzip_file, f)
+from checks.utils import utils
 
 
 def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_golden_wrapper_file_path, project_config):
     parent_directory = Path(__file__).parent
-    root_directory = parent_directory.parent
     logs_directory = output_directory / 'logs'
     outputs_directory = output_directory / 'outputs'
 
-    # magicrc_file_path = root_directory / 'tech-files' / 'sky130A.magicrc'
-    gds_ut_path = input_directory / 'gds' / f"{project_config['user_module']}.gds"  # gds_ut : gds under test
+    gds_ut_path = input_directory / 'gds' / f"{project_config['user_module']}.gds"
     xor_log_file_path = logs_directory / 'xor_check.log'
 
     if not gds_ut_path.exists():
@@ -52,7 +36,7 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
 
     with open(xor_log_file_path, 'w') as xor_log:
         rb_gds_size_file_path = parent_directory / 'gds_size.rb'
-        rb_gds_size_cmd = [rb_gds_size_file_path, gds_ut_path, project_config['user_module']]
+        rb_gds_size_cmd = ['ruby', rb_gds_size_file_path, gds_ut_path, project_config['user_module']]
         rb_gds_size_process = subprocess.run(rb_gds_size_cmd, stderr=xor_log, stdout=xor_log)
         if rb_gds_size_process.returncode != 0:
             logging.error(f"Top cell name {project_config['user_module']} not found.")
@@ -77,12 +61,16 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
         klayout_rb_drc_xor_file_path = parent_directory / 'xor.rb.drc'
         xor_resulting_shapes_gds_file_path = outputs_directory / f"{project_config['user_module']}.xor.gds"
         xor_total_file_path = logs_directory / 'xor_check.total'
-        klayout_xor_command = ['klayout', '-b', '-r', klayout_rb_drc_xor_file_path,
-                               '-rd', 'top_cell=xor_target', '-rd', 'a=%s' % gds_ut_box_erased_path, '-rd', 'b=%s' % gds_golden_wrapper_box_erased_file_path,
-                               '-rd', 'thr=%s' % os.cpu_count(), '-rd', 'ol=%s' % xor_resulting_shapes_gds_file_path,
-                               '-rd', 'o=%s' % xor_resulting_shapes_gds_file_path, '-rd', 'ext=%s' % 'gds',
-                               '-rd', 'xor_total_file_path=%s' % xor_total_file_path]
-        subprocess.run(klayout_xor_command, stderr=xor_log, stdout=xor_log)
+        xor_command = ['klayout', '-b', '-r', klayout_rb_drc_xor_file_path,
+                       '-rd', 'ext=gds',
+                       '-rd', 'top_cell=xor_target',
+                       '-rd', f'thr={os.cpu_count()}',
+                       '-rd', f'a={gds_ut_box_erased_path}',
+                       '-rd', f'b={gds_golden_wrapper_box_erased_file_path}',
+                       '-rd', f'o={xor_resulting_shapes_gds_file_path}',
+                       '-rd', f'ol={xor_resulting_shapes_gds_file_path}',
+                       '-rd', f'xor_total_file_path={xor_total_file_path}']
+        subprocess.run(xor_command, stderr=xor_log, stdout=xor_log)
 
     try:
         with open(xor_total_file_path) as xor_total:
@@ -101,18 +89,16 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=f"%(message)s")
     parser = argparse.ArgumentParser(description='Runs a magic xor check on a given GDS.')
     parser.add_argument('--input_directory', '-i', required=True, help='Design Path')
-    parser.add_argument('--output_directory', '-o', required=False, help='Output Directory')
+    parser.add_argument('--output_directory', '-o', required=False, default='.', help='Output Directory')
     parser.add_argument('--magicrc_file_path', '-mrc', required=True, help='magicrc file path')
     args = parser.parse_args()
 
-    output_directory = Path(args.output_directory) if args.output_directory else Path(args.input_directory) / 'checks'
+    output_directory = Path(args.output_directory)
+    project_config = utils.get_project_config(Path(args.input_directory))
 
-    # TODO OMLA: fix broken utils import and run xor_check outside precheck
-    # project_config = get_project_config(Path(args.input_directory))
-    project_config = {}
     empty_wrapper_url = f"{project_config['link_prefix']}/gds/{project_config['golden_wrapper']}.gds.gz"
     gds_golden_wrapper_file_path = output_directory / 'outputs' / f"{project_config['golden_wrapper']}.gds"
-    download_gzip_file_from_url(empty_wrapper_url, gds_golden_wrapper_file_path)
+    utils.download_gzip_file_from_url(empty_wrapper_url, gds_golden_wrapper_file_path)
     if gds_xor_check(Path(args.input_directory), output_directory, Path(args.magicrc_file_path), gds_golden_wrapper_file_path, project_config):
         logging.info("XOR Check Clean")
     else:

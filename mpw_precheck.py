@@ -21,7 +21,7 @@ from pathlib import Path
 
 import precheck_logger
 from check_manager import get_check_manager, open_source_checks, private_checks
-from checks.utils.utils import get_project_config, uncompress_gds
+from checks.utils.utils import file_hash, get_project_config, uncompress_gds
 
 
 def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
@@ -48,7 +48,6 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
 def run_precheck_sequence(precheck_config, project_config):
     results = {}
     logging.info(f"{{{{START}}}} Precheck Started, the full log '{precheck_config['log_path'].name}' will be located in '{precheck_config['log_path'].parent}'")
-    uncompress_gds(precheck_config['input_directory'])
     for check_count, entry in enumerate(precheck_config['sequence'], start=1):
         check = get_check_manager(entry, precheck_config, project_config)
         if check:
@@ -76,10 +75,14 @@ def main(*args, **kwargs):
                            default_content=Path(kwargs['default_content']),
                            check_managers=check_managers)
 
+    uncompress_gds(precheck_config['input_directory'])
+    project_config = get_project_config(precheck_config['input_directory'])
+    project_wrapper = "user_analog_project_wrapper.gds" if project_config['type'] == 'analog' else 'user_project_wrapper.gds'
+    project_wrapper_hash = file_hash(precheck_config['input_directory'] / f'gds/{project_wrapper}')
+    logging.info(f"MPW Precheck is running on: {project_wrapper}: {project_wrapper_hash} ...")
     tools_info_path = precheck_config['log_path'].parent / 'tools.info'
     pdks_info_path = precheck_config['log_path'].parent / 'pdks.info'
     log_tools_info(precheck_config['pdk_root'], tools_info_path, pdks_info_path)
-    project_config = get_project_config(precheck_config['input_directory'])
     run_precheck_sequence(precheck_config=precheck_config, project_config=project_config)
 
 

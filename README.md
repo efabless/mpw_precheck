@@ -58,8 +58,8 @@ It runs a sequence of checks and aborts with the appropriate error message(s) if
 The steps are as follows:
 
 - **License**:
-    - The root directory of the project contains at least one of the approved licenses and does not contain any of the prohibitted licenses
-    - All source files contain an approved SPDX header
+    - The root directory of the project, submodules and third party libraries contain at least one approved license and does not contain any prohibitted license
+    - All source files contain an approved SPDX License and Copyright Headers 
 - **Yaml**:
     - info.yaml file contain the pre-defined fields in [caravel_user_project](https://github.com/efabless/caravel_user_project.git) for digital projects
       and [caravel_user_project_analog](https://github.com/efabless/caravel_user_project_analog.git)
@@ -76,7 +76,16 @@ The steps are as follows:
 - **Documentation**:
     - Documentation file README.md exists and does not use any non-inclusive language
 - **Consistency**:
-    - Port names match that of the golden wrapper in user_project_wrapper_empty.gds or user_project_wrapper_analog_empty.gds
+    - Runs a series of checks on the user netlist (user_project_wrapper/user_analog_project_wrapper), and the top netlist (caravel/caravan) to make sure that both conform to the constraints put by the golden wrapper. 
+        - Both Netlists share the following checks:  
+            - Modeling check: check netlist is structural and doesn't contain behavioral constructs
+            - Complexity check: check netlist isn't empty and contains at least eight instances
+        - Remaining Top Netlist checks:
+            - Sub-module hooks: check the user wrapper submodule port connections match the golden wrapper ports
+            - Power check: check all submodules in the netlist are connected to power
+        - Remaining User Netlist checks:
+            - Ports check: check netlist port names match the golden wrapper ports
+            - Layout check: check netlist matches the provided user wrapper layout in terms of the number of instances, and the instance names
 - **XOR**:
     - No modification in the user_project_wrapper(versus default user_project_wrapper.gds in [caravel_user_project](https://github.com/efabless/caravel_user_project.git) for digital projects
       and [caravel_user_project_analog](https://github.com/efabless/caravel_user_project_analog.git) for analog projects) outside the user defined area lower left corner (0,0) and upper right corner (2920, 3520)
@@ -112,33 +121,34 @@ sh docker-mount.sh
 Run the following command:
 
 ```
-usage: mpw_precheck.py [-h] --input_directory INPUT_DIRECTORY --caravel_root
-                       CARAVEL_ROOT --pdk_root PDK_ROOT
-                       [--output_directory OUTPUT_DIRECTORY] [--private]
-                       [check [check ...]]
+usage: mpw_precheck.py [-h] --input_directory INPUT_DIRECTORY --caravel_root CARAVEL_ROOT --pdk_root PDK_ROOT 
+                       [--output_directory OUTPUT_DIRECTORY] [--private] [check [check ...]]
 
 Runs the precheck tool by calling the various checks in order.
 
 positional arguments:
+
   check                 Checks to be ran by the precheck (default: None)
 
 optional arguments:
+
   -h, --help            show this help message and exit
+  
   --input_directory INPUT_DIRECTORY, -i INPUT_DIRECTORY
-                        INPUT_DIRECTORY Absolute Path to the project.
-                        (default: None)
+                        INPUT_DIRECTORY Absolute Path to the project. (default: None)
+  
   --caravel_root CARAVEL_ROOT, -cr CARAVEL_ROOT
                         CARAVEL_ROOT Absolute Path to caravel. (default: None)
+  
   --pdk_root PDK_ROOT, -p PDK_ROOT
-                        PDK_ROOT, points to pdk installation path (default:
-                        None)
+                        PDK_ROOT, points to pdk installation path (default: None)
+  
   --output_directory OUTPUT_DIRECTORY, -o OUTPUT_DIRECTORY
                         Output Directory,
-                        default=<input_directory>/precheck_results. (default:
-                        None)
-  --private             If provided, precheck skips [License, Defaults,
-                        Documentation] checks that qualify the project to be
-                        Open Source (default: False)
+                        default=<input_directory>/precheck_results. (default:None)
+  
+  --private             If provided, precheck skips [License, Defaults, Documentation] 
+                        checks used to qualify the project to as an Open Source Project (default: False)
 ```
 
 ## How to Troubleshoot Issues with Precheck
