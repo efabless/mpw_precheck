@@ -18,7 +18,6 @@ import os
 from collections import OrderedDict
 from pathlib import Path
 
-import xor_checks.xor_checker as xor_check
 from checks import defaults_check
 from checks import documentation_check
 from checks import makefile_check
@@ -29,6 +28,7 @@ from checks.drc_checks.klayout import klayout_gds_drc_check
 from checks.drc_checks.magic import magic_gds_drc_check
 from checks.license_check import license_check
 from checks.utils import utils
+from checks.xor_check import xor_check
 
 
 class CheckManagerNotFound(Exception):
@@ -166,8 +166,8 @@ class KlayoutFOMDensity(KlayoutDRC):
     __ref__ = 'klayout_fom_density'
     __surname__ = 'Klayout Field Oxide Mask Density'
 
-    def __init__(self, gds_input_path, output_directory):
-        super().__init__(gds_input_path, output_directory)
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/fom_density.lydrc"
 
 
@@ -175,8 +175,8 @@ class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
 
-    def __init__(self, gds_input_path, output_directory):
-        super().__init__(gds_input_path, output_directory)
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/met_min_ca_density.lydrc"
 
 
@@ -184,8 +184,8 @@ class KlayoutOffgrid(KlayoutDRC):
     __ref__ = 'klayout_offgrid'
     __surname__ = 'Klayout Offgrid'
 
-    def __init__(self, gds_input_path, output_directory):
-        super().__init__(gds_input_path, output_directory)
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/offgrid.lydrc"
 
 
