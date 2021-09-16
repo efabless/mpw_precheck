@@ -92,7 +92,7 @@ if __name__ == '__main__':
     parser.add_argument('--input_directory', '-i', required=True, help="INPUT_DIRECTORY Absolute Path to the project.")
     parser.add_argument('--caravel_root', '-cr', required=True, help="CARAVEL_ROOT Absolute Path to caravel.")
     parser.add_argument('--pdk_root', '-p', required=True, help="PDK_ROOT, points to pdk installation path")
-    parser.add_argument('--output_directory', '-o', required=False, help="Output Directory, default=<input_directory>/precheck_results.")
+    parser.add_argument('--output_directory', '-o', required=False, help="Output Directory, default=<input_directory>/precheck_results/%d_%b_%Y___%H_%M_%S.")
     parser.add_argument('--private', action='store_true', help="If provided, precheck skips [License, Defaults, Documentation] checks that qualify the project to be Open Source")
     parser.add_argument('checks', metavar='check', type=str, nargs='*', help="Checks to be ran by the precheck")
     args = parser.parse_args()
