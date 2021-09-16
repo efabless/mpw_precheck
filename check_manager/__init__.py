@@ -199,6 +199,16 @@ class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
         self.klayout_cmd_extra_args = ['-rd',f'top_cell_name={self.project_config["user_module"]}']
 
 
+class KlayoutZeroArea(KlayoutDRC):
+    __ref__ = 'klayout_zeroarea'
+    __surname__ = 'Klayout ZeroArea'
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/zeroarea.rb.drc"
+        self.klayout_cmd_extra_args = ["-rd", f"""cleaned_output={self.precheck_config['output_directory'] / 'outputs' / f"{self.gds_input_file_path.stem}_no_zero_areas.gds"}"""]
+
+
 class License(CheckManager):
     __ref__ = 'license'
     __surname__ = 'License'
@@ -363,7 +373,8 @@ open_source_checks = OrderedDict([
     (KlayoutFEOLDRC.__ref__, KlayoutFEOLDRC),
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
-    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing)
+    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    (KlayoutZeroArea.__ref__, KlayoutZeroArea)
 ])
 
 # Note: list of checks for a private project
@@ -377,7 +388,8 @@ private_checks = OrderedDict([
     (KlayoutFEOLDRC.__ref__, KlayoutFEOLDRC),
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
-    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing)
+    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    (KlayoutZeroArea.__ref__, KlayoutZeroArea)
 ])
 
 

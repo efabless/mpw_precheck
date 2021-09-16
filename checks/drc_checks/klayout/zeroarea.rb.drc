@@ -1,0 +1,44 @@
+# based in part on: https://www.klayout.de/forum/discussion/173/use-klayout-in-batch-mode
+$errs = 0
+ly = RBA::Layout.new
+source($input, $top_cell_name)
+ly.read($input)
+report("zero area check", $report)
+ly.layer_indices.each { |li|
+  ly.each_cell { |cell|
+    cell.shapes(li).each { |shape|
+      # TODO: must we check that shape is one of: box, polygon, path? What happens to text?
+      if shape.is_valid? && (!shape.is_null?) &&
+          (shape.is_box? || shape.is_path? || shape.is_polygon?) &&
+          shape.area == 0
+        $errs += 1
+        polygons().insert(shape.dpolygon).output("zero_area_shape")
+        if $cleaned_output
+          shape.delete
+        end
+      end
+    }
+  }
+}
+puts "#{$errs} zero-area shapes"
+if $cleaned_output
+  puts "writing to #{$cleaned_output}"
+  ly.write($cleaned_output)
+end
+# if we roll-over to 256, exit-status seen by shell is zero.
+# uncaught I/O errors will yield (built-in) exit status of 1.
+if $errs > 0
+  $errs = $errs + 1
+end
+if $errs > 127
+  $errs = 127
+end
+# experimental: report own peak process-stats. BUT: output-file isn't really written
+# until we exit (during exit). So these results are not 100% accurate.
+# VmHWM: max-resident-size, VmPeak: max virtual-size.
+# don't need: pid=Process.pid
+if   File.readable?("/proc/self/status")
+  puts File.foreach("/proc/self/status").grep(/^(VmPeak|VmHWM)/)
+end
+# does not work (to set exit-status) in 0.23.11. Does work in 0.24.2, 0.27.
+exit $errs
