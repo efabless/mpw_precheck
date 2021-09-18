@@ -428,6 +428,8 @@ all_checks  = OrderedDict([
     (KlayoutFEOL.__ref__, KlayoutFEOL),
     (KlayoutBEOL.__ref__, KlayoutBEOL),
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
+    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity)
 ])
 
@@ -435,4 +437,4 @@ def get_check_manager(name, *args, **kwargs):
     if name.lower() in all_checks.keys():
         return all_checks[name.lower()](*args, **kwargs)
     else:
-        raise CheckManagerNotFound()
+        raise CheckManagerNotFound(f"The check '{name.lower()}' does not exist")
