@@ -1,4 +1,5 @@
 **/__pycache__
+**/parsetab.py
 /.idea/
 /.vscode/
 /build/

@@ -171,17 +171,6 @@ class KlayoutFEOL(KlayoutDRC):
         self.klayout_cmd_extra_args = ['-rd', 'feol=true']
 
 
-class KlayoutMR(KlayoutDRC):
-    __ref__ = 'klayout_mr'
-    __surname__ = 'Klayout MR'
-
-    def __init__(self, precheck_config, project_config):
-        super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
-        self.klayout_cmd_extra_args = ['-rd', 'feol=true',
-                                        '-rd', 'beol=true']
-
-
 # TODO: discuss migration to tapeout and removal from precheck
 class KlayoutFOMDensity(KlayoutDRC):
     __ref__ = 'klayout_fom_density'
@@ -205,10 +194,9 @@ class KlayoutOffgrid(KlayoutDRC):
     __ref__ = 'klayout_offgrid'
     __surname__ = 'Klayout Offgrid'
 
-    def __init__(self, gds_input_path, output_directory):
-        super().__init__(gds_input_path, output_directory)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
-        self.klayout_cmd_extra_args = ['-rd', 'offgrid=true']
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/offgrid.lydrc"
 
 
 class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
@@ -218,7 +206,7 @@ class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/pin_label_purposes_overlapping_drawing.rb.drc"
-        self.klayout_cmd_extra_args = ['-rd',f'top_cell_name={self.project_config["user_module"]}']
+        self.klayout_cmd_extra_args = ['-rd', f'top_cell_name={self.project_config["user_module"]}']
 
 
 class KlayoutZeroArea(KlayoutDRC):
@@ -392,7 +380,8 @@ open_source_checks = OrderedDict([
     (Consistency.__ref__, Consistency),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
-    (KlayoutMR.__ref__, KlayoutMR),
+    (KlayoutFEOL.__ref__, KlayoutFEOL),
+    (KlayoutBEOL.__ref__, KlayoutBEOL),
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
@@ -407,34 +396,18 @@ private_checks = OrderedDict([
     (Consistency.__ref__, Consistency),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
-    (KlayoutMR.__ref__, KlayoutMR),
+    (KlayoutFEOL.__ref__, KlayoutFEOL),
+    (KlayoutBEOL.__ref__, KlayoutBEOL),
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
     (KlayoutZeroArea.__ref__, KlayoutZeroArea)
 ])
 
-all_checks  = OrderedDict([
-    (License.__ref__, License),
-    (Yaml.__ref__, Yaml),
-    (Manifest.__ref__, Manifest),
-    (Makefile.__ref__, Makefile),
-    (Defaults.__ref__, Defaults),
-    (Documentation.__ref__, Documentation),
-    (Consistency.__ref__, Consistency),
-    (XOR.__ref__, XOR),
-    (MagicDRC.__ref__, MagicDRC),
-    (KlayoutMR.__ref__, KlayoutMR),
-    (KlayoutFEOL.__ref__, KlayoutFEOL),
-    (KlayoutBEOL.__ref__, KlayoutBEOL),
-    (KlayoutOffgrid.__ref__, KlayoutOffgrid),
-    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
-    (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity)
-])
 
 def get_check_manager(name, *args, **kwargs):
-    if name.lower() in all_checks.keys():
-        return all_checks[name.lower()](*args, **kwargs)
+    check_managers = args[0]['check_managers']
+    if name.lower() in check_managers.keys():
+        return check_managers[name.lower()](*args, **kwargs)
     else:
         raise CheckManagerNotFound(f"The check '{name.lower()}' does not exist")
