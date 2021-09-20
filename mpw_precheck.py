@@ -48,6 +48,7 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
 def run_precheck_sequence(precheck_config, project_config):
     results = {}
     logging.info(f"{{{{START}}}} Precheck Started, the full log '{precheck_config['log_path'].name}' will be located in '{precheck_config['log_path'].parent}'")
+    logging.info(f"{{{{PRECHECK SEQUENCE}}}} Precheck will run the following checks: {' '.join([get_check_manager(x, precheck_config, project_config).__surname__ for x in precheck_config['sequence']])}")
     for check_count, entry in enumerate(precheck_config['sequence'], start=1):
         check = get_check_manager(entry, precheck_config, project_config)
         if check:
@@ -87,14 +88,13 @@ def main(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Runs the precheck tool by calling the various checks in order.",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(description="Runs the precheck tool.")
     parser.add_argument('--input_directory', '-i', required=True, help="INPUT_DIRECTORY Absolute Path to the project.")
     parser.add_argument('--caravel_root', '-cr', required=True, help="CARAVEL_ROOT Absolute Path to caravel.")
     parser.add_argument('--pdk_root', '-p', required=True, help="PDK_ROOT, points to pdk installation path")
-    parser.add_argument('--output_directory', '-o', required=False, help="Output Directory, default=<input_directory>/precheck_results.")
-    parser.add_argument('--private', action='store_true', help="If provided, precheck skips [License, Defaults, Documentation] checks that qualify the project to be Open Source")
-    parser.add_argument('checks', metavar='check', type=str, nargs='*', help="Checks to be ran by the precheck")
+    parser.add_argument('--output_directory', '-o', required=False, help="Output Directory, default=<input_directory>/precheck_results/DD_MMM_YYYY___HH_MM_SS.")
+    parser.add_argument('--private', action='store_true', help=f"If provided, precheck skips {open_source_checks.keys() - private_checks.keys()}  checks that qualify the project to be Open Source")
+    parser.add_argument('checks', metavar='check', type=str, nargs='*', choices=open_source_checks.keys(), help=f"Checks to be run by the precheck: {' '.join(open_source_checks.keys())}")
     args = parser.parse_args()
 
     # NOTE Separated to allow the option later on for a run tag

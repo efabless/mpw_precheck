@@ -151,13 +151,23 @@ class KlayoutDRC(CheckManager):
         return self.result
 
 
-class KlayoutFEOLDRC(KlayoutDRC):
+class KlayoutBEOL(KlayoutDRC):
+    __ref__ = 'klayout_beol'
+    __surname__ = 'Klayout BEOL'
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
+        self.klayout_cmd_extra_args = ['-rd', 'beol=true']
+
+
+class KlayoutFEOL(KlayoutDRC):
     __ref__ = 'klayout_feol'
     __surname__ = 'Klayout FEOL'
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.lydrc"
+        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'feol=true']
 
 
@@ -196,7 +206,7 @@ class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/pin_label_purposes_overlapping_drawing.rb.drc"
-        self.klayout_cmd_extra_args = ['-rd',f'top_cell_name={self.project_config["user_module"]}']
+        self.klayout_cmd_extra_args = ['-rd', f'top_cell_name={self.project_config["user_module"]}']
 
 
 class KlayoutZeroArea(KlayoutDRC):
@@ -370,7 +380,8 @@ open_source_checks = OrderedDict([
     (Consistency.__ref__, Consistency),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
-    (KlayoutFEOLDRC.__ref__, KlayoutFEOLDRC),
+    (KlayoutFEOL.__ref__, KlayoutFEOL),
+    (KlayoutBEOL.__ref__, KlayoutBEOL),
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
@@ -385,7 +396,8 @@ private_checks = OrderedDict([
     (Consistency.__ref__, Consistency),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
-    (KlayoutFEOLDRC.__ref__, KlayoutFEOLDRC),
+    (KlayoutFEOL.__ref__, KlayoutFEOL),
+    (KlayoutBEOL.__ref__, KlayoutBEOL),
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
@@ -398,4 +410,4 @@ def get_check_manager(name, *args, **kwargs):
     if name.lower() in check_managers.keys():
         return check_managers[name.lower()](*args, **kwargs)
     else:
-        raise CheckManagerNotFound()
+        raise CheckManagerNotFound(f"The check '{name.lower()}' does not exist")

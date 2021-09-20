@@ -1,7 +1,7 @@
 **/__pycache__
+**/parsetab.py
 /.idea/
 /.vscode/
 /build/
 /venv/
 dependencies/logs/docker/mpw_precheck.build.txt
-parsetab.py

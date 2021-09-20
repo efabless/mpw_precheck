@@ -59,7 +59,7 @@ The steps are as follows:
 
 - **License**:
     - The root directory of the project, submodules and third party libraries contain at least one approved license and does not contain any prohibitted license
-    - All source files contain an approved SPDX License and Copyright Headers 
+    - All source files contain an approved SPDX License and Copyright Headers
 - **Yaml**:
     - info.yaml file contain the pre-defined fields in [caravel_user_project](https://github.com/efabless/caravel_user_project.git) for digital projects
       and [caravel_user_project_analog](https://github.com/efabless/caravel_user_project_analog.git)
@@ -76,8 +76,8 @@ The steps are as follows:
 - **Documentation**:
     - Documentation file README.md exists and does not use any non-inclusive language
 - **Consistency**:
-    - Runs a series of checks on the user netlist (user_project_wrapper/user_analog_project_wrapper), and the top netlist (caravel/caravan) to make sure that both conform to the constraints put by the golden wrapper. 
-        - Both Netlists share the following checks:  
+    - Runs a series of checks on the user netlist (user_project_wrapper/user_analog_project_wrapper), and the top netlist (caravel/caravan) to make sure that both conform to the constraints put by the golden wrapper.
+        - Both Netlists share the following checks:
             - Modeling check: check netlist is structural and doesn't contain behavioral constructs
             - Complexity check: check netlist isn't empty and contains at least eight instances
         - Remaining Top Netlist checks:
