@@ -77,7 +77,7 @@ def main(*args, **kwargs):
                            check_managers=check_managers)
 
     uncompress_gds(precheck_config['input_directory'])
-    project_config = get_project_config(precheck_config['input_directory'])
+    project_config = get_project_config(precheck_config['input_directory'], precheck_config['private'])
     project_wrapper = "user_analog_project_wrapper.gds" if project_config['type'] == 'analog' else 'user_project_wrapper.gds'
     project_wrapper_hash = file_hash(precheck_config['input_directory'] / f'gds/{project_wrapper}')
     logging.info(f"MPW Precheck is running on: {project_wrapper}: {project_wrapper_hash} ...")

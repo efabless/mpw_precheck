@@ -136,7 +136,7 @@ class NetlistChecker:
                 if module_hooks[pin] != pin + '_core':
                     logging.warning(f"{NetlistChecks.submodule_hooks.value} CHECK FAILED: The user power port {pin} is "
                                     f"not connected to the correct power domain in the top level netlist. "
-                                    f"It is connected to {module_hooks[pin]} but it should be connected to {pin}.")
+                                    f"It is connected to {module_hooks[pin]} but it should be connected to {pin}_core.")
                     return False
             except KeyError:
                 logging.warning(f"{NetlistChecks.submodule_hooks.value} CHECK FAILED: The user power port {pin} is "
