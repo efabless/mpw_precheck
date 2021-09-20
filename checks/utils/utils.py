@@ -87,7 +87,7 @@ def file_hash(filename):
     return sha1.hexdigest()
 
 
-def get_project_config(project_path):
+def get_project_config(project_path, private):
     project_config = {}
     try:
         yaml_path = project_path / 'info.yaml'
@@ -107,6 +107,12 @@ def get_project_config(project_path):
     if not project or not project.get('top_level_netlist') or not project.get('user_level_netlist'):
         raise SystemExit(254)
 
+    # enforce spice netlist for public analog projects
+    if private: 
+        analog_netlist_extension = ["v", "spice"] 
+    else: 
+        analog_netlist_extension = ["spice"] 
+
     # note: get netlists
     project_config['top_netlist'] = project_path / project['top_level_netlist']
     project_config['user_netlist'] = project_path / project['user_level_netlist']
@@ -125,10 +131,11 @@ def get_project_config(project_path):
 
     # note: get project type and set remaining config
     project_config['link_prefix'] = "https://raw.githubusercontent.com/efabless/caravel/master"
-    is_caravan = any(netlist in str(project_config['top_netlist']) for netlist in [f'caravan.{ext}' for ext in ['v', 'spice']])
+    is_caravan = any(netlist in str(project_config['top_netlist']) for netlist in [f'caravan.{ext}' for ext in analog_netlist_extension])
     is_caravel = any(netlist in str(project_config['top_netlist']) for netlist in [f'caravel.{ext}' for ext in ['v', 'spice']])
-    is_analog_wrapper = any(netlist in str(project_config['user_netlist']) for netlist in [f'user_analog_project_wrapper.{ext}' for ext in ['v', 'spice']])
+    is_analog_wrapper = any(netlist in str(project_config['user_netlist']) for netlist in [f'user_analog_project_wrapper.{ext}' for ext in analog_netlist_extension])
     is_digital_wrapper = any(netlist in str(project_config['user_netlist']) for netlist in [f'user_project_wrapper.{ext}' for ext in ['v', 'spice']])
+    
     if is_caravan and is_analog_wrapper:
         project_config['type'] = 'analog'
         project_config['top_module'] = 'caravan'
@@ -141,7 +148,7 @@ def get_project_config(project_path):
         project_config['golden_wrapper'] = 'user_project_wrapper_empty'
     else:
         logging.fatal("{{IDENTIFYING PROJECT TYPE FAILED}} The provided top level and user level netlists are not correct.\n"
-                      "The top level netlist should point to 'caravel.(v/spice)' if your project is digital or 'caravan.(v/spice)' if your project is analog.\n"
-                      "The user level netlist should point to 'user_project_wrapper.(v/spice)' if your project is digital or 'user_analog_project_wrapper.(v/spice)' if your project is analog.")
+                      f"The top level netlist should point to 'caravel.(v/spice)' if your project is digital or 'caravan.({'/'.join(analog_netlist_extension)})' if your project is analog.\n"
+                      f"The user level netlist should point to 'user_project_wrapper.(v/spice)' if your project is digital or 'user_analog_project_wrapper.({'/'.join(analog_netlist_extension)})' if your project is analog.")
         raise SystemExit(254)
     return project_config

@@ -4,3 +4,4 @@
 /build/
 /venv/
 dependencies/logs/docker/mpw_precheck.build.txt
+parsetab.py
