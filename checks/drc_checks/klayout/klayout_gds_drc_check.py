@@ -45,8 +45,7 @@ if __name__ == "__main__":
     pdk_root = Path(args.pdk_root)
     design_name = args.design_name
 
-    klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent.parent / "tech-files/sky130A_mr.lydrc"
-    # klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent / "sky130A/libs.tech/klayout/sky130A.drc"
+    klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent.parent / "tech-files/sky130A_mr.drc"
 
     if gds_input_file_path.exists() and gds_input_file_path.suffix == ".gds":
         if output_directory.exists() and output_directory.is_dir():
