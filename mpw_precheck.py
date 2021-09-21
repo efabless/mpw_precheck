@@ -94,7 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('--pdk_root', '-p', required=True, help="PDK_ROOT, points to pdk installation path")
     parser.add_argument('--output_directory', '-o', required=False, help="Output Directory, default=<input_directory>/precheck_results/DD_MMM_YYYY___HH_MM_SS.")
     parser.add_argument('--private', action='store_true', help=f"If provided, precheck skips {open_source_checks.keys() - private_checks.keys()}  checks that qualify the project to be Open Source")
-    parser.add_argument('checks', metavar='check', type=str, nargs='*', choices=[list(open_source_checks.keys()), []], help=f"Checks to be run by the precheck: {' '.join(open_source_checks.keys())}")
+    parser.add_argument('checks', metavar='check', type=str, nargs='*', choices=list(open_source_checks.keys()).append([]), help=f"Checks to be run by the precheck: {' '.join(open_source_checks.keys())}")
     args = parser.parse_args()
 
     # NOTE Separated to allow the option later on for a run tag
