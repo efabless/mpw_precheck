@@ -19,13 +19,17 @@ import os
 from pathlib import Path
 
 try:
+    from checks.consistency_check.parsers import netlist_parser
+    from checks.consistency_check.parsers import layout_parser
     from checks.consistency_check.netlist_checker import NetlistChecker, NetlistChecks
     from checks.consistency_check.parsers.layout_parser import LayoutParser
-    from checks.consistency_check.parsers.netlist_parser import DataError, get_netlist_parser, VerilogParser
+    from checks.consistency_check.parsers.netlist_parser import get_netlist_parser, VerilogParser
 except ImportError:
+    from parsers import netlist_parser
+    from parsers import layout_parser
     from netlist_checker import NetlistChecker, NetlistChecks
     from parsers.layout_parser import LayoutParser
-    from parsers.netlist_parser import DataError, get_netlist_parser, VerilogParser
+    from parsers.netlist_parser import get_netlist_parser, VerilogParser
 
 # pdk specific
 PDK = "sky130_fd_sc"
@@ -77,7 +81,7 @@ def main(*args, **kwargs):
         top_netlist_parser = get_netlist_parser(top_netlist, top_module, netlist_type, include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
         user_netlist_parser = get_netlist_parser(user_netlist, user_module, netlist_type, include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
         golden_wrapper_parser = VerilogParser(golden_wrapper_netlist, user_module, include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
-    except DataError as e:
+    except netlist_parser.DataError as e:
         logging.fatal(f"{{{{PARSING NETLISTS FAILED}}}} The provided {netlist_type} netlists fail parsing because: {str(e)}")
         return False
 
@@ -85,7 +89,7 @@ def main(*args, **kwargs):
     user_wrapper_gds = input_directory / "gds" / f"{user_module}.gds"
     try:
         user_layout_parser = LayoutParser(user_wrapper_gds, user_module)
-    except (DataError, RuntimeError) as e:
+    except (layout_parser.DataError, RuntimeError) as e:
         logging.fatal(f"{{{{PARSING LAYOUT FAILED}}}} The {user_module} layout fails parsing because: {str(e)}")
         return False
 
