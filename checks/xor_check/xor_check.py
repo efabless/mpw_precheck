@@ -86,7 +86,7 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format=f"%(message)s")
+    logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     parser = argparse.ArgumentParser(description='Runs a magic xor check on a given GDS.')
     parser.add_argument('--input_directory', '-i', required=True, help='Design Path')
     parser.add_argument('--output_directory', '-o', required=False, default='.', help='Output Directory')

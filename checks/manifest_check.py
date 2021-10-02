@@ -69,7 +69,7 @@ def main(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, format=f'%(message)s')
+    logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     parser = argparse.ArgumentParser(description='Runs a manifest check on a given directory.')
     parser.add_argument('--input_directory', '-i', required=True, help='Input Directory')
     parser.add_argument('--output_directory', '-o', required=True, help='Output Directory')

@@ -65,8 +65,8 @@ def main(*args, **kwargs):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     default_input_directory = Path(__file__).parents[1] / '_default_content'
-    logging.basicConfig(level=logging.DEBUG, format=f'%(message)s')
     parser = argparse.ArgumentParser(description="Runs a documentation check on a given directory.")
     parser.add_argument('--input_directory', '-i', required=False, default=default_input_directory, help='Input Directory')
     args = parser.parse_args()

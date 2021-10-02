@@ -15,6 +15,7 @@
 
 import logging
 import os
+import sys
 from collections import OrderedDict
 from pathlib import Path
 
@@ -22,7 +23,6 @@ from checks import defaults_check
 from checks import documentation_check
 from checks import makefile_check
 from checks import manifest_check
-from checks import yaml_check
 from checks.consistency_check import consistency_check
 from checks.drc_checks.klayout import klayout_gds_drc_check
 from checks.drc_checks.magic import magic_gds_drc_check
@@ -89,13 +89,6 @@ class Defaults(CheckManager):
         else:
             self.result = False
             logging.warning("{{README DEFAULT CHECK FAILED}} Project 'README.md' was not modified and is identical to the default 'README.md'")
-
-        default_project_config_result = defaults_check.has_default_project_config(self.precheck_config['input_directory'], self.precheck_config['default_content'])
-        if default_project_config_result:
-            logging.info("{{PROJECT CONFIG DEFAULT CHECK PASSED}} Project 'info.yaml' was modified and is not identical to the default 'info.yaml'")
-        else:
-            self.result = False
-            logging.warning("{{PROJECT CONFIG DEFAULT CHECK FAILED}} Project 'info.yaml' was not modified and is identical to the default 'info.yaml'")
 
         default_content_result = defaults_check.has_default_content(self.precheck_config['input_directory'], self.precheck_config['default_content'])
         if default_content_result:
@@ -266,7 +259,7 @@ class License(CheckManager):
                     [f.write(f"{str(x)}\n") for x in spdx_non_compliant_list]
             except OSError as os_error:
                 logging.fatal(f"{{{{SPDX COMPLIANCE EXCEPTION}}}} Failed to create SPDX compliance report: {os_error}")
-                raise SystemExit(253)
+                sys.exit(253)
         return self.result
 
 
@@ -353,26 +346,9 @@ class XOR(CheckManager):
         return self.result
 
 
-class Yaml(CheckManager):
-    __ref__ = 'yaml'
-    __surname__ = 'Yaml'
-
-    def __init__(self, precheck_config, project_config):
-        super().__init__(precheck_config, project_config)
-
-    def run(self):
-        self.result = yaml_check.main(user_yaml_path=self.precheck_config['input_directory'], default_yaml_path=self.precheck_config['default_content'])
-        if self.result:
-            logging.info("{{YAML CHECK PASSED}} YAML file valid.")
-        else:
-            logging.warning("{{YAML CHECK FAILED}} YAML file not valid in target path, please check the README.md for more info on the structure.")
-        return self.result
-
-
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
     (License.__ref__, License),
-    (Yaml.__ref__, Yaml),
     (Manifest.__ref__, Manifest),
     (Makefile.__ref__, Makefile),
     (Defaults.__ref__, Defaults),
@@ -390,7 +366,6 @@ open_source_checks = OrderedDict([
 
 # Note: list of checks for a private project
 private_checks = OrderedDict([
-    (Yaml.__ref__, Yaml),
     (Manifest.__ref__, Manifest),
     (Makefile.__ref__, Makefile),
     (Consistency.__ref__, Consistency),
