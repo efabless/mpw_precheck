@@ -16,13 +16,12 @@
 import gzip
 import hashlib
 import logging
-import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import requests
-import yaml
 
 
 def download_gzip_file_from_url(target_url, download_path):
@@ -44,7 +43,7 @@ def compress_gds(gds_path):
         subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
     except subprocess.CalledProcessError as error:
         logging.info(f"{{{{COMPRESSING GDS ERROR}}}} Make 'compress' Error: {error}")
-        raise SystemExit(252)
+        sys.exit(252)
 
 
 def uncompress_gds(gds_path):
@@ -54,7 +53,7 @@ def uncompress_gds(gds_path):
         subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
     except subprocess.CalledProcessError as error:
         logging.info(f"{{{{EXTRACTING GDS ERROR}}}} Make 'uncompress' Error: {error}")
-        raise SystemExit(252)
+        sys.exit(252)
 
 
 def is_binary_file(filename):
@@ -87,68 +86,29 @@ def file_hash(filename):
     return sha1.hexdigest()
 
 
-def get_project_config(project_path, private):
+def get_project_config(project_path):
     project_config = {}
-    try:
-        yaml_path = project_path / 'info.yaml'
-        project = yaml.load(open(yaml_path, encoding='utf-8'), Loader=yaml.FullLoader).get('project')
-    except FileNotFoundError:
-        logging.error(f"{{{{YAML NOT FOUND ERROR}}}} Required YAML file 'info.yaml' was not found in path: {project_path}")
-        raise SystemExit(254)
-
-    if project:
-        if not project.get('top_level_netlist'):
-            logging.fatal("{{TOP LEVEL NETLIST NOT FOUND}} 'top_level_netlist' wast not found in project 'info.yaml'")
-        if not project.get('user_level_netlist'):
-            logging.fatal("{{USER LEVEL NETLIST NOT FOUND}} 'user_level_netlist' wast not found in project 'info.yaml'")
-    else:
-        logging.fatal("{{PROJECT YAML MALFORMED}} Project 'info.yaml' is structured incorrectly")
-
-    if not project or not project.get('top_level_netlist') or not project.get('user_level_netlist'):
-        raise SystemExit(254)
-
-    # enforce spice netlist for public analog projects
-    if private: 
-        analog_netlist_extension = ["v", "spice"] 
-    else: 
-        analog_netlist_extension = ["spice"] 
-
-    # note: get netlists
-    project_config['top_netlist'] = project_path / project['top_level_netlist']
-    project_config['user_netlist'] = project_path / project['user_level_netlist']
-
-    # note: parse netlists
-    top_level_netlist_extension = os.path.splitext(project_config['top_netlist'])[1]
-    user_level_netlist_extension = os.path.splitext(project_config['user_netlist'])[1]
-
-    if top_level_netlist_extension == '.v' and user_level_netlist_extension == '.v':
-        project_config['netlist_type'] = 'verilog'
-    elif top_level_netlist_extension == '.spice' and user_level_netlist_extension == '.spice':
-        project_config['netlist_type'] = 'spice'
-    else:
-        logging.fatal("{{PARSING NETLISTS FAILED}} The provided top and user level netlists are neither '.spice' or '.v' files. Please adhere to the required input types.")
-        raise SystemExit(254)
-
-    # note: get project type and set remaining config
+    gds_path = project_path / 'gds'
     project_config['link_prefix'] = "https://raw.githubusercontent.com/efabless/caravel/master"
-    is_caravan = any(netlist in str(project_config['top_netlist']) for netlist in [f'caravan.{ext}' for ext in analog_netlist_extension])
-    is_caravel = any(netlist in str(project_config['top_netlist']) for netlist in [f'caravel.{ext}' for ext in ['v', 'spice']])
-    is_analog_wrapper = any(netlist in str(project_config['user_netlist']) for netlist in [f'user_analog_project_wrapper.{ext}' for ext in analog_netlist_extension])
-    is_digital_wrapper = any(netlist in str(project_config['user_netlist']) for netlist in [f'user_project_wrapper.{ext}' for ext in ['v', 'spice']])
-    
-    if is_caravan and is_analog_wrapper:
+    if [str(x.name) for x in gds_path.glob('user_analog_project_wrapper*')]:
         project_config['type'] = 'analog'
         project_config['top_module'] = 'caravan'
         project_config['user_module'] = 'user_analog_project_wrapper'
         project_config['golden_wrapper'] = 'user_analog_project_wrapper_empty'
-    elif is_caravel and is_digital_wrapper:
+        project_config['netlist_type'] = 'spice'
+        project_config['top_netlist'] = project_path / "caravel/spi/lvs/caravan.spice"
+        project_config['user_netlist'] = project_path / "netgen/user_analog_project_wrapper.spice"
+    elif [str(x.name) for x in gds_path.glob('user_project_wrapper*')]:
         project_config['type'] = 'digital'
         project_config['top_module'] = 'caravel'
         project_config['user_module'] = 'user_project_wrapper'
         project_config['golden_wrapper'] = 'user_project_wrapper_empty'
+        project_config['netlist_type'] = 'verilog'
+        project_config['top_netlist'] = project_path / "caravel/verilog/gl/caravel.v"
+        project_config['user_netlist'] = project_path / "verilog/gl/user_project_wrapper.v"
     else:
-        logging.fatal("{{IDENTIFYING PROJECT TYPE FAILED}} The provided top level and user level netlists are not correct.\n"
-                      f"The top level netlist should point to 'caravel.(v/spice)' if your project is digital or 'caravan.({'/'.join(analog_netlist_extension)})' if your project is analog.\n"
-                      f"The user level netlist should point to 'user_project_wrapper.(v/spice)' if your project is digital or 'user_analog_project_wrapper.({'/'.join(analog_netlist_extension)})' if your project is analog.")
-        raise SystemExit(254)
+        logging.fatal("{{IDENTIFYING PROJECT TYPE FAILED}} A valid GDS was not found.\n"
+                      f"If your project is digital, a GDS file should exist under the project's 'gds' directory containing 'user_project_wrapper.(gds)'.\n"
+                      f"If your project is analog, a GDS file should exist under the project's 'gds' directory containing 'user_analog_project_wrapper.(gds)'.\n")
+        sys.exit(254)
     return project_config

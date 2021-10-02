@@ -17,6 +17,7 @@ import argparse
 import datetime
 import logging
 import subprocess
+import sys
 from pathlib import Path
 
 import precheck_logger
@@ -61,7 +62,7 @@ def run_precheck_sequence(precheck_config, project_config):
     else:
         failed_checks = [x for x in results.keys() if results[x] is False]
         logging.fatal(f"{{{{FAILURE}}}} {len(failed_checks)} Check(s) Failed: {failed_checks} !!!")
-        raise SystemExit(2)
+        sys.exit(2)
 
 
 def main(*args, **kwargs):
@@ -77,7 +78,7 @@ def main(*args, **kwargs):
                            check_managers=check_managers)
 
     uncompress_gds(precheck_config['input_directory'])
-    project_config = get_project_config(precheck_config['input_directory'], precheck_config['private'])
+    project_config = get_project_config(precheck_config['input_directory'])
     project_wrapper = "user_analog_project_wrapper.gds" if project_config['type'] == 'analog' else 'user_project_wrapper.gds'
     project_wrapper_hash = file_hash(precheck_config['input_directory'] / f'gds/{project_wrapper}')
     logging.info(f"MPW Precheck is running on: {project_wrapper}: {project_wrapper_hash} ...")
