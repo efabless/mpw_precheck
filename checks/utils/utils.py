@@ -70,13 +70,10 @@ def file_hash(filename):
         with open(filename, 'rb') as f:
             return f.read(2) == b'\x1f\x8b'
 
-    sha1 = hashlib.sha1()
     BSIZE = 65536
+    sha1 = hashlib.sha1()
+    f = gzip.open(filename, 'rb') if is_compressed(filename) else open(filename, 'rb')
 
-    if is_compressed(filename):
-        f = gzip.open(filename, 'rb')
-    else:
-        f = open(filename, 'rb')
     while True:
         data = f.read(BSIZE)
         if not data:

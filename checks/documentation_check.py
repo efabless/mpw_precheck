@@ -26,13 +26,17 @@ DOCUMENTATION_FILENAME = 'README'
 
 
 def check_inclusive_language(file):
-    with open(file, encoding='utf-8') as f:
-        content = f.read()
-    for word in BANNED_WORDS:
-        if word in content:
-            logging.warning(f"The documentation file ({file}) contains the non-inclusive word: {word}")
-            return False
-    return True
+    try:
+        with open(file, encoding='utf-8') as f:
+            content = f.read()
+        for word in BANNED_WORDS:
+            if word in content:
+                logging.warning(f"The documentation file ({file}) contains the non-inclusive word: {word}")
+                return False
+        return True
+    except UnicodeDecodeError as unicode_error:
+        logging.error(f"DOCUMENTATION FILE UNICODE DECODE EXCEPTION in ({file}): {unicode_error}")
+        return False
 
 
 def main(*args, **kwargs):
