@@ -90,7 +90,7 @@ def main(*args, **kwargs):
     gds_compress_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds.gz"
     if gds_file_path.exists() and gds_compress_file_path.exists():
         logging.fatal(f"{{{{GDS VIOLATION}}}} Both a compressed and an uncompressed version the gds exist, ensure only one design file exists.")
-        sys.exit(2)
+        sys.exit(255)
 
     run_precheck_sequence(precheck_config=precheck_config, project_config=project_config)
 
