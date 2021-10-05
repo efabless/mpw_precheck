@@ -30,7 +30,7 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
         klayout_version = subprocess.check_output(['klayout', '-v'], encoding='utf-8').replace('KLayout', '').lstrip().rstrip()
         magic_version = subprocess.check_output(['magic', '--version'], encoding='utf-8').rstrip()
         tools_info.write(f"KLayout: {klayout_version}\n")
-        tools_info.write(f"Magic: {magic_version}\n")
+        tools_info.write(f"Magic: {magic_version}")
         logging.info(f"MPW Precheck is using: KLayout: v{klayout_version} | Magic: v{magic_version} ...")
     with open(pdks_info_path, 'w') as pdks_info:
         try:
@@ -40,7 +40,7 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
             open_pdks_version = subprocess.check_output(open_pdks_v_cmd, encoding='utf-8').rstrip()
             skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
             pdks_info.write(f"Open PDKs {open_pdks_version}\n")
-            pdks_info.write(f"Skywater PDK {skywater_pdk_version}\n")
+            pdks_info.write(f"Skywater PDK {skywater_pdk_version}")
             logging.info(f"MPW Precheck is using: Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version} ...")
         except Exception as e:
             logging.error(f"MPW Precheck failed to get Open PDKs & Skywater PDK versions: {e}")
@@ -82,7 +82,7 @@ def main(*args, **kwargs):
 
     gds_info_path = precheck_config['log_path'].parent / 'gds.info'
     with open(gds_info_path, 'w') as gds_info:
-        user_module_hash = file_hash(precheck_config['input_directory'] / f"gds/{project_config['user_module']}")
+        user_module_hash = file_hash(precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds")
         gds_info.write(f"GDS {user_module_hash}\n")
         logging.info(f"MPW Precheck is running on: {project_config['user_module']}: {user_module_hash} ...")
 
