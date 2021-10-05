@@ -82,7 +82,7 @@ def main(*args, **kwargs):
 
     gds_info_path = precheck_config['log_path'].parent / 'gds.info'
     with open(gds_info_path, 'w') as gds_info:
-        user_module_hash = file_hash(precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds")
+        user_module_hash = file_hash(f"{precheck_config['input_directory']}/gds/{project_config['user_module']}.gds")
         gds_info.write(f"GDS {user_module_hash}\n")
         logging.info(f"MPW Precheck is running on: {project_config['user_module']}: {user_module_hash} ...")
 
