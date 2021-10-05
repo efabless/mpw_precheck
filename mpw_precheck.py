@@ -91,8 +91,8 @@ def main(*args, **kwargs):
     log_tools_info(precheck_config['pdk_root'], tools_info_path, pdks_info_path)
 
     gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
-    gds_compress_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds.gz"
-    if gds_file_path.exists() and gds_compress_file_path.exists():
+    compressed_gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds.gz"
+    if gds_file_path.exists() and compressed_gds_file_path.exists():
         logging.fatal(f"{{{{GDS VIOLATION}}}} Both a compressed and an uncompressed version the gds exist, ensure only one design file exists.")
         sys.exit(255)
 
