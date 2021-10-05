@@ -60,9 +60,6 @@ The steps are as follows:
 - **License**:
     - The root directory of the project, submodules and third party libraries contain at least one approved license and does not contain any prohibitted license
     - All source files contain an approved SPDX License and Copyright Headers
-- **Yaml**:
-    - info.yaml file contain the pre-defined fields in [caravel_user_project](https://github.com/efabless/caravel_user_project.git) for digital projects
-      and [caravel_user_project_analog](https://github.com/efabless/caravel_user_project_analog.git)
 - **Manifest**:
     - Caravel version used in development is the latest
 - **Makefile**:
@@ -95,8 +92,6 @@ The steps are as follows:
     - The user_project_wrapper.gds does not have any DRC violations(using klayout) in the [_Front End Of Line_ layers](https://skywater-pdk.readthedocs.io/en/latest/rules/summary.html#id3)
 - **KlayoutOffgrid**:
     - The user_project_wrapper.gds does not contain any shapes that have offgrid violations(rules [x.1b, x.3a, x.2, x.2c](https://skywater-pdk.readthedocs.io/en/latest/rules/periphery.html))
-- **KlayoutFOMDensity**:
-    - The user_project_wrapper.gds has Field Oxide Mask density between 33 and 54 percent according to the [cfom.pd.1e, cfom.pd.1d rules](https://skywater-pdk.readthedocs.io/en/latest/rules/periphery.html)
 - **KlayoutMetalMinimumClearAreaDensity**:
     - The user_project_wrapper.gds has metal density (for each of the 5 metal layers) that is the lower than the maximum metal density specified by
       the [li1.pd.ld, m1.pd.ld, m2.pd.ld, m3.pd.ld, m4.pd.ld, m5.pd.ld rules](https://skywater-pdk.readthedocs.io/en/latest/rules/periphery.html)
