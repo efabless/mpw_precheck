@@ -18,7 +18,6 @@ import logging
 from glob import glob
 from pathlib import Path
 
-import yaml
 from strsimpy.sorensen_dice import SorensenDice
 
 try:
@@ -27,9 +26,7 @@ except ImportError:
     from utils.utils import is_binary_file, file_hash, is_not_binary_file
 
 EXCLUDES = []
-MUST_CHANGE = ['description', 'git_url', 'organization', 'organization_url', 'owner', 'project_name']
 VIEWS = ['gds']
-YAML_FILENAME = 'info.yaml'
 
 
 def get_view(name, directory):
@@ -61,26 +58,8 @@ def has_default_readme(input_directory, default_content_path):
     return True
 
 
-def has_default_project_config(input_directory, default_content_path):
-    result = True
-    default_config = user_prj_config = {}
-    try:
-        default_config = yaml.load(open(default_content_path / YAML_FILENAME, encoding='utf-8'), Loader=yaml.FullLoader)['project']
-        user_prj_config = yaml.load(open(input_directory / YAML_FILENAME, encoding='utf-8'), Loader=yaml.FullLoader)['project']
-    except FileNotFoundError:
-        logging.error(f"File 'info.yaml' not found in {input_directory}")
-        result = False
-
-    for key in user_prj_config.keys():
-        if key in MUST_CHANGE and user_prj_config[key] == default_config[key]:
-            logging.warning(f"The parameter {key} in the provided 'info.yaml' is identical to the one in the default 'info.yaml'")
-            result = False
-    return result
-
-
 def has_default_content(input_directory, default_content_path):
     result = True
-
     for view in VIEWS:
         try:
             for target_file in get_updated_view(input_directory, view):
@@ -106,8 +85,8 @@ def has_default_content(input_directory, default_content_path):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     default_input_directory = Path(__file__).parents[1] / '_default_content'
-    logging.basicConfig(level=logging.DEBUG, format=f'%(message)s')
     parser = argparse.ArgumentParser(description="Runs a makefile check on a given file (looks for 'Makefile' if a directory is provided).")
     parser.add_argument('--input_directory', '-i', required=False, default=default_input_directory, help='Input Directory')
     parser.add_argument('--defaults_path', '-d', required=False, default=default_input_directory, help='Defaults Path')
@@ -117,11 +96,6 @@ if __name__ == '__main__':
         logging.info("README Clean")
     else:
         logging.info("README Dirty")
-
-    if has_default_project_config(Path(args.input_directory), Path(args.defaults_path)):
-        logging.info("Project Config Clean")
-    else:
-        logging.info("Project Config Dirty")
 
     if has_default_content(Path(args.input_directory), Path(args.defaults_path)):
         logging.info("Content Clean")

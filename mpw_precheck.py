@@ -17,6 +17,7 @@ import argparse
 import datetime
 import logging
 import subprocess
+import sys
 from pathlib import Path
 
 import precheck_logger
@@ -29,7 +30,7 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
         klayout_version = subprocess.check_output(['klayout', '-v'], encoding='utf-8').replace('KLayout', '').lstrip().rstrip()
         magic_version = subprocess.check_output(['magic', '--version'], encoding='utf-8').rstrip()
         tools_info.write(f"KLayout: {klayout_version}\n")
-        tools_info.write(f"Magic: {magic_version}\n")
+        tools_info.write(f"Magic: {magic_version}")
         logging.info(f"MPW Precheck is using: KLayout: v{klayout_version} | Magic: v{magic_version} ...")
     with open(pdks_info_path, 'w') as pdks_info:
         try:
@@ -39,7 +40,7 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
             open_pdks_version = subprocess.check_output(open_pdks_v_cmd, encoding='utf-8').rstrip()
             skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
             pdks_info.write(f"Open PDKs {open_pdks_version}\n")
-            pdks_info.write(f"Skywater PDK {skywater_pdk_version}\n")
+            pdks_info.write(f"Skywater PDK {skywater_pdk_version}")
             logging.info(f"MPW Precheck is using: Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version} ...")
         except Exception as e:
             logging.error(f"MPW Precheck failed to get Open PDKs & Skywater PDK versions: {e}")
@@ -61,7 +62,7 @@ def run_precheck_sequence(precheck_config, project_config):
     else:
         failed_checks = [x for x in results.keys() if results[x] is False]
         logging.fatal(f"{{{{FAILURE}}}} {len(failed_checks)} Check(s) Failed: {failed_checks} !!!")
-        raise SystemExit(2)
+        sys.exit(2)
 
 
 def main(*args, **kwargs):
@@ -77,13 +78,24 @@ def main(*args, **kwargs):
                            check_managers=check_managers)
 
     uncompress_gds(precheck_config['input_directory'])
-    project_config = get_project_config(precheck_config['input_directory'], precheck_config['private'])
-    project_wrapper = "user_analog_project_wrapper.gds" if project_config['type'] == 'analog' else 'user_project_wrapper.gds'
-    project_wrapper_hash = file_hash(precheck_config['input_directory'] / f'gds/{project_wrapper}')
-    logging.info(f"MPW Precheck is running on: {project_wrapper}: {project_wrapper_hash} ...")
+    project_config = get_project_config(precheck_config['input_directory'])
+
+    gds_info_path = precheck_config['log_path'].parent / 'gds.info'
+    with open(gds_info_path, 'w') as gds_info:
+        user_module_hash = file_hash(f"{precheck_config['input_directory']}/gds/{project_config['user_module']}.gds")
+        gds_info.write(f"GDS {user_module_hash}\n")
+        logging.info(f"MPW Precheck is running on: {project_config['user_module']}: {user_module_hash} ...")
+
     tools_info_path = precheck_config['log_path'].parent / 'tools.info'
     pdks_info_path = precheck_config['log_path'].parent / 'pdks.info'
     log_tools_info(precheck_config['pdk_root'], tools_info_path, pdks_info_path)
+
+    gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
+    compressed_gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds.gz"
+    if gds_file_path.exists() and compressed_gds_file_path.exists():
+        logging.fatal(f"{{{{GDS VIOLATION}}}} Both a compressed and an uncompressed version the gds exist, ensure only one design file exists.")
+        sys.exit(255)
+
     run_precheck_sequence(precheck_config=precheck_config, project_config=project_config)
 
 

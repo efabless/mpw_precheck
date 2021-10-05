@@ -16,6 +16,7 @@
 import argparse
 import logging
 import os
+import sys
 from pathlib import Path
 
 try:
@@ -111,7 +112,7 @@ def main(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format=f"%(message)s")
+    logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     parser = argparse.ArgumentParser(description="Runs consistency checks on the top and the user structural netlists.")
     parser.add_argument("--input_directory", "-i", required=True, help="Path to the project folder")
     parser.add_argument("--output_directory", "-o", required=True, help="Path to the output directory")
@@ -136,7 +137,7 @@ if __name__ == "__main__":
         netlist_type = "spice"
     else:
         logging.fatal("Please provide a verilog (.v) / a spice (.spice) structural netlist.")
-        raise SystemExit(1)
+        sys.exit(1)
 
     project_config = {
         'top_netlist': top_netlist,

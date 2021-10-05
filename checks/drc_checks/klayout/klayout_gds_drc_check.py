@@ -32,7 +32,7 @@ def klayout_gds_drc_check(check_name, drc_script_path, gds_input_file_path, outp
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format=f"%(message)s")
+    logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     parser = argparse.ArgumentParser(description='Runs magic and klayout drc checks on a given GDS.')
     parser.add_argument('--gds_input_file_path', '-g', required=True, help='GDS File to apply DRC checks on')
     parser.add_argument('--output_directory', '-o', required=True, help='Output Directory')
