@@ -79,9 +79,13 @@ def main(*args, **kwargs):
 
     uncompress_gds(precheck_config['input_directory'])
     project_config = get_project_config(precheck_config['input_directory'])
-    project_wrapper = "user_analog_project_wrapper.gds" if project_config['type'] == 'analog' else 'user_project_wrapper.gds'
-    project_wrapper_hash = file_hash(precheck_config['input_directory'] / f'gds/{project_wrapper}')
-    logging.info(f"MPW Precheck is running on: {project_wrapper}: {project_wrapper_hash} ...")
+
+    gds_info_path = precheck_config['log_path'].parent / 'gds.info'
+    with open(gds_info_path, 'w') as gds_info:
+        user_module_hash = file_hash(precheck_config['input_directory'] / f"gds/{project_config['user_module']}")
+        gds_info.write(f"GDS {user_module_hash}\n")
+        logging.info(f"MPW Precheck is running on: {project_config['user_module']}: {user_module_hash} ...")
+
     tools_info_path = precheck_config['log_path'].parent / 'tools.info'
     pdks_info_path = precheck_config['log_path'].parent / 'pdks.info'
     log_tools_info(precheck_config['pdk_root'], tools_info_path, pdks_info_path)
