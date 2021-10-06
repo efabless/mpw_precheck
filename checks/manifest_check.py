@@ -45,7 +45,7 @@ def check_manifest(input_directory, manifest_check_log, manifest_git_url):
                         else:
                             f.write(f"{file_path}: OK\n")
                     except FileNotFoundError:
-                        logging.error(f"Manifest file {file_path.name} was not found in path: {file_path},")
+                        logging.error(f"Manifest file {file_path.name} was not found in path: {file_path}")
                         f.write(f"{file_path}: NOT FOUND\n")
                         mismatches.append(str(file_path))
                         result = False
