@@ -31,7 +31,7 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
         magic_version = subprocess.check_output(['magic', '--version'], encoding='utf-8').rstrip()
         tools_info.write(f"KLayout: {klayout_version}\n")
         tools_info.write(f"Magic: {magic_version}")
-        logging.info(f"{{{{MPW Precheck Tools Info}}}} KLayout: v{klayout_version} | Magic: v{magic_version}")
+        logging.info(f"{{{{Tools Info}}}} KLayout: v{klayout_version} | Magic: v{magic_version}")
     with open(pdks_info_path, 'w') as pdks_info:
         try:
             pdk_dir = f"{pdk_root}/%s"
@@ -41,7 +41,7 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
             skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
             pdks_info.write(f"Open PDKs {open_pdks_version}\n")
             pdks_info.write(f"Skywater PDK {skywater_pdk_version}")
-            logging.info(f"{{{{MPW Precheck PDKs Info}}}} Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
+            logging.info(f"{{{{PDKs Info}}}} Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
         except Exception as e:
             logging.error(f"MPW Precheck failed to get Open PDKs & Skywater PDK versions: {e}")
 
