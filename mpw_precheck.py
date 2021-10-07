@@ -35,8 +35,8 @@ def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
     with open(pdks_info_path, 'w') as pdks_info:
         try:
             pdk_dir = f"{pdk_root}/%s"
-            open_pdks_v_cmd = ['git', '-C', pdk_dir % 'open_pdks', 'rev-parse', '--verify', '--short', 'HEAD']
-            skywater_pdk_v_cmd = ['git', '-C', pdk_dir % 'skywater-pdk', 'rev-parse', '--verify', '--short', 'HEAD']
+            open_pdks_v_cmd = ['git', '-C', pdk_dir % 'open_pdks', 'rev-parse', '--verify', 'HEAD']
+            skywater_pdk_v_cmd = ['git', '-C', pdk_dir % 'skywater-pdk', 'rev-parse', '--verify', 'HEAD']
             open_pdks_version = subprocess.check_output(open_pdks_v_cmd, encoding='utf-8').rstrip()
             skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
             pdks_info.write(f"Open PDKs {open_pdks_version}\n")
