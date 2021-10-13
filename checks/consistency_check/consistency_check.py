@@ -65,9 +65,16 @@ def main(*args, **kwargs):
     top_netlist = project_config['top_netlist']
     user_module = project_config['user_module']
     top_module = project_config['top_module']
+    project_type = project_config['type']
 
-    top_module_checks = [NetlistChecks.power, NetlistChecks.hierarchy, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.submodule_hooks]
-    user_module_checks = [NetlistChecks.power, NetlistChecks.ports, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.layout]
+    top_module_checks = [NetlistChecks.hierarchy, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.submodule_hooks]
+    user_module_checks = [NetlistChecks.ports, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.layout]
+
+    # enable power check for digital projects only 
+    # analog projects don't need to have all components connected to power (ex: short resistors)
+    if project_type == 'digital': 
+        top_module_checks.append(NetlistChecks.power)
+        user_module_checks.append(NetlistChecks.power)
 
     if netlist_type == "verilog":
         # Filter physical cells from the verilog netlist to speed up parsing
@@ -121,6 +128,7 @@ if __name__ == "__main__":
     parser.add_argument("--golden_netlist", "-gn", required=True, help="Golden user wrapper structural netlist (.v)")
     parser.add_argument("--top_module", "-tm", required=True, help="Top module name")
     parser.add_argument("--user_module", "-um", required=True, help="User module name")
+    parser.add_argument("--project_type", "-um", required=True, help="Project type (analog/digital)")
     parser.add_argument("--include_files", "-inc", required=False, help="Extra (.v) files to include for preprocessing the netlist.")
     parser.add_argument("--run_gds_fc", "-rf", required=False, action='store_true', help="Run gds consistency checks.")
     args = parser.parse_args()
@@ -129,6 +137,7 @@ if __name__ == "__main__":
     user_netlist = Path(args.user_netlist)
     top_module = args.top_module
     user_module = args.user_module
+    project_type = args.project_type 
     top_netlist_extension = os.path.splitext(top_netlist)[1]
     user_netlist_extension = os.path.splitext(user_netlist)[1]
     if top_netlist_extension == ".v" and user_netlist_extension == ".v":
@@ -144,7 +153,8 @@ if __name__ == "__main__":
         'user_netlist': user_netlist,
         'top_module': top_module,
         'user_module': user_module,
-        'netlist_type': netlist_type
+        'netlist_type': netlist_type,
+        'type': project_type 
     }
     result = main(input_directory=Path(args.input_directory),
                   output_directory=Path(args.output_directory),
