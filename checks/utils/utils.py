@@ -86,7 +86,7 @@ def file_hash(filename):
 def get_project_config(project_path):
     project_config = {}
     gds_path = project_path / 'gds'
-    # note: commit id below points to mpw-3a tag
+    # note: commit id below points to mpw-3b tag
     project_config['link_prefix'] = "https://raw.githubusercontent.com/efabless/caravel/ca9025570d8180598301d874117a63d372d4243c"
     if [str(x.name) for x in gds_path.glob('user_analog_project_wrapper*')]:
         project_config['type'] = 'analog'
