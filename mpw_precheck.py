@@ -80,6 +80,12 @@ def main(*args, **kwargs):
     uncompress_gds(precheck_config['input_directory'])
     project_config = get_project_config(precheck_config['input_directory'])
 
+    gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
+    compressed_gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds.gz"
+    if gds_file_path.exists() and compressed_gds_file_path.exists():
+        logging.fatal("{{GDS VIOLATION}} Both a compressed and an uncompressed version the gds exist, ensure only one design file exists.")
+        sys.exit(255)
+
     gds_info_path = precheck_config['log_path'].parent / 'gds.info'
     with open(gds_info_path, 'w') as gds_info:
         user_module_hash = file_hash(f"{precheck_config['input_directory']}/gds/{project_config['user_module']}.gds")

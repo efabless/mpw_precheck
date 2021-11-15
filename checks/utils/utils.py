@@ -85,17 +85,11 @@ def file_hash(filename):
 
 def get_project_config(project_path):
     project_config = {}
-    gds_path = project_path / 'gds'
+    analog_gds_path = project_path / 'gds/user_analog_project_wrapper.gds'
+    digital_gds_path = project_path / 'gds/user_project_wrapper.gds'
     # note: commit id below points to mpw-3b tag
     project_config['link_prefix'] = "https://raw.githubusercontent.com/efabless/caravel/ca9025570d8180598301d874117a63d372d4243c"
-    digital_gds_files_available = list(f"'{str(x)}'" for x in [*list(gds_path.glob('user_project_wrapper.gds')), *list(gds_path.glob('user_project_wrapper.gds.gz'))])
-    analog_gds_files_available = list(f"'{str(x)}'" for x in [*list(gds_path.glob('user_analog_project_wrapper.gds')), *list(gds_path.glob('user_analog_project_wrapper.gds.gz'))])
-    if len([*digital_gds_files_available, *analog_gds_files_available]) > 1:
-        logging.fatal(f"{{IDENTIFYING PROJECT TYPE FAILURE}} More than one valid gds file was found.\n"
-                      f"Found {', '.join([*digital_gds_files_available, *analog_gds_files_available])}\n"
-                      f"Only one of ['user_project_wrapper.gds', 'user_project_wrapper.gds.gz', 'user_analog_project_wrapper.gds', 'user_analog_project_wrapper.gds.gz'] can exist under {gds_path} directory.\n")
-        sys.exit(254)
-    elif analog_gds_files_available:
+    if analog_gds_path.exists() and not digital_gds_path.exists():
         project_config['type'] = 'analog'
         project_config['top_module'] = 'caravan'
         project_config['user_module'] = 'user_analog_project_wrapper'
@@ -103,7 +97,7 @@ def get_project_config(project_path):
         project_config['netlist_type'] = 'spice'
         project_config['top_netlist'] = project_path / "caravel/spi/lvs/caravan.spice"
         project_config['user_netlist'] = project_path / "netgen/user_analog_project_wrapper.spice"
-    elif digital_gds_files_available:
+    elif digital_gds_path.exists() and not analog_gds_path.exists():
         project_config['type'] = 'digital'
         project_config['top_module'] = 'caravel'
         project_config['user_module'] = 'user_project_wrapper'
@@ -112,8 +106,8 @@ def get_project_config(project_path):
         project_config['top_netlist'] = project_path / "caravel/verilog/gl/caravel.v"
         project_config['user_netlist'] = project_path / "verilog/gl/user_project_wrapper.v"
     else:
-        logging.fatal("{{IDENTIFYING PROJECT TYPE FAILED}} A valid GDS was not found.\n"
-                      f"If your project is digital, a GDS file should exist under the project's 'gds' directory containing 'user_project_wrapper.(gds)'.\n"
-                      f"If your project is analog, a GDS file should exist under the project's 'gds' directory containing 'user_analog_project_wrapper.(gds)'.\n")
+        logging.fatal("{{IDENTIFYING PROJECT TYPE FAILED}} A single valid GDS was not found.\n"
+                      f"If your project is digital, a GDS file should exist under the project's 'gds' directory named 'user_project_wrapper(.gds/.gds.gz)'.\n"
+                      f"If your project is analog, a GDS file should exist under the project's 'gds' directory named 'user_analog_project_wrapper(.gds/.gds.gz)'.\n")
         sys.exit(254)
     return project_config
