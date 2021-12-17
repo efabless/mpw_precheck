@@ -63,13 +63,13 @@ RUN yum install -y libglu tcl tk csh wget tcl-devel tk-devel libX11-devel ncurse
     rm -rf /var/cache/yum
 
 # Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.3-0.x86_64.rpm && \
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.5-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 # Clone Magic
-RUN git clone --depth=1 --branch 8.3.220 https://github.com/RTimothyEdwards/magic.git ./magic_8_3_220
-WORKDIR magic_8_3_220
+RUN git clone --depth=1 --branch 8.3.241 https://github.com/RTimothyEdwards/magic.git ./magic_8_3_241
+WORKDIR magic_8_3_241
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
 # -g    : keep debugging info, incl. symbols.

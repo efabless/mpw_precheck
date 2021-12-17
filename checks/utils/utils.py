@@ -88,7 +88,7 @@ def get_project_config(project_path):
     analog_gds_path = project_path / 'gds/user_analog_project_wrapper.gds'
     digital_gds_path = project_path / 'gds/user_project_wrapper.gds'
     # note: commit id below points to mpw-3b tag
-    project_config['link_prefix'] = "https://raw.githubusercontent.com/efabless/caravel/ca9025570d8180598301d874117a63d372d4243c"
+    project_config['link_prefix'] = "https://raw.githubusercontent.com/efabless/caravel/dd71e938ce85d7e877b8213d5405457f2ea15ae9"
     if analog_gds_path.exists() and not digital_gds_path.exists():
         project_config['type'] = 'analog'
         project_config['top_module'] = 'caravan'
