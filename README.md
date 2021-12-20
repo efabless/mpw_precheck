@@ -60,8 +60,6 @@ The steps are as follows:
 - **License**:
     - The root directory of the project, submodules and third party libraries contain at least one approved license and does not contain any prohibitted license
     - All source files contain an approved SPDX License and Copyright Headers
-- **Manifest**:
-    - Caravel version used in development is the latest
 - **Makefile**:
     - Makefile targets contain at least compression and uncompression for the user_project_wrapper.gds file
 - **Defaults**:
@@ -88,13 +86,15 @@ The steps are as follows:
       and [caravel_user_project_analog](https://github.com/efabless/caravel_user_project_analog.git) for analog projects) outside the user defined area lower left corner (0,0) and upper right corner (2920, 3520)
 - **MagicDRC**:
     - The user_project_wrapper.gds does not have any DRC violations(using magic vlsi tool)
+- **KlayoutBEOLDRC**:
+    - The user_project_wrapper.gds does not have any DRC violations(using klayout) in the [_Back End Of Line_ layers](https://skywater-pdk.readthedocs.io/en/main/rules/summary.html)
 - **KlayoutFEOLDRC**:
-    - The user_project_wrapper.gds does not have any DRC violations(using klayout) in the [_Front End Of Line_ layers](https://skywater-pdk.readthedocs.io/en/latest/rules/summary.html#id3)
+    - The user_project_wrapper.gds does not have any DRC violations(using klayout) in the [_Front End Of Line_ layers](https://skywater-pdk.readthedocs.io/en/main/rules/summary.html)
 - **KlayoutOffgrid**:
-    - The user_project_wrapper.gds does not contain any shapes that have offgrid violations(rules [x.1b, x.3a, x.2, x.2c](https://skywater-pdk.readthedocs.io/en/latest/rules/periphery.html))
+    - The user_project_wrapper.gds does not contain any shapes that have offgrid violations(rules [x.1b, x.3a, x.2, x.2c](https://skywater-pdk.readthedocs.io/en/main/rules/periphery.html))
 - **KlayoutMetalMinimumClearAreaDensity**:
     - The user_project_wrapper.gds has metal density (for each of the 5 metal layers) that is the lower than the maximum metal density specified by
-      the [li1.pd.ld, m1.pd.ld, m2.pd.ld, m3.pd.ld, m4.pd.ld, m5.pd.ld rules](https://skywater-pdk.readthedocs.io/en/latest/rules/periphery.html)
+      the [li1.pd.ld, m1.pd.ld, m2.pd.ld, m3.pd.ld, m4.pd.ld, m5.pd.ld rules](https://skywater-pdk.readthedocs.io/en/main/rules/periphery.html)
 
 ## Current Assumptions
 
