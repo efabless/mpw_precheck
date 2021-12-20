@@ -164,16 +164,6 @@ class KlayoutFEOL(KlayoutDRC):
         self.klayout_cmd_extra_args = ['-rd', 'feol=true']
 
 
-# TODO: discuss migration to tapeout and removal from precheck
-class KlayoutFOMDensity(KlayoutDRC):
-    __ref__ = 'klayout_fom_density'
-    __surname__ = 'Klayout Field Oxide Mask Density'
-
-    def __init__(self, precheck_config, project_config):
-        super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/fom_density.lydrc"
-
-
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
@@ -349,7 +339,6 @@ class XOR(CheckManager):
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
     (License.__ref__, License),
-    (Manifest.__ref__, Manifest),
     (Makefile.__ref__, Makefile),
     (Defaults.__ref__, Defaults),
     (Documentation.__ref__, Documentation),
@@ -366,7 +355,6 @@ open_source_checks = OrderedDict([
 
 # Note: list of checks for a private project
 private_checks = OrderedDict([
-    (Manifest.__ref__, Manifest),
     (Makefile.__ref__, Makefile),
     (Consistency.__ref__, Consistency),
     (XOR.__ref__, XOR),

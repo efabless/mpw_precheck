@@ -36,20 +36,33 @@ def download_gzip_file_from_url(target_url, download_path):
         shutil.copyfileobj(gzip_file, f)
 
 
-def compress_gds(gds_path):
-    cmd = f"cd {gds_path}; make compress;"
+def install_caravel(project_path):
+    user_caravel_path = project_path / 'caravel'
+    if user_caravel_path.is_dir():
+        shutil.rmtree(user_caravel_path)
+    cmd = f"cd {project_path}; make install;"
     try:
-        logging.info(f"{{{{COMPRESSING GDS}}}} Compressing GDS files in {gds_path}")
+        logging.info(f"{{{{INSTALLING CARAVEL}}}} Running `Make Install` in {project_path}")
+        subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
+    except subprocess.CalledProcessError as error:
+        logging.info(f"{{{{INSTALLING CARAVEL}}}} Make 'install' Error: {error}")
+        sys.exit(252)
+
+
+def compress_gds(project_path):
+    cmd = f"cd {project_path}; make compress;"
+    try:
+        logging.info(f"{{{{COMPRESSING GDS}}}} Compressing GDS files in {project_path}")
         subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
     except subprocess.CalledProcessError as error:
         logging.info(f"{{{{COMPRESSING GDS ERROR}}}} Make 'compress' Error: {error}")
         sys.exit(252)
 
 
-def uncompress_gds(gds_path):
-    cmd = f"cd {gds_path}; make uncompress;"
+def uncompress_gds(project_path):
+    cmd = f"cd {project_path}; make uncompress;"
     try:
-        logging.info(f"{{{{EXTRACTING GDS}}}} Extracting GDS files in: {gds_path}")
+        logging.info(f"{{{{EXTRACTING GDS}}}} Extracting GDS files in: {project_path}")
         subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
     except subprocess.CalledProcessError as error:
         logging.info(f"{{{{EXTRACTING GDS ERROR}}}} Make 'uncompress' Error: {error}")
@@ -87,7 +100,7 @@ def get_project_config(project_path):
     project_config = {}
     analog_gds_path = project_path / 'gds/user_analog_project_wrapper.gds'
     digital_gds_path = project_path / 'gds/user_project_wrapper.gds'
-    # note: commit id below points to mpw-3b tag
+    # note: commit id below points to mpw-4 tag
     project_config['link_prefix'] = "https://raw.githubusercontent.com/efabless/caravel/dd71e938ce85d7e877b8213d5405457f2ea15ae9"
     if analog_gds_path.exists() and not digital_gds_path.exists():
         project_config['type'] = 'analog'
