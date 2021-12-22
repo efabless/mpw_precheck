@@ -56,7 +56,7 @@ def main(*args, **kwargs):
 
     for path in [input_directory, project_config['user_netlist'], project_config['top_netlist'], golden_wrapper_netlist, defines_file_path]:
         if not path.exists():
-            logging.warning(f"{{{{CONSISTENCY CHECK FAILED}}}} {path.name} file was not found.")
+            logging.warning(f"{{{{CONSISTENCY CHECK FAILED}}}} {path.name} file was not found in {path.parent}.")
             return False
 
     include_files = [str(defines_file_path)]
@@ -70,9 +70,9 @@ def main(*args, **kwargs):
     top_module_checks = [NetlistChecks.hierarchy, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.submodule_hooks]
     user_module_checks = [NetlistChecks.ports, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.layout]
 
-    # enable power check for digital projects only 
+    # enable power check for digital projects only
     # analog projects don't need to have all components connected to power (ex: short resistors)
-    if project_type == 'digital': 
+    if project_type == 'digital':
         top_module_checks.append(NetlistChecks.power)
         user_module_checks.append(NetlistChecks.power)
 
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     user_netlist = Path(args.user_netlist)
     top_module = args.top_module
     user_module = args.user_module
-    project_type = args.project_type 
+    project_type = args.project_type
     top_netlist_extension = os.path.splitext(top_netlist)[1]
     user_netlist_extension = os.path.splitext(user_netlist)[1]
     if top_netlist_extension == ".v" and user_netlist_extension == ".v":
@@ -154,7 +154,7 @@ if __name__ == "__main__":
         'top_module': top_module,
         'user_module': user_module,
         'netlist_type': netlist_type,
-        'type': project_type 
+        'type': project_type
     }
     result = main(input_directory=Path(args.input_directory),
                   output_directory=Path(args.output_directory),

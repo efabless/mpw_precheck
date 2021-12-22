@@ -22,7 +22,7 @@ from pathlib import Path
 
 import precheck_logger
 from check_manager import get_check_manager, open_source_checks, private_checks
-from checks.utils.utils import file_hash, get_project_config, install_caravel, uncompress_gds
+from checks.utils.utils import file_hash, get_project_config, uncompress_gds
 
 
 def log_tools_info(pdk_root, tools_info_path, pdks_info_path):
@@ -77,7 +77,6 @@ def main(*args, **kwargs):
                            default_content=Path(kwargs['default_content']),
                            check_managers=check_managers)
 
-    install_caravel(precheck_config['input_directory'])
     uncompress_gds(precheck_config['input_directory'])
     project_config = get_project_config(precheck_config['input_directory'])
 
