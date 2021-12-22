@@ -68,8 +68,8 @@ RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.5-0.x
     rm -rf /var/cache/yum
 
 # Clone Magic
-RUN git clone --depth=1 --branch 8.3.241 https://github.com/RTimothyEdwards/magic.git ./magic_8_3_241
-WORKDIR magic_8_3_241
+RUN git clone --depth=1 --branch 8.3.243 https://github.com/RTimothyEdwards/magic.git ./magic_8_3_243
+WORKDIR magic_8_3_243
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
 # -g    : keep debugging info, incl. symbols.
