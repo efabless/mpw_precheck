@@ -267,11 +267,11 @@ class MagicDRC(CheckManager):
             logging.warning(f"{{{{MAGIC DRC CHECK FAILED}}}} The GDS file, {self.gds_input_file_path.name}, was not found.")
             return self.result
 
-        self.result = magic_gds_drc_check.magic_gds_drc_check(self.gds_input_file_path,
-                                                              self.project_config['user_module'],
-                                                              self.precheck_config['pdk_root'],
-                                                              self.precheck_config['output_directory'])
-        if self.result:
+        result = magic_gds_drc_check.magic_gds_drc_check(self.gds_input_file_path,
+                                                         self.project_config['user_module'],
+                                                         self.precheck_config['pdk_root'],
+                                                         self.precheck_config['output_directory'])
+        if result:
             logging.info(f"{{{{MAGIC DRC CHECK PASSED}}}} The GDS file, {self.gds_input_file_path.name}, has no DRC violations.")
         else:
             logging.warning(f"{{{{MAGIC DRC CHECK FAILED}}}} The GDS file, {self.gds_input_file_path.name}, has DRC violations.")
