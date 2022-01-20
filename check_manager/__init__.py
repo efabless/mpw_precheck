@@ -27,7 +27,6 @@ from checks.consistency_check import consistency_check
 from checks.drc_checks.klayout import klayout_gds_drc_check
 from checks.drc_checks.magic import magic_gds_drc_check
 from checks.license_check import license_check
-from checks.utils import utils
 from checks.xor_check import xor_check
 
 
@@ -53,21 +52,13 @@ class Consistency(CheckManager):
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.output_directory = self.precheck_config['output_directory']
-        self.input_directory = self.precheck_config['input_directory']
 
     def run(self):
-        empty_wrapper_url = f"{self.project_config['link_prefix']}/verilog/rtl/__{self.project_config['user_module']}.v"
-        golden_wrapper_file_path = self.output_directory / 'outputs' / f"__{self.project_config['user_module']}.v"
-        utils.download_gzip_file_from_url(empty_wrapper_url, golden_wrapper_file_path)
-        defines_url = f"{self.project_config['link_prefix']}/verilog/rtl/defines.v"
-        defines_file_path = self.output_directory / 'outputs/defines.v'
-        utils.download_gzip_file_from_url(defines_url, defines_file_path)
-        self.result = consistency_check.main(input_directory=self.input_directory,
-                                             output_directory=self.output_directory,
+        self.result = consistency_check.main(input_directory=self.precheck_config['input_directory'],
+                                             output_directory=self.precheck_config['output_directory'],
                                              project_config=self.project_config,
-                                             golden_wrapper_netlist=golden_wrapper_file_path,
-                                             defines_file_path=defines_file_path)
+                                             golden_wrapper_netlist=self.precheck_config['caravel_root'] / f"verilog/rtl/__{self.project_config['user_module']}.v",
+                                             defines_file_path=self.precheck_config['caravel_root'] / 'verilog/rtl/defines.v')
         if self.result:
             logging.info("{{CONSISTENCY CHECK PASSED}} The user netlist and the top netlist are valid.")
         else:
@@ -320,15 +311,14 @@ class XOR(CheckManager):
 
     def run(self):
         # TODO(nofal): This should be a single file across the entire precheck
-        # We should have a good reason to have it in the XORCheck, it should be
-        # part of a constant variables file that defines project-wide variables
         magicrc_file_path = self.precheck_config['pdk_root'] / 'sky130A' / 'libs.tech' / 'magic' / 'sky130A.magicrc'
-        empty_wrapper_url = f"{self.project_config['link_prefix']}/gds/{self.project_config['golden_wrapper']}.gds.gz"
-        gds_golden_wrapper_file_path = self.precheck_config['output_directory'] / 'outputs' / f"{self.project_config['golden_wrapper']}.gds"
+        gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
 
-        utils.download_gzip_file_from_url(empty_wrapper_url, gds_golden_wrapper_file_path)
-        self.result = xor_check.gds_xor_check(self.precheck_config['input_directory'], self.precheck_config['output_directory'],
-                                              magicrc_file_path, gds_golden_wrapper_file_path, self.project_config)
+        self.result = xor_check.gds_xor_check(self.precheck_config['input_directory'],
+                                              self.precheck_config['output_directory'],
+                                              magicrc_file_path,
+                                              gds_golden_wrapper_file_path,
+                                              self.project_config)
         if self.result:
             logging.info("{{XOR CHECK PASSED}} The GDS file has no XOR violations.")
         else:

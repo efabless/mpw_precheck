@@ -17,43 +17,17 @@ import gzip
 import hashlib
 import logging
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
-import requests
-
-
-def download_gzip_file_from_url(target_url, download_path):
-    with open(download_path, 'wb') as f:
-        status_code = None
-        while status_code != 200:
-            logging.info(f"Trying to get file {target_url}")
-            response = requests.get(target_url, headers={'accept-encoding': 'gzip'}, stream=True)
-            status_code = response.status_code
-        logging.info(f"Got file {target_url}")
-        gzip_file = gzip.GzipFile(fileobj=response.raw)
-        shutil.copyfileobj(gzip_file, f)
-
-
-def compress_gds(project_path):
-    cmd = f"cd {project_path}; make compress;"
-    try:
-        logging.info(f"{{{{COMPRESSING GDS}}}} Compressing GDS files in {project_path}")
-        subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-    except subprocess.CalledProcessError as error:
-        logging.info(f"{{{{COMPRESSING GDS ERROR}}}} Make 'compress' Error: {error}")
-        sys.exit(252)
-
 
 def uncompress_gds(project_path):
-    cmd = f"cd {project_path}; make uncompress;"
-    try:
-        logging.info(f"{{{{EXTRACTING GDS}}}} Extracting GDS files in: {project_path}")
-        subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True)
-    except subprocess.CalledProcessError as error:
-        logging.info(f"{{{{EXTRACTING GDS ERROR}}}} Make 'uncompress' Error: {error}")
-        sys.exit(252)
+    for compressed_file in [x for x in Path(project_path).glob('**/*.gz')]:
+        logging.info(f"{{{{EXTRACTING FILES}}}} Extracting file {compressed_file} into: {compressed_file.parent}")
+        uncompressed_file = compressed_file.parent / compressed_file.stem
+        with gzip.open(compressed_file, 'rb') as cf, open(uncompressed_file, 'wb') as ucf:
+            shutil.copyfileobj(cf, ucf)
+            compressed_file.unlink()
 
 
 def is_binary_file(filename):
@@ -83,31 +57,29 @@ def file_hash(filename):
     return sha1.hexdigest()
 
 
-def get_project_config(project_path):
+def get_project_config(project_path, caravel_root):
     project_config = {}
     analog_gds_path = project_path / 'gds/user_analog_project_wrapper.gds'
     digital_gds_path = project_path / 'gds/user_project_wrapper.gds'
-    # note: commit id below points to mpw-4b tag
-    project_config['link_prefix'] = "https://raw.githubusercontent.com/efabless/caravel/e938b7dcf30360591aac7775251abd513bb8f72f"
     if analog_gds_path.exists() and not digital_gds_path.exists():
         project_config['type'] = 'analog'
+        project_config['netlist_type'] = 'spice'
         project_config['top_module'] = 'caravan'
         project_config['user_module'] = 'user_analog_project_wrapper'
         project_config['golden_wrapper'] = 'user_analog_project_wrapper_empty'
-        project_config['netlist_type'] = 'spice'
-        project_config['top_netlist'] = project_path / "caravel/spi/lvs/caravan.spice"
+        project_config['top_netlist'] = caravel_root / "spi/lvs/caravan.spice"
         project_config['user_netlist'] = project_path / "netgen/user_analog_project_wrapper.spice"
     elif digital_gds_path.exists() and not analog_gds_path.exists():
         project_config['type'] = 'digital'
+        project_config['netlist_type'] = 'verilog'
         project_config['top_module'] = 'caravel'
         project_config['user_module'] = 'user_project_wrapper'
         project_config['golden_wrapper'] = 'user_project_wrapper_empty'
-        project_config['netlist_type'] = 'verilog'
-        project_config['top_netlist'] = project_path / "caravel/verilog/gl/caravel.v"
+        project_config['top_netlist'] = caravel_root / "verilog/gl/caravel.v"
         project_config['user_netlist'] = project_path / "verilog/gl/user_project_wrapper.v"
     else:
-        logging.fatal("{{IDENTIFYING PROJECT TYPE FAILED}} A single valid GDS was not found.\n"
-                      f"If your project is digital, a GDS file should exist under the project's 'gds' directory named 'user_project_wrapper(.gds/.gds.gz)'.\n"
-                      f"If your project is analog, a GDS file should exist under the project's 'gds' directory named 'user_analog_project_wrapper(.gds/.gds.gz)'.\n")
+        logging.fatal("{{IDENTIFYING PROJECT TYPE FAILED}} A single valid GDS was not found. "
+                      "If your project is digital, a GDS file should exist under the project's 'gds' directory named 'user_project_wrapper(.gds/.gds.gz)'. "
+                      "If your project is analog, a GDS file should exist under the project's 'gds' directory named 'user_analog_project_wrapper(.gds/.gds.gz)'.")
         sys.exit(254)
     return project_config
