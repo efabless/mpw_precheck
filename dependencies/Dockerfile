@@ -61,7 +61,7 @@ RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.7-0.x
 
 # Clone Magic
 ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.257 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.258 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
@@ -82,6 +82,7 @@ ENV MANPATH=$BUILD_PATH/share/man:$MANPATH
 ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV LC_CTYPE en_US.UTF-8
+WORKDIR $PRECHECKER_ROOT
 
 # GOLDEN CARAVEL AND DEFAULT CONTENT
 ENV CARAVEL_ROOT=/opt/caravel
@@ -90,5 +91,3 @@ ENV CARAVEL_USER_PROJECT_ANALOG_ROOT=/opt/caravel_user_project_analog
 RUN git clone --depth=1 --branch mpw-4b https://github.com/efabless/caravel.git ${CARAVEL_ROOT} && make -C ${CARAVEL_ROOT} uncompress
 RUN git clone --depth=1 --branch mpw-3 https://github.com/efabless/caravel_user_project.git ${CARAVEL_USER_PROJECT_ROOT} && make -C ${CARAVEL_USER_PROJECT_ROOT} uncompress
 RUN git clone --depth=1 --branch mpw-3 https://github.com/efabless/caravel_user_project_analog.git ${CARAVEL_USER_PROJECT_ANALOG_ROOT} && make -C ${CARAVEL_USER_PROJECT_ANALOG_ROOT} uncompress
-
-WORKDIR $PRECHECKER_ROOT
