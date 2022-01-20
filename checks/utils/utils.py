@@ -22,8 +22,11 @@ from pathlib import Path
 
 
 def uncompress_gds(project_path):
-    for compressed_file in [x for x in Path(project_path).glob('**/*.gz')]:
-        logging.info(f"{{{{EXTRACTING FILES}}}} Extracting file {compressed_file} into: {compressed_file.parent}")
+    compressed_files = [x for x in Path(project_path).glob('**/*.gz')]
+    if compressed_files:
+        logging.info(f"{{{{EXTRACTING FILES}}}} Extracting Compressed files in: {project_path}")
+    for compressed_file in compressed_files:
+        logging.info(f"Extracting {compressed_file} into: {compressed_file.parent}")
         uncompressed_file = compressed_file.parent / compressed_file.stem
         with gzip.open(compressed_file, 'rb') as cf, open(uncompressed_file, 'wb') as ucf:
             shutil.copyfileobj(cf, ucf)

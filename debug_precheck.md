@@ -7,7 +7,7 @@
 Include a LICENSE file in
 
 - The root directory in your project
-- each directory under  `third_party`
+- each directory under `third_party`
 - each git submodule (Any directory that contains a .git folder)
 
 Make sure it is one of the [approved licenses](base_checks/_licenses/_approved_licenses)
@@ -19,9 +19,10 @@ check the `$INPUT_DIRECTORY/checks/spdx_compliance_report.log` for the non-compl
 #### Compliance Check failed
 
 - Remove all non-inclusive keywords in all of your files those are
-    - blacklist
-    - whitelist
-    - slave
+
+  - blacklist
+  - whitelist
+  - slave
 
 - Include `verify` and `clean` targets in your makefile
 
@@ -101,4 +102,3 @@ there is a problem with your project's name, the project's name is supposed to n
 ### How to load marker database files
 
     klayout <gds_file> -m <marker_database_file>
-
