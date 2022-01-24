@@ -1,6 +1,8 @@
 # MPW Precheck
 
-| :exclamation: Important Note: Although still possible, running the mpw-precheck from outside Docker is no longer supported by efabless. If you choose to run directly through python, you bare full responsibility for the generated results :exclamation: |
+| :exclamation::exclamation::exclamation: Important Note :exclamation::exclamation::exclamation: |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Although still possible, running the mpw-precheck from outside Docker is no longer supported by efabless. If you choose to run directly through python, you bare full responsibility for the generated results |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
 ## Prerequisites
@@ -115,7 +117,7 @@ sh docker-mount.sh
 Run the following command:
 
 ```
-usage: mpw_precheck.py [-h] --input_directory INPUT_DIRECTORY --pdk_root PDK_ROOT
+usage: mpw_precheck.py [-h] --input_directory $INPUT_DIRECTORY --pdk_root $PDK_ROOT
                        [--output_directory OUTPUT_DIRECTORY] [--private] [check [check ...]]
 
 Runs the precheck tool by calling the various checks in order.
