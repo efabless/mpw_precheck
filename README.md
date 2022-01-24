@@ -1,9 +1,7 @@
 # MPW Precheck
 
-| :exclamation::exclamation::exclamation: Important Note :exclamation::exclamation::exclamation: |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| :exclamation: :exclamation: :exclamation:  Important Note  :exclamation: :exclamation: :exclamation: |
 | Although still possible, running the mpw-precheck from outside Docker is no longer supported by efabless. If you choose to run directly through python, you bare full responsibility for the generated results |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 
 ## Prerequisites
 
