@@ -101,10 +101,10 @@ def main(*args, **kwargs):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Runs the mpw precheck tool.")
-    parser.add_argument('--input_directory', '-i', required=True, help="INPUT_DIRECTORY Absolute Path to the project.")
-    parser.add_argument('--pdk_root', '-p', required=True, help="PDK_ROOT, points to pdk installation path")
-    parser.add_argument('--output_directory', '-o', required=False, help="Output Directory, default=<input_directory>/precheck_results/DD_MMM_YYYY___HH_MM_SS.")
+    parser = argparse.ArgumentParser(description="Runs the mpw precheck tool.", allow_abbrev=False)
+    parser.add_argument('-i', '--input_directory', required=True, help="INPUT_DIRECTORY Absolute Path to the project.")
+    parser.add_argument('-p', '--pdk_root', required=True, help="PDK_ROOT, points to pdk installation path")
+    parser.add_argument('-o', '--output_directory', required=False, help="OUTPUT_DIRECTORY, default=<input_directory>/precheck_results/DD_MMM_YYYY___HH_MM_SS.")
     parser.add_argument('--private', action='store_true', help=f"If provided, precheck skips {open_source_checks.keys() - private_checks.keys()}  checks that qualify the project to be Open Source")
     parser.add_argument('checks', metavar='check', type=str, nargs='*', choices=list(open_source_checks.keys()).append([]), help=f"Checks to be run by the precheck: {' '.join(open_source_checks.keys())}")
     args = parser.parse_args()
@@ -120,6 +120,8 @@ if __name__ == '__main__':
 
     if not Path('/.dockerenv').exists():
         logging.warning("MPW Precheck is being executed outside Docker, this mode is no longer supported. Efabless bares no responsibility for the generated results !!!")
+        question = lambda q: input(q).lower().strip() == "continue" or question(q)
+        question("If you want to proceed please type 'continue' and press 'Enter'.\n")
 
     if 'CARAVEL_ROOT' not in os.environ:
         logging.critical("`CARAVEL ROOT` envrionment variable is not set. Please set it to point to absolute path to the golden caravel")

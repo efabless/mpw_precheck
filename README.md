@@ -116,8 +116,7 @@ sh docker-mount.sh
 Run the following command:
 
 ```
-usage: mpw_precheck.py [-h] --input_directory $INPUT_DIRECTORY --pdk_root $PDK_ROOT
-                       [--output_directory OUTPUT_DIRECTORY] [--private] [check [check ...]]
+usage: mpw_precheck.py [-h] --input_directory $INPUT_DIRECTORY --pdk_root $PDK_ROOT [--output_directory OUTPUT_DIRECTORY] [--private] [check [check ...]]
 
 Runs the precheck tool by calling the various checks in order.
 
@@ -127,20 +126,19 @@ positional arguments:
 
 optional arguments:
 
-  -h, --help            show this help message and exit
+  -h, --help               show this help message and exit
 
-  --input_directory INPUT_DIRECTORY, -i INPUT_DIRECTORY
-                        INPUT_DIRECTORY Absolute Path to the project. (default: None)
+  -i, --input_directory    $INPUT_DIRECTORY
+                           INPUT_DIRECTORY, absolute Path to the project. (default: None)
 
-  --pdk_root PDK_ROOT, -p PDK_ROOT
-                        PDK_ROOT, points to pdk installation path (default: None)
+  -p, --pdk_root           $PDK_ROOT
+                           PDK_ROOT, points to pdk installation path (default: None)
 
-  --output_directory OUTPUT_DIRECTORY, -o OUTPUT_DIRECTORY
-                        Output Directory,
-                        default=<input_directory>/precheck_results. (default:None)
+  -o, --output_directory   OUTPUT_DIRECTORY
+                           OUTPUT_DIRECTORY, default=<input_directory>/precheck_results. (default:None)
 
-  --private             If provided, precheck skips [License, Defaults, Documentation]
-                        checks used to qualify the project to as an Open Source Project (default: False)
+  --private                If provided, precheck skips [License, Defaults, Documentation]
+                           checks used to qualify the project to as an Open Source Project (default: False)
 ```
 
 ## How to Troubleshoot Issues with Precheck
