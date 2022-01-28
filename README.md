@@ -33,13 +33,7 @@ To pull the necessary docker from [dockerhub](https://hub.docker.com/repository/
 
 ### Install the PDK
 
-If you don't have the skywater-pdk installed, run:
-
-```bash
-    export PDK_ROOT=<absolute path to where skywater-pdk and open_pdks will reside>
-    cd dependencies
-    sh build-pdk.sh
-```
+If you don't have the skywater-pdk installed, please refer to the [caravel](https://github.com/efabless/caravel.git) Makefile.
 
 ## Before Using
 
