@@ -74,9 +74,9 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
 
     try:
         with open(xor_total_file_path) as xor_total:
-            xor_cnt = xor_total.read()
-        logging.info(f"{{XOR CHECK UPDATE}} Total XOR differences: {xor_cnt}, for more details view {xor_resulting_shapes_gds_file_path}")
-        if xor_cnt == '0':
+            xor_violations_count = xor_total.read()
+        logging.info(f"{{{{XOR CHECK UPDATE}}}} Total XOR differences: {xor_violations_count}, for more details view {xor_resulting_shapes_gds_file_path}")
+        if xor_violations_count == '0':
             return True
         else:
             return False

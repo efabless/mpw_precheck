@@ -60,7 +60,7 @@ def log_info(precheck_config, project_config):
 def run_precheck_sequence(precheck_config, project_config):
     results = {}
     logging.info(f"{{{{START}}}} Precheck Started, the full log '{precheck_config['log_path'].name}' will be located in '{precheck_config['log_path'].parent}'")
-    logging.info(f"{{{{PRECHECK SEQUENCE}}}} Precheck will run the following checks: {' '.join([get_check_manager(x, precheck_config, project_config).__surname__ for x in precheck_config['sequence']])}")
+    logging.info(f"{{{{PRECHECK SEQUENCE}}}} Precheck will run the following checks: [{', '.join([get_check_manager(x, precheck_config, project_config).__surname__ for x in precheck_config['sequence']])}]")
     for check_count, entry in enumerate(precheck_config['sequence'], start=1):
         check = get_check_manager(entry, precheck_config, project_config)
         if check:
