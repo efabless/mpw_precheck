@@ -101,7 +101,7 @@ The steps are as follows:
 ## Current Assumptions
 
 - The user module name is `user_project_wrapper` (or `user_analog_project_wrapper' for caravel_user_project_analog)
-- The mpw precheck is executed from inside it's docker container where a golden copy of caravel exists and is specified by an environment variable called `CARAVEL_ROOT`.
+- The mpw precheck is executed from inside it's docker container where a golden copy of caravel exists and is specified by an environment variable called `GOLDEN_CARAVEL`.
 
 ## How To Run
 

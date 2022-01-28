@@ -84,10 +84,7 @@ ENV LC_ALL en_US.UTF-8
 ENV LC_CTYPE en_US.UTF-8
 WORKDIR $PRECHECKER_ROOT
 
-# GOLDEN CARAVEL AND DEFAULT CONTENT
+# GOLDEN CARAVEL
 ENV CARAVEL_ROOT=/opt/caravel
-ENV CARAVEL_USER_PROJECT_ROOT=/opt/caravel_user_project
-ENV CARAVEL_USER_PROJECT_ANALOG_ROOT=/opt/caravel_user_project_analog
+ENV GOLDEN_CARAVEL=/opt/caravel
 RUN git clone --depth=1 --branch mpw-4b https://github.com/efabless/caravel.git ${CARAVEL_ROOT} && make -C ${CARAVEL_ROOT} uncompress
-RUN git clone --depth=1 --branch mpw-3 https://github.com/efabless/caravel_user_project.git ${CARAVEL_USER_PROJECT_ROOT} && make -C ${CARAVEL_USER_PROJECT_ROOT} uncompress
-RUN git clone --depth=1 --branch mpw-3 https://github.com/efabless/caravel_user_project_analog.git ${CARAVEL_USER_PROJECT_ANALOG_ROOT} && make -C ${CARAVEL_USER_PROJECT_ANALOG_ROOT} uncompress

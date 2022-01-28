@@ -16,21 +16,19 @@
 import gzip
 import hashlib
 import logging
-import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 
-def uncompress_gds(project_path):
-    compressed_files = [x for x in Path(project_path).glob('**/*.gz')]
-    if compressed_files:
-        logging.info(f"{{{{EXTRACTING FILES}}}} Extracting Compressed files in: {project_path}")
-    for compressed_file in compressed_files:
-        logging.info(f"Extracting {compressed_file} into: {compressed_file.parent}")
-        uncompressed_file = compressed_file.parent / compressed_file.stem
-        with gzip.open(compressed_file, 'rb') as cf, open(uncompressed_file, 'wb') as ucf:
-            shutil.copyfileobj(cf, ucf)
-            compressed_file.unlink()
+def uncompress_gds(project_path, caravel_root):
+    cmd = f"make -f {caravel_root}/Makefile uncompress;"
+    try:
+        logging.info(f"{{{{EXTRACTING FILES}}}} Extracting compressed files in: {project_path}")
+        subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, shell=True, cwd=str(project_path))
+    except subprocess.CalledProcessError as error:
+        logging.info(f"{{{{EXTRACTING FILES ERROR}}}} Make 'uncompress' Error: {error}")
+        sys.exit(252)
 
 
 def is_binary_file(filename):

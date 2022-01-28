@@ -88,7 +88,7 @@ def main(*args, **kwargs):
                            default_content=Path(kwargs['default_content']),
                            check_managers=check_managers)
 
-    uncompress_gds(precheck_config['input_directory'])
+    uncompress_gds(precheck_config['input_directory'], precheck_config['caravel_root'])
     project_config = get_project_config(precheck_config['input_directory'], precheck_config['caravel_root'])
     gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
     compressed_gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds.gz"
@@ -124,14 +124,14 @@ if __name__ == '__main__':
         question("If you want to proceed please type 'continue' and press 'Enter'.\n")
 
     if 'CARAVEL_ROOT' not in os.environ:
-        logging.critical("`CARAVEL ROOT` envrionment variable is not set. Please set it to point to absolute path to the golden caravel")
+        logging.critical("`GOLDEN_CARAVEL` envrionment variable is not set. Please set it to point to absolute path to the golden caravel")
         sys.exit(1)
 
     sequence = args.checks if args.checks else [x for x in private_checks.keys()] if args.private else [x for x in open_source_checks.keys()]
 
     main(input_directory=args.input_directory,
          output_directory=output_directory,
-         caravel_root=os.environ['CARAVEL_ROOT'],
+         caravel_root=os.environ['GOLDEN_CARAVEL'],
          pdk_root=args.pdk_root,
          private=args.private,
          sequence=sequence,
