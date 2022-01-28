@@ -1,4 +1,4 @@
-### Always check the $INPUT_DIRECTORY/checks folder for relevant log files
+### Always check the $INPUT_DIRECTORY/precheck_results folder for relevant log files
 
 # What to do if:
 
@@ -7,7 +7,7 @@
 Include a LICENSE file in
 
 - The root directory in your project
-- each directory under  `third_party`
+- each directory under `third_party`
 - each git submodule (Any directory that contains a .git folder)
 
 Make sure it is one of the [approved licenses](base_checks/_licenses/_approved_licenses)
@@ -16,16 +16,13 @@ Make sure it is one of the [approved licenses](base_checks/_licenses/_approved_l
 
 check the `$INPUT_DIRECTORY/checks/spdx_compliance_report.log` for the non-compliant files. Then add SPDX header in the beginning of all of those files.
 
-#### Manifest check failed
-
-Pull and checkout the master branch in your caravel directory
-
 #### Compliance Check failed
 
 - Remove all non-inclusive keywords in all of your files those are
-    - blacklist
-    - whitelist
-    - slave
+
+  - blacklist
+  - whitelist
+  - slave
 
 - Include `verify` and `clean` targets in your makefile
 
@@ -43,7 +40,7 @@ This indicates a serious issue with the design please check [information about f
 
 #### DRC Check failed
 
-###### Magic drc check
+###### Magic DRC check
 
 To debug drc errors you can open up the `$INPUT_DIRECTORY/checks/magic_drc.log` folder and you can view them via the .magic.drc.mag file which is loadable in magic
 
@@ -51,20 +48,13 @@ Also there is a listing of all the failed parts of the design in $INPUT_DIRECTOR
 
 If you are having a huge number of DRC violations there is a good chance you are using an SRAM block that is not the latest version in efabless/sram_sky130_macros . Just pull the master branch and include one of those updated macros instead
 
-###### Klayout drc check (DISABLED BY DEFAULT)
+###### Klayout DRC check (DISABLED BY DEFAULT)
 
 Load marker databases provided by the drc check into klayout (Or whichever layout editor/viewer you wish to use) along with the gds file (user_project_wrapper.gds)
 and you can view the violations on top of your design layout
 [using klayout](#how-to-load-marker-database-files)
 
 Investigate the specific coordinates of the failures in the design gds. Use `$INPUT_DIRECTORY/checks/<design_name>_klayout.lydrc` file as a marker database file loadable in [klayout](#how-to-load-marker-database-files)
-
-#### Klayout FOM density check failed
-
-Investigate the specific coordinates and types of the violations via loading the marker database file `$INPUT_DIRECTORY/checks/fom_density_check.xml` into [ klayout ](#how-to-load-marker-database-files)
-along with the design
-
-[use klayout](#how-to-load-marker-database-files) to view the marker database file which is in checks directory
 
 #### Default content check failed
 
@@ -112,4 +102,3 @@ there is a problem with your project's name, the project's name is supposed to n
 ### How to load marker database files
 
     klayout <gds_file> -m <marker_database_file>
-

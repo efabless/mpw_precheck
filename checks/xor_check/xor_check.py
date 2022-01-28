@@ -74,9 +74,9 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
 
     try:
         with open(xor_total_file_path) as xor_total:
-            xor_cnt = xor_total.read()
-        logging.info(f"{{XOR CHECK UPDATE}} Total XOR differences: {xor_cnt}, for more details view {xor_resulting_shapes_gds_file_path}")
-        if xor_cnt == '0':
+            xor_violations_count = xor_total.read()
+        logging.info(f"{{{{XOR CHECK UPDATE}}}} Total XOR differences: {xor_violations_count}, for more details view {xor_resulting_shapes_gds_file_path}")
+        if xor_violations_count == '0':
             return True
         else:
             return False
@@ -89,16 +89,15 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     parser = argparse.ArgumentParser(description='Runs a magic xor check on a given GDS.')
     parser.add_argument('--input_directory', '-i', required=True, help='Design Path')
-    parser.add_argument('--output_directory', '-o', required=False, default='.', help='Output Directory')
+    parser.add_argument('--caravel_root', '-cr', required=True, help="CARAVEL_ROOT Absolute Path to caravel.")
     parser.add_argument('--magicrc_file_path', '-mrc', required=True, help='magicrc file path')
+    parser.add_argument('--output_directory', '-o', required=False, default='.', help='Output Directory')
     args = parser.parse_args()
 
     output_directory = Path(args.output_directory)
     project_config = utils.get_project_config(Path(args.input_directory))
 
-    empty_wrapper_url = f"{project_config['link_prefix']}/gds/{project_config['golden_wrapper']}.gds.gz"
-    gds_golden_wrapper_file_path = output_directory / 'outputs' / f"{project_config['golden_wrapper']}.gds"
-    utils.download_gzip_file_from_url(empty_wrapper_url, gds_golden_wrapper_file_path)
+    gds_golden_wrapper_file_path = args.caravel_root / f"gds/{project_config['golden_wrapper']}.gds"
     if gds_xor_check(Path(args.input_directory), output_directory, Path(args.magicrc_file_path), gds_golden_wrapper_file_path, project_config):
         logging.info("XOR Check Clean")
     else:

@@ -33,18 +33,18 @@ except ImportError:
     from parsers.netlist_parser import get_netlist_parser, VerilogParser
 
 # pdk specific
+LIBS = ["hd", "hdll", "hs", "lp", "ls", "ms", "hvl"]
 PDK = "sky130_fd_sc"
 PREPROCESS_DEFINES = ["USE_POWER_PINS"]
-LIBS = ["hd", "hdll", "hs", "lp", "ls", "ms", "hvl"]
 
 # caravel specific
+CORE_SIDE_POWER = [net + "_core" for net in ["vccd", "vccd1", "vccd2", "vdda1", "vdda2", "vssa", "vssa1", "vssa2", "vssd", "vssd1", "vssd2"]]
 IGNORED_POWER_CELLS = ["caravan_power_routing", "caravel_power_routing"]
 IGNORED_TEXT_BLOCKS = ["copyright_block", "copyright_block_a", "open_source", "user_id_textblock"]
-CORE_SIDE_POWER = [net + "_core" for net in ["vccd", "vccd1", "vccd2", "vdda1", "vdda2", "vssa", "vssa1", "vssa2", "vssd", "vssd1", "vssd2"]]
 MGMT_POWER = ["vccd", "vdda", "vddio", "vssa", "vssd", "vssio"]
+PHYSICAL_CELLS = ["decap", "diode", "fakediode", "fill", "fill_diode", "tapvpwrvgnd"]
 USER_BANNED_POWER = MGMT_POWER + [net + "_core" for net in MGMT_POWER]
 USER_POWER_PINS = ["vccd1", "vccd2", "vdda1", "vdda2", "vssa1", "vssa2", "vssd1", "vssd2"]
-PHYSICAL_CELLS = ["decap", "diode", "fakediode", "fill", "fill_diode", "tapvpwrvgnd"]
 
 
 def main(*args, **kwargs):
@@ -53,52 +53,45 @@ def main(*args, **kwargs):
     project_config = kwargs["project_config"]
     golden_wrapper_netlist = kwargs["golden_wrapper_netlist"]
     defines_file_path = kwargs["defines_file_path"]
+    include_files = [str(defines_file_path)]
 
     for path in [input_directory, project_config['user_netlist'], project_config['top_netlist'], golden_wrapper_netlist, defines_file_path]:
         if not path.exists():
             logging.warning(f"{{{{CONSISTENCY CHECK FAILED}}}} {path.name} file was not found in {path.parent}.")
             return False
 
-    include_files = [str(defines_file_path)]
-    netlist_type = project_config['netlist_type']
-    user_netlist = project_config['user_netlist']
-    top_netlist = project_config['top_netlist']
-    user_module = project_config['user_module']
-    top_module = project_config['top_module']
-    project_type = project_config['type']
-
     top_module_checks = [NetlistChecks.hierarchy, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.submodule_hooks]
     user_module_checks = [NetlistChecks.ports, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.layout]
 
     # enable power check for digital projects only
     # analog projects don't need to have all components connected to power (ex: short resistors)
-    if project_type == 'digital':
+    if project_config['type'] == 'digital':
         top_module_checks.append(NetlistChecks.power)
         user_module_checks.append(NetlistChecks.power)
-
-    if netlist_type == "verilog":
-        # Filter physical cells from the verilog netlist to speed up parsing
-        filtered_user_netlist = output_directory / 'outputs' / f"{user_module}.filtered.v"
-        VerilogParser.remove_cells(user_netlist, filtered_user_netlist, PHYSICAL_CELLS)
-        user_netlist = filtered_user_netlist
-        # The port type check is enabled only for verilog netlists
-        user_module_checks.append(NetlistChecks.port_types)
+        # TODO CHECK UNNCESSARY CONDITION (VERILOG <===> DIGITAL)
+        if project_config['netlist_type'] == "verilog":
+            # Filter physical cells from the verilog netlist to speed up parsing
+            filtered_user_netlist = output_directory / f"outputs/{project_config['user_module']}.filtered.v"
+            VerilogParser.remove_cells(project_config['user_netlist'], filtered_user_netlist, PHYSICAL_CELLS)
+            project_config['user_netlist'] = filtered_user_netlist
+            # The port type check is enabled only for verilog netlists
+            user_module_checks.append(NetlistChecks.port_types)
 
     # Parse netlists (spice/verilog)
     try:
-        top_netlist_parser = get_netlist_parser(top_netlist, top_module, netlist_type, include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
-        user_netlist_parser = get_netlist_parser(user_netlist, user_module, netlist_type, include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
-        golden_wrapper_parser = VerilogParser(golden_wrapper_netlist, user_module, include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
+        top_netlist_parser = get_netlist_parser(project_config['top_netlist'], project_config['top_module'], project_config['netlist_type'], include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
+        user_netlist_parser = get_netlist_parser(project_config['user_netlist'], project_config['user_module'], project_config['netlist_type'], include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
+        golden_wrapper_parser = VerilogParser(golden_wrapper_netlist, project_config['user_module'], include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
     except netlist_parser.DataError as e:
-        logging.fatal(f"{{{{PARSING NETLISTS FAILED}}}} The provided {netlist_type} netlists fail parsing because: {str(e)}")
+        logging.fatal(f"{{{{PARSING NETLISTS FAILED}}}} The provided {project_config['netlist_type']} netlists fail parsing because: {str(e)}")
         return False
 
     # Parse layout
-    user_wrapper_gds = input_directory / "gds" / f"{user_module}.gds"
+    user_wrapper_gds = input_directory / f"gds/{project_config['user_module']}.gds"
     try:
-        user_layout_parser = LayoutParser(user_wrapper_gds, user_module)
+        user_layout_parser = LayoutParser(user_wrapper_gds, project_config['user_module'])
     except (layout_parser.DataError, RuntimeError) as e:
-        logging.fatal(f"{{{{PARSING LAYOUT FAILED}}}} The {user_module} layout fails parsing because: {str(e)}")
+        logging.fatal(f"{{{{PARSING LAYOUT FAILED}}}} The {project_config['user_module']} layout fails parsing because: {str(e)}")
         return False
 
     # Run Consistency Checks
@@ -109,13 +102,12 @@ def main(*args, **kwargs):
     user_netlist_checker = NetlistChecker(user_netlist_parser, user_layout_parser, golden_wrapper_parser)
 
     top_netlist_check = top_netlist_checker.check(checks=top_module_checks, min_instances=8,
-                                                  power_nets=CORE_SIDE_POWER, ignored_instances=top_module_ignored_cells, submodule=user_module,
+                                                  power_nets=CORE_SIDE_POWER, ignored_instances=top_module_ignored_cells, submodule=project_config['user_module'],
                                                   submodule_power=USER_POWER_PINS, submodule_banned_power=USER_BANNED_POWER)
     user_netlist_check = user_netlist_checker.check(checks=user_module_checks, min_instances=1,
                                                     power_nets=USER_POWER_PINS, ignored_instances=user_module_ignored_cells)
 
-    result = top_netlist_check and user_netlist_check
-    return result
+    return top_netlist_check and user_netlist_check
 
 
 if __name__ == "__main__":
@@ -135,9 +127,6 @@ if __name__ == "__main__":
 
     top_netlist = Path(args.top_netlist)
     user_netlist = Path(args.user_netlist)
-    top_module = args.top_module
-    user_module = args.user_module
-    project_type = args.project_type
     top_netlist_extension = os.path.splitext(top_netlist)[1]
     user_netlist_extension = os.path.splitext(user_netlist)[1]
     if top_netlist_extension == ".v" and user_netlist_extension == ".v":
@@ -151,10 +140,10 @@ if __name__ == "__main__":
     project_config = {
         'top_netlist': top_netlist,
         'user_netlist': user_netlist,
-        'top_module': top_module,
-        'user_module': user_module,
+        'top_module': args.top_module,
+        'user_module': args.user_module,
         'netlist_type': netlist_type,
-        'type': project_type
+        'type': args.project_type
     }
     result = main(input_directory=Path(args.input_directory),
                   output_directory=Path(args.output_directory),
