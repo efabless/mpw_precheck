@@ -123,7 +123,7 @@ if __name__ == '__main__':
         question = lambda q: input(q).lower().strip() == "continue" or question(q)
         question("If you want to proceed please type 'continue' and press 'Enter'.\n")
 
-    if 'CARAVEL_ROOT' not in os.environ:
+    if 'GOLDEN_CARAVEL' not in os.environ:
         logging.critical("`GOLDEN_CARAVEL` envrionment variable is not set. Please set it to point to absolute path to the golden caravel")
         sys.exit(1)
 

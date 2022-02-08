@@ -15,7 +15,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 docker run -it -v $(pwd):/opt/mpw_precheck \
-  -v $INPUT_DIRECTORY:$INPUT_DIRECTORY -v $PDK_ROOT:$PDK_ROOT \
-  -e INPUT_DIRECTORY=$INPUT_DIRECTORY -e PDK_ROOT=$PDK_ROOT \
-  -u $(id -u $USER):$(id -g $USER) \
+  -v "$INPUT_DIRECTORY":"$INPUT_DIRECTORY" -v "$PDK_ROOT":"$PDK_ROOT" \
+  -e INPUT_DIRECTORY="$INPUT_DIRECTORY" -e PDK_ROOT="$PDK_ROOT" \
+  -u $(id -u "$USER"):$(id -g "$USER") \
   efabless/mpw_precheck:latest
