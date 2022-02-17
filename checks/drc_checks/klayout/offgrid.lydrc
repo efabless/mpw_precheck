@@ -44,9 +44,14 @@ via4_wildcard = "71/44"
 
 m5_wildcard = "72/20"
 
+nsdm_wildcard = "93/44"
+
+psdm_wildcard = "94/20"
+nwell_wildcard = "64/20"
+
 diff = input(65, 20)
 tap = polygons(65, 44)
-nwell = polygons(64, 20)
+nwell = polygons(nwell_wildcard)
 dnwell = polygons(64, 18)
 pwbm = polygons(19, 44)
 pwde = polygons(124, 20)
@@ -59,8 +64,8 @@ tunm = polygons(80, 20)
 lvtn = polygons(125, 44)
 poly = polygons(66, 20)
 hvntm = polygons(125, 20)
-nsdm = polygons(93, 44)
-psdm = polygons(94, 20)
+nsdm = polygons(nsdm_wildcard)
+psdm = polygons(psdm_wildcard)
 rpm = polygons(86, 20)
 urpm = polygons(79, 20)
 npc = polygons(95, 20)
