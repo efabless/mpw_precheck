@@ -54,7 +54,7 @@ RUN yum install -y iverilog && \
     rm -rf /var/cache/yum
 
 # Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.7-0.x86_64.rpm && \
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.8-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
