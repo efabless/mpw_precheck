@@ -170,7 +170,8 @@ class KlayoutOffgrid(KlayoutDRC):
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/offgrid.lydrc"
+        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
+        self.klayout_cmd_extra_args = ['-rd', 'offgrid=true']
 
 
 class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
