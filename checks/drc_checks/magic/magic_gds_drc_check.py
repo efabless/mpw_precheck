@@ -44,11 +44,11 @@ def violations_count(drc_content):
         for key in vio_dict:
             val = vio_dict[key]
             count += val
-            logging.error(f"Violation Message \"{str(key.strip())} \"found {str(val)} Times.")
+            logging.error(f"Violation Message '{str(key.strip())}' found {str(val)} times.")
         return count
 
 
-def magic_gds_drc_check(gds_ut_path, design_name, pdk_root, output_directory):
+def magic_gds_drc_check(gds_ut_path, design_name, pdk_path, output_directory):
     parent_directory = Path(__file__).parent
     logs_directory = output_directory / 'logs'
     outputs_directory = output_directory / 'outputs'
@@ -57,7 +57,7 @@ def magic_gds_drc_check(gds_ut_path, design_name, pdk_root, output_directory):
     design_magic_drc_file_path = reports_directory / f"magic_drc_check.drc.report"
 
     installed_sram_modules_names = []
-    sram_maglef_files_generator = Path(pdk_root / "sky130A" / "libs.ref" / "sky130_sram_macros" / "maglef").glob('*.mag')
+    sram_maglef_files_generator = Path(pdk_path / 'libs.ref/sky130_sram_macros/maglef').glob('*.mag')
     for installed_sram in sram_maglef_files_generator:
         installed_sram_modules_names.append(installed_sram.stem)
     sram_modules_in_gds = []
@@ -75,7 +75,7 @@ def magic_gds_drc_check(gds_ut_path, design_name, pdk_root, output_directory):
     # TODO(ahmad.nofal@efabless.com): This should be a command line argument
     os.environ['MAGTYPE'] = 'mag'
     run_magic_drc_check_cmd = ['magic', '-noconsole', '-dnull', '-rcfile', magicrc_file_path, magic_drc_tcl_path, gds_ut_path,
-                               design_name, pdk_root, design_magic_drc_file_path, design_magic_drc_mag_file_path,
+                               design_name, pdk_path, design_magic_drc_file_path, design_magic_drc_mag_file_path,
                                ' '.join(sram_modules_in_gds), esd_fet, has_sram_as_str, has_esd_fet_as_str]
 
     magic_drc_log_file_path = logs_directory / 'magic_drc_check.log'
@@ -133,18 +133,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs magic and klayout drc checks on a given GDS.')
     parser.add_argument('--gds_input_file_path', '-g', required=True, help='GDS File to apply DRC checks on')
     parser.add_argument('--output_directory', '-o', required=True, help='Output Directory')
-    parser.add_argument('--pdk_root', '-p', required=True, help='PDK Path')
+    parser.add_argument('--pdk_path', '-p', required=True, help='PDK Path')
     parser.add_argument('--design_name', '-d', required=True, help='Design Name')
 
     args = parser.parse_args()
     gds_input_file_path = Path(args.gds_input_file_path)
     output_directory = Path(args.output_directory)
-    pdk_root = Path(args.pdk_root)
+    pdk_path = Path(args.pdk_path)
     design_name = args.design_name
 
     if gds_input_file_path.exists() and gds_input_file_path.suffix == ".gds":
         if output_directory.exists() and output_directory.is_dir():
-            if magic_gds_drc_check(gds_input_file_path, args.design_name, pdk_root, output_directory):
+            if magic_gds_drc_check(gds_input_file_path, args.design_name, pdk_path, output_directory):
                 logging.info("Magic GDS DRC Clean")
             else:
                 logging.info("Magic GDS DRC Dirty")

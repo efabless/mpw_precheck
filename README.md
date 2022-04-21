@@ -102,7 +102,7 @@ The steps are as follows:
 Mount the docker file:
 
 ```bash
-export PDK_ROOT=<Absolute path to parent of sky130A. Installed PDK root.>
+export PDK_PATH=<Absolute path to the desired PDK 'variant specific'.>
 export INPUT_DIRECTORY=<Absolute path to the user project path>
 sh docker-mount.sh
 ```
@@ -110,7 +110,7 @@ sh docker-mount.sh
 Run the following command:
 
 ```
-usage: mpw_precheck.py [-h] --input_directory $INPUT_DIRECTORY --pdk_root $PDK_ROOT [--output_directory OUTPUT_DIRECTORY] [--private] [check [check ...]]
+usage: mpw_precheck.py [-h] --input_directory $INPUT_DIRECTORY --pdk_path $PDK_PATH [--output_directory OUTPUT_DIRECTORY] [--private] [check [check ...]]
 
 Runs the precheck tool by calling the various checks in order.
 
@@ -125,8 +125,8 @@ optional arguments:
   -i, --input_directory    $INPUT_DIRECTORY
                            INPUT_DIRECTORY, absolute Path to the project. (default: None)
 
-  -p, --pdk_root           $PDK_ROOT
-                           PDK_ROOT, points to pdk installation path (default: None)
+  -p, --pdk_path           $PDK_PATH
+                           PDK_PATH, points to the installation path of the pdk 'variant specific' (default: None)
 
   -o, --output_directory   OUTPUT_DIRECTORY
                            OUTPUT_DIRECTORY, default=<input_directory>/precheck_results. (default:None)

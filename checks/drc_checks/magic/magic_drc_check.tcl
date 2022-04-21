@@ -16,7 +16,7 @@
 
 set GDS_UT_PATH [lindex $argv 6]
 set DESIGN_NAME [lindex $argv 7]
-set PDK_ROOT [lindex $argv 8]
+set PDK_PATH [lindex $argv 8]
 set DRC_REPORT [lindex $argv 9]
 set DRC_MAG [lindex $argv 10]
 set SRAM_MODULES [lindex $argv 11]
@@ -28,7 +28,7 @@ if { $HAS_ESD_FET } {
     gds noduplicates yes
     puts "Detected an ESD FET module"
     puts "Pre-loading a maglef of: $ESD_FET"
-    load $PDK_ROOT/sky130A/libs.ref/sky130_fd_io/maglef/$ESD_FET.mag
+    load $PDK_PATH/libs.ref/sky130_fd_io/maglef/$ESD_FET.mag
 }
 
 if { $HAS_SRAM } {
@@ -36,7 +36,7 @@ if { $HAS_SRAM } {
     puts "Detected an SRAM module"
     foreach x $SRAM_MODULES {
         puts "Pre-loading a maglef of the SRAM block: ${x}"
-        load $PDK_ROOT/sky130A/libs.ref/sky130_sram_macros/maglef/${x}.mag
+        load $PDK_PATH/libs.ref/sky130_sram_macros/maglef/${x}.mag
     }
 }
 gds read $GDS_UT_PATH

@@ -261,7 +261,7 @@ class MagicDRC(CheckManager):
 
         result = magic_gds_drc_check.magic_gds_drc_check(self.gds_input_file_path,
                                                          self.project_config['user_module'],
-                                                         self.precheck_config['pdk_root'],
+                                                         self.precheck_config['pdk_path'],
                                                          self.precheck_config['output_directory'])
         if result:
             logging.info(f"{{{{MAGIC DRC CHECK PASSED}}}} The GDS file, {self.gds_input_file_path.name}, has no DRC violations.")
@@ -312,7 +312,7 @@ class XOR(CheckManager):
 
     def run(self):
         # TODO(nofal): This should be a single file across the entire precheck
-        magicrc_file_path = self.precheck_config['pdk_root'] / 'sky130A' / 'libs.tech' / 'magic' / 'sky130A.magicrc'
+        magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
         gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
 
         self.result = xor_check.gds_xor_check(self.precheck_config['input_directory'],
