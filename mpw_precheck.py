@@ -52,7 +52,7 @@ def log_info(precheck_config, project_config):
             skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
             pdks_info.write(f"Open PDKs {open_pdks_version}\n")
             pdks_info.write(f"Skywater PDK {skywater_pdk_version}")
-            logging.info(f"{{{{PDKs Info}}}} Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
+            logging.info(f"{{{{PDKs Info}}}} PDK: {precheck_config['pdk_path'].name} | Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
         except Exception as e:
             logging.error(f"MPW Precheck failed to get Open PDKs & Skywater PDK versions: {e}")
 
