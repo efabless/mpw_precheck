@@ -14,7 +14,15 @@ def klayout_gds_drc_check(check_name, drc_script_path, gds_input_file_path, outp
 
     log_file_path = logs_directory / f'{check_name}_check.log'
     with open(log_file_path, 'w') as klayout_drc_log:
-        subprocess.run(run_drc_check_cmd, stderr=klayout_drc_log, stdout=klayout_drc_log)
+        try:
+            subprocess.run(run_drc_check_cmd, stderr=klayout_drc_log, stdout=klayout_drc_log, check=True)
+        except subprocess.CalledProcessError as error:
+            logging.error(f"Klayout failed. Error: {error}")
+            return False
+
+    if not report_file_path.exists():
+        logging.error(f"No {report_file_path} file produced by Klayout drc check")
+        return False
 
     with open(report_file_path) as klayout_xml_report:
         drc_content = klayout_xml_report.read()
