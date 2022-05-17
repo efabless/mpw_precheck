@@ -60,7 +60,7 @@ RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.9-0.x
 
 # Clone Magic
 ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.304 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.300 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
