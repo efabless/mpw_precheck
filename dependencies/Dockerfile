@@ -44,7 +44,7 @@ RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cai
 
 # uninstall current version of git and install latest version available in rhel/7
 RUN yum -y remove git && yum -y remove git-* && \
-    yum -y install https://repo.ius.io/7/x86_64/packages/g/git224-2.24.4-1.el7.ius.x86_64.rpm && \
+    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.1-2.el7.ius.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
@@ -54,13 +54,13 @@ RUN yum install -y iverilog && \
     rm -rf /var/cache/yum
 
 # Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.8-0.x86_64.rpm && \
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.10-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 # Clone Magic
 ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.274 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.309 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
