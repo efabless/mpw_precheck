@@ -387,7 +387,7 @@ li_edges_with_less_enclosure = li.enclosing(licon_peri, 0.08, projection).second
 error_corners = li_edges_with_less_enclosure.width(angle_limit(100.0), 1.dbu)
 li_interact = licon_peri.interacting(error_corners.polygons(1.dbu))
 li_interact.output("li.5", "li.5 : min. li enclosure of licon of 2 adjacent edges : 0.08um")
-li.with_area(nil, 0.0561).output("li.6", "li.6 : min. li area : 0.0561um²")
+linotace.with_area(nil, 0.0561).output("li.6", "li.6 : min. li area : 0.0561um²")
 log("END: 67/20 (li)")
 
 #   ct
