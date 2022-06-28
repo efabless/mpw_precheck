@@ -1,9 +1,16 @@
 # based in part on: https://www.klayout.de/forum/discussion/173/use-klayout-in-batch-mode
+
 $errs = 0
+del = 0
+delZLp = true
+len0 = 0
+len0Del = 0
+
 ly = RBA::Layout.new
 source($input, $top_cell_name)
 ly.read($input)
 report("zero area check", $report)
+
 ly.layer_indices.each { |li|
   ly.each_cell { |cell|
     cell.shapes(li).each { |shape|
@@ -15,16 +22,47 @@ ly.layer_indices.each { |li|
         polygons().insert(shape.dpolygon).output("zero_area_shape")
         if $cleaned_output
           shape.delete
+          del += 1
+         end
+      elsif delZLp && shape.is_valid? && (!shape.is_null?) && shape.is_path?
+        # puts "path on layer:#{layer_info} area:#{shape.area}"
+        lastpt = nil
+        same = true
+        # walk the points. First time we identify at least two unique-points, skip: not a zero-length path.
+        shape.each_point { |pt|
+          if lastpt && lastpt != pt
+            same = false
+            break
+          end
+          lastpt = pt
+        }
+        if same
+          # puts "zero-length path on layer:#{layer_info} area:#{shape.area} path:#{shape.to_s}"
+          len0 += 1
+          $errs += 1
+          if $cleaned_output
+            shape.delete
+            len0Del += 1
+          end
         end
       end
     }
   }
 }
-puts "#{$errs} zero-area shapes"
+
 if $cleaned_output
   puts "writing to #{$cleaned_output}"
   ly.write($cleaned_output)
 end
+
+puts "#{$errs} zero-area shapes"
+
+del += len0Del
+if delZLp
+  puts "#{len0} zero-length paths,  #{len0Del} zero-length paths deleted."
+end
+puts "#{$errs} total zero-area objects,  #{del} total objects deleted."
+
 # if we roll-over to 256, exit-status seen by shell is zero.
 # uncaught I/O errors will yield (built-in) exit status of 1.
 if $errs > 0
