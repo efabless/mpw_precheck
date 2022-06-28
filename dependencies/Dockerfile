@@ -54,13 +54,13 @@ RUN yum install -y iverilog && \
     rm -rf /var/cache/yum
 
 # Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.9-0.x86_64.rpm && \
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.10-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 # Clone Magic
 ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.300 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.315 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.

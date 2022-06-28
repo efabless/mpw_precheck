@@ -5,10 +5,22 @@
 #   Distributed under GNU GPLv3: https://www.gnu.org/licenses/
 #
 #  History :
-#   2022-2-17 : 2022.2.17_01.04 release
+#   2022-6-22 : 2022.6.22_01.06 release
 #
 ##########################################################################################
+release = "2022.6.22_01.06"
 
+require 'time'
+require "logger"
+
+exec_start_time = Time.now
+
+logger = Logger.new(STDOUT)
+
+logger.formatter = proc do |severity, datetime, progname, msg|
+  "#{msg}
+"
+end
 # optionnal for a batch launch :   klayout -b -rd input=my_layout.gds -rd report=sky130_drc.txt -r drc_sky130.drc
 if $input
   source($input, $top_cell)
@@ -229,16 +241,21 @@ log("START: 64/18 (dnwell)")
 dnwell.width(3.0, euclidian).output("dnwell.2", "dnwell.2 : min. dnwell width : 3.0um")
 log("END: 64/18 (dnwell)")
 
-not_sram = layout(source.cell_obj).select("-*sram*")
+not_sram = layout(source.cell_obj).select("-*sky130_sram_*kbyte_*")
 not_sram_nsdm = not_sram.input(nsdm_wildcard)
 not_sram_psdm = not_sram.input(psdm_wildcard)
 not_sram_nwell = not_sram.input(nwell_wildcard)
+
+# This is a hack, should be reverted
+
+not_io = layout(source.cell_obj).select("-*sky130_fd_io__gpiov2_amux", "-*sky130_fd_io__simple_pad_and_busses")
+not_io_nwell = not_io.input(nwell_wildcard)
 
 #   nwell
 log("START: 64/20 (nwell)")
 nwell.width(0.84, euclidian).output("nwell.1", "nwell.1 : min. nwell width : 0.84um")
 nwell.space(1.27, euclidian).output("nwell.2a", "nwell.2a : min. nwell spacing (merged if less) : 1.27um")
-nwell_interact = not_sram_nwell.merge
+nwell_interact = not_sram_nwell.and(not_io_nwell).merge
 dnwell.enclosing(nwell_interact.holes, 1.03, euclidian).output("nwell.6", "nwell.6 : min enclosure of nwellHole by dnwell : 1.03um")
 log("END: 64/20 (nwell)")
 
@@ -347,29 +364,28 @@ log("END: 66/44 (licon)")
 
 # CAPM
 log("START: 89/44 (capm)")
-m3_bot_plate = (capm.and(m3)).sized(0.14)
 capm.width(1.0, euclidian).output("capm.1", "capm.1 : min. capm width : 1.0um")
 capm.space(0.84, euclidian).output("capm.2a", "capm.2a : min. capm spacing : 0.84um")
 m3.interacting(capm).isolated(1.2, euclidian).output("capm.2b", "capm.2b : min. capm spacing : 1.2um")
-m3_bot_plate.isolated(1.2, euclidian).output("capm.2b_a", "capm.2b_a : min. spacing of m3_bot_plate : 1.2um")
+(m3.interacting(capm)).isolated(1.2, euclidian).output("capm.2b_a", "capm.2b_a : min. spacing of m3_bot_plate : 1.2um")
 capm.and(m3).enclosing(m3, 0.14, euclidian).output("capm.3", "capm.3 : min. capm and m3 enclosure of m3 : 0.14um")
 m3.enclosing(capm, 0.14, euclidian).output("capm.3_a", "capm.3_a : min. m3 enclosure of capm : 0.14um")
 capm.enclosing(via3, 0.14, euclidian).output("capm.4", "capm.4 : min. capm enclosure of via3 : 0.14um")
 capm.separation(via3, 0.14, euclidian).output("capm.5", "capm.5 : min. capm spacing to via3 : 0.14um")
+(m3.not_interacting(capm)).separation(capm, 0.5, euclidian).output("capm.11", "capm.11 : Min spacing of capm and met3 not overlapping capm : 0.5um")
 log("END: 89/44 (capm)")
 
 # CAP2M
 log("START: 97/44 (cap2m)")
-m4_bot_plate = (cap2m.and(m4)).sized(0.14)
 cap2m.width(1.0, euclidian).output("cap2m.1", "cap2m.1 : min. cap2m width : 1.0um")
 cap2m.space(0.84, euclidian).output("cap2m.2a", "cap2m.2a : min. cap2m spacing : 0.84um")
 m4.interacting(cap2m).isolated(1.2, euclidian).output("cap2m.2b", "cap2m.2b : min. cap2m spacing : 1.2um")
-# This rule has false positive errors
-m4_bot_plate.isolated(1.2, euclidian).output("cap2m.2b_a", "cap2m.2b_a : min. spacing of m4_bot_plate : 1.2um")
+(m4.interacting(cap2m)).isolated(1.2, euclidian).output("cap2m.2b_a", "cap2m.2b_a : min. spacing of m4_bot_plate : 1.2um")
 cap2m.and(m4).enclosing(m4, 0.14, euclidian).output("cap2m.3", "cap2m.3 : min. m4 enclosure of cap2m : 0.14um")
 m4.enclosing(cap2m, 0.14, euclidian).output("cap2m.3_a", "cap2m.3_a : min. m4 enclosure of cap2m : 0.14um")
 cap2m.enclosing(via4, 0.2, euclidian).output("cap2m.4", "cap2m.4 : min. cap2m enclosure of via4 : 0.14um")
 cap2m.separation(via4, 0.2, euclidian).output("cap2m.5", "cap2m.5 : min. cap2m spacing to via4 : 0.14um")
+(m4.not_interacting(cap2m)).separation(cap2m, 0.5, euclidian).output("cap2m.11", "cap2m.11 : Min spacing of cap2m and met4 not overlapping cap2m : 0.5um")
 log("END: 97/44 (cap2m)")
 end #FEOL
 
@@ -387,7 +403,7 @@ li_edges_with_less_enclosure = li.enclosing(licon_peri, 0.08, projection).second
 error_corners = li_edges_with_less_enclosure.width(angle_limit(100.0), 1.dbu)
 li_interact = licon_peri.interacting(error_corners.polygons(1.dbu))
 li_interact.output("li.5", "li.5 : min. li enclosure of licon of 2 adjacent edges : 0.08um")
-li.with_area(nil, 0.0561).output("li.6", "li.6 : min. li area : 0.0561um²")
+linotace.with_area(nil, 0.0561).output("li.6", "li.6 : min. li area : 0.0561um²")
 log("END: 67/20 (li)")
 
 #   ct
@@ -766,3 +782,13 @@ pwell_rs.with_angle(0 .. 45).output("pwell_rs_angle", "x.3a : non 45 degree angl
 areaid_re.ongrid(0.005).output("areaid_re_OFFGRID", "x.1b : OFFGRID vertex on areaid.re")
 
 end #OFFGRID
+logger.info(" ")
+logger.info("Cell exclusion list:")
+logger.info("   rule    | cell")
+logger.info("   nwell.6 | sky130_fd_io__gpiov2_amux, sky130_fd_io__simple_pad_and_busses, sram")
+logger.info("   nsd.1   | sram")
+logger.info("   nsd.2   | sram")
+logger.info("   psd.1   | sram")
+logger.info("   psd.2   | sram")
+logger.info(" ")
+logger.info("release #{release}")
