@@ -45,14 +45,14 @@ def log_info(precheck_config, project_config):
         logging.info(f"{{{{Tools Info}}}} KLayout: v{klayout_version} | Magic: v{magic_version}")
     with open(pdks_info_path, 'w') as pdks_info:
         try:
-            pdk_dir = f"{precheck_config['pdk_root']}/%s"
+            pdk_dir = f"{precheck_config['pdk_path'].parent}/%s"
             open_pdks_v_cmd = ['git', '-C', pdk_dir % 'open_pdks', 'rev-parse', '--verify', 'HEAD']
             skywater_pdk_v_cmd = ['git', '-C', pdk_dir % 'skywater-pdk', 'rev-parse', '--verify', 'HEAD']
             open_pdks_version = subprocess.check_output(open_pdks_v_cmd, encoding='utf-8').rstrip()
             skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
             pdks_info.write(f"Open PDKs {open_pdks_version}\n")
             pdks_info.write(f"Skywater PDK {skywater_pdk_version}")
-            logging.info(f"{{{{PDKs Info}}}} Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
+            logging.info(f"{{{{PDKs Info}}}} PDK: {precheck_config['pdk_path'].name} | Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
         except Exception as e:
             logging.error(f"MPW Precheck failed to get Open PDKs & Skywater PDK versions: {e}")
 
@@ -81,7 +81,7 @@ def main(*args, **kwargs):
     precheck_config = dict(input_directory=Path(kwargs['input_directory']),
                            output_directory=Path(kwargs['output_directory']),
                            caravel_root=Path(kwargs['caravel_root']),
-                           pdk_root=Path(kwargs['pdk_root']),
+                           pdk_path=Path(kwargs['pdk_path']),
                            private=kwargs['private'],
                            sequence=kwargs['sequence'],
                            log_path=Path(kwargs['log_path']),
@@ -103,7 +103,7 @@ def main(*args, **kwargs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Runs the mpw precheck tool.", allow_abbrev=False)
     parser.add_argument('-i', '--input_directory', required=True, help="INPUT_DIRECTORY Absolute Path to the project.")
-    parser.add_argument('-p', '--pdk_root', required=True, help="PDK_ROOT, points to pdk installation path")
+    parser.add_argument('-p', '--pdk_path', required=True, help="PDK_PATH, points to the installation path of the pdk (variant specific)")
     parser.add_argument('-o', '--output_directory', required=False, help="OUTPUT_DIRECTORY, default=<input_directory>/precheck_results/DD_MMM_YYYY___HH_MM_SS.")
     parser.add_argument('--private', action='store_true', help=f"If provided, precheck skips {open_source_checks.keys() - private_checks.keys()}  checks that qualify the project to be Open Source")
     parser.add_argument('checks', metavar='check', type=str, nargs='*', choices=list(open_source_checks.keys()).append([]), help=f"Checks to be run by the precheck: {' '.join(open_source_checks.keys())}")
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     main(input_directory=args.input_directory,
          output_directory=output_directory,
          caravel_root=os.environ['GOLDEN_CARAVEL'],
-         pdk_root=args.pdk_root,
+         pdk_path=args.pdk_path,
          private=args.private,
          sequence=sequence,
          log_path=log_path,

@@ -35,13 +35,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs magic and klayout drc checks on a given GDS.')
     parser.add_argument('--gds_input_file_path', '-g', required=True, help='GDS File to apply DRC checks on')
     parser.add_argument('--output_directory', '-o', required=True, help='Output Directory')
-    parser.add_argument('--pdk_root', '-p', required=True, help='PDK Path')
     parser.add_argument('--design_name', '-d', required=True, help='Design Name')
     args = parser.parse_args()
 
     gds_input_file_path = Path(args.gds_input_file_path)
     output_directory = Path(args.output_directory)
-    pdk_root = Path(args.pdk_root)
     design_name = args.design_name
 
     klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent.parent / "tech-files/sky130A_mr.drc"

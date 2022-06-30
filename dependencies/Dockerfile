@@ -54,13 +54,13 @@ RUN yum install -y iverilog && \
     rm -rf /var/cache/yum
 
 # Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.8-0.x86_64.rpm && \
+RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.9-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 # Clone Magic
 ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.274 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.300 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
@@ -68,7 +68,7 @@ WORKDIR $MAGIC_ROOT
 # --disable-locking : recommended by tim due to cell-depth of sky130A PDK cells.
 # scl enable devtoolset-8 --  : use the devtoolset-8 gcc-8.x (not the native gcc-4.x).
 # Note: to use gdb start like:   docker run --ulimit core=-1 --cap-add SYS_PTRACE ...
-RUN scl enable devtoolset-8 -- ./configure --disable-locking --prefix=/build CFLAGS='-g -O0 -m64 -fPIC' && \
+RUN scl enable devtoolset-8 -- ./configure --prefix=/build CFLAGS='-g -O0 -m64 -fPIC' && \
     scl enable devtoolset-8 -- make -j4 && \
     scl enable devtoolset-8 -- make install
 
@@ -85,4 +85,4 @@ WORKDIR $PRECHECKER_ROOT
 
 # GOLDEN CARAVEL
 ENV GOLDEN_CARAVEL=/opt/caravel
-RUN git clone --depth=1 --branch mpw-5c https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress
+RUN git clone --depth=1 --branch mpw-6c https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress

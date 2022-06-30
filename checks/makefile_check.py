@@ -17,8 +17,11 @@ import argparse
 import logging
 from pathlib import Path
 
+# TODO Investigate target diffs between analog & digital user projects i.e. ['harden','setup','verify-*']
 MAKEFILE_FILENAME = 'Makefile'
-MAKEFILE_TARGETS = ['clean', 'verify']
+MAKEFILE_TARGETS = ['check-caravel', 'check-pdk', 'check-precheck', 'clean', 'help', 'install',
+                    'openlane', 'precheck', 'run-precheck', 'simenv', 'simlink',
+                    'uninstall', 'update_caravel', 'verify']
 
 
 def main(*args, **kwargs):
@@ -29,7 +32,7 @@ def main(*args, **kwargs):
         with open(makefile_path, encoding='utf-8') as f:
             makefile_content = f.read()
         for target in MAKEFILE_TARGETS:
-            if makefile_content.count(target + ':') == 0:
+            if makefile_content.count(f'{target}:') == 0:
                 result = False
                 logging.warning(f"Makefile missing target: {target}:")
             if target == 'compress':
