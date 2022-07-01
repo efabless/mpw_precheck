@@ -44,7 +44,7 @@ RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cai
 
 # uninstall current version of git and install latest version available in rhel/7
 RUN yum -y remove git && yum -y remove git-* && \
-    yum -y install https://repo.ius.io/7/x86_64/packages/g/git224-2.24.4-1.el7.ius.x86_64.rpm && \
+    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.1-2.el7.ius.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
