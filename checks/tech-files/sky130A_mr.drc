@@ -5,10 +5,10 @@
 #   Distributed under GNU GPLv3: https://www.gnu.org/licenses/
 #
 #  History :
-#   2022-6-22 : 2022.6.22_01.06 release
+#   2022-6-22 : 2022.6.30_01.07 release
 #
 ##########################################################################################
-release = "2022.6.22_01.06"
+release = "2022.6.30_01.07"
 
 require 'time'
 require "logger"
@@ -36,6 +36,12 @@ AL = true  # do not change
 CU = false  # do not change
 # choose betwen only one of  AL  or  CU  back-end flow here :
 backend_flow = AL
+
+FEOL = false
+BEOL = false
+OFFGRID = false
+SEAL = false
+FLOATING_MET = false
 
 # enable / disable rule groups
 if $feol  == "1"        || $feol == "true"
@@ -388,7 +394,7 @@ log("BEOL section")
 
 #   li
 log("START: 67/20 (li)")
-linotace = li.not(areaid_ce)
+linotace = li.not(li.interacting(areaid_ce))
 linotace.width(0.17, euclidian).output("li.1", "li.1 : min. li width : 0.17um")
 # This rule is taking a long time in some slots
 linotace.edges.space(0.17, euclidian).output("li.3", "li.3 : min. li spacing : 0.17um")
