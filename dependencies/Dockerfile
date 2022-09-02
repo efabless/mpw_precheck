@@ -85,4 +85,4 @@ WORKDIR $PRECHECKER_ROOT
 
 # GOLDEN CARAVEL
 ENV GOLDEN_CARAVEL=/opt/caravel
-RUN git clone --depth=1 https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress
+RUN git clone --branch mpw-7b --depth=1 https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress
