@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 Efabless Corporation
+# SPDX-FileCopyrightText: 2020-2022 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ def main(*args, **kwargs):
     gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
     compressed_gds_file_path = precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds.gz"
     if gds_file_path.exists() and compressed_gds_file_path.exists():
-        logging.fatal("{{GDS VIOLATION}} Both a compressed and an uncompressed version the gds exist, ensure only one design file exists.")
+        logging.fatal("{{GDS VIOLATION}} Both a compressed and an uncompressed version of the gds exist, ensure only one design file exists.")
         sys.exit(255)
 
     log_info(precheck_config, project_config)
@@ -119,12 +119,12 @@ if __name__ == '__main__':
     precheck_logger.initialize_root_logger(log_path)
 
     if not Path('/.dockerenv').exists():
-        logging.warning("MPW Precheck is being executed outside Docker, this mode is no longer supported. Efabless bares no responsibility for the generated results !!!")
+        logging.warning("MPW Precheck is being executed outside Docker, this mode is no longer supported. Efabless bears no responsibility for the generated results !!!")
         question = lambda q: input(q).lower().strip() == "continue" or question(q)
         question("If you want to proceed please type 'continue' and press 'Enter'.\n")
 
     if 'GOLDEN_CARAVEL' not in os.environ:
-        logging.critical("`GOLDEN_CARAVEL` envrionment variable is not set. Please set it to point to absolute path to the golden caravel")
+        logging.critical("`GOLDEN_CARAVEL` environment variable is not set. Please set it to point to absolute path to the golden caravel")
         sys.exit(1)
 
     sequence = args.checks if args.checks else [x for x in private_checks.keys()] if args.private else [x for x in open_source_checks.keys()]
