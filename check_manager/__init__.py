@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 Efabless Corporation
+# SPDX-FileCopyrightText: 2020-2022 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ from checks import manifest_check
 from checks.consistency_check import consistency_check
 from checks.drc_checks.klayout import klayout_gds_drc_check
 from checks.drc_checks.magic import magic_gds_drc_check
+from checks.gpio_defines_check import gpio_defines_check
 from checks.license_check import license_check
 from checks.xor_check import xor_check
 
@@ -104,6 +105,26 @@ class Documentation(CheckManager):
             logging.info("{{DOCUMENTATION CHECK PASSED}} Project documentation is appropriate.")
         else:
             logging.warning("{{DOCUMENTATION CHECK FAILED}} Project documentation is not appropriate.")
+        return self.result
+
+
+class GpioDefines(CheckManager):
+    __ref__ = 'gpio_defines'
+    __surname__ = 'GPIO-Defines'
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+
+    def run(self):
+        self.result = gpio_defines_check.main(input_directory=self.precheck_config['input_directory'],
+                                              output_directory=self.precheck_config['output_directory'],
+                                              project_type=self.project_config['type'],
+                                              user_defines_v=Path("verilog/rtl/user_defines.v"),
+                                              include_extras=[])
+        if self.result:
+            logging.info("{{GPIO-DEFINES CHECK PASSED}} The user verilog/rtl/user_defines.v is valid.")
+        else:
+            logging.warning("{{GPIO-DEFINES CHECK FAILED}} The user verilog/rtl/user_defines.v is not valid.")
         return self.result
 
 
@@ -334,6 +355,7 @@ open_source_checks = OrderedDict([
     (Defaults.__ref__, Defaults),
     (Documentation.__ref__, Documentation),
     (Consistency.__ref__, Consistency),
+    (GpioDefines.__ref__, GpioDefines),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),
@@ -348,6 +370,7 @@ open_source_checks = OrderedDict([
 private_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
     (Consistency.__ref__, Consistency),
+    (GpioDefines.__ref__, GpioDefines),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),
