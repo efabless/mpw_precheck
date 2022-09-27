@@ -99,21 +99,21 @@ def main(*args, **kwargs):
     # order the files to parse
     file_list = [*PRE_V, *include_extras_vf, user_defines_vf, *POST_V]
     file_list_p = [str(f) for f in file_list]
-    logging.info(f"GPIO-DEFINES: to check {user_defines_v} parsing files: {file_list_p}")
+    logging.info(f"GPIO-DEFINES: Checking {user_defines_v}, parsing files: {file_list_p}")
 
     try:
         ast, _ = parse(file_list)
     except ParseError as e:
         # raise DataError(f"Parsing netlist(s) {file_list_p} failed2 because {str(e)}")
-        logging.warning(f"{{{{GPIO-DEFINES: PARSE NETLISTS FAILED}}}} The files fail parsing(2) because: {{{str(e)}}}, did you?: `undef USER_CONFIG_GPIO_<int>_INIT")
+        logging.warning(f"{{{{GPIO-DEFINES: PARSE NETLISTS FAILED}}}} The files fail parsing(2) because: {str(e)}, did you?: `undef USER_CONFIG_GPIO_<int>_INIT")
         errs += 1
     except RuntimeError as e:
         # raise DataError(f"Parsing netlist(s) {file_list_p} failed because {str(e)}")
-        logging.warning(f"{{{{GPIO-DEFINES: PARSE NETLISTS FAILED}}}} The files fail parsing because: {{{str(e)}}}")
+        logging.warning(f"{{{{GPIO-DEFINES: PARSE NETLISTS FAILED}}}} The files fail parsing because: {str(e)}")
         errs += 1
     except Exception as e:  # any other exception...
         # raise DataError(f"Parsing netlist(s) {file_list_p} failed3 because {str(e)}")
-        logging.warning(f"{{{{GPIO-DEFINES: PARSE NETLISTS FAILED}}}} The files netlists fail parsing(3) because: {{{str(e)}}}")
+        logging.warning(f"{{{{GPIO-DEFINES: PARSE NETLISTS FAILED}}}} The files netlists fail parsing(3) because: {str(e)}")
         errs += 1
 
     # any errors till now?: Stop/return now. No useful parse-result.
@@ -169,7 +169,7 @@ def main(*args, **kwargs):
 
     # Form set of the USER_CONFIG_GPIO_*_INIT indexes we require. Different for caravel vs caravan.
     want = {i for i in range(5, 38)}
-    if project_type['type'] == 'analog':
+    if project_type == 'analog':
         # For caravan, the span 15...25 is a don't care.
         list(want.remove(i) for i in range(15, 26))
 
@@ -237,10 +237,10 @@ def main(*args, **kwargs):
                     pair = valids[i]
                     rpt.write(f"{pair[0]: <{w0}} {pair[1]}\n")
     except Exception as e:  # any other exception...
-        logging.fatal(f"{{{{GPIO-DEFINES: ERROR IN writing report {gpio_defines_report}}}}} because: {{{str(e)}}}")
+        logging.fatal(f"GPIO-DEFINES: ERROR IN writing report {gpio_defines_report} because: {str(e)}")
         return False
 
-    logging.info(f"{{{{GPIO-DEFINES: wrote report {gpio_defines_report}}}}}")
+    logging.info(f"GPIO-DEFINES report path: {gpio_defines_report}")
     return True  # pass
 
 
