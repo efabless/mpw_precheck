@@ -99,7 +99,7 @@ def main(*args, **kwargs):
     # order the files to parse
     file_list = [*PRE_V, *include_extras_vf, user_defines_vf, *POST_V]
     file_list_p = [str(f) for f in file_list]
-    logging.info(f"GPIO-DEFINES: to check {user_defines_v} parsing files: {file_list_p}")
+    logging.info(f"GPIO-DEFINES: Checking {user_defines_v}, parsing files: {file_list_p}")
 
     try:
         ast, _ = parse(file_list)
