@@ -24,6 +24,7 @@ from checks.utils import utils
 
 def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_golden_wrapper_file_path, project_config):
     parent_directory = Path(__file__).parent
+    pdk_root = Path(os.getenv("PDK_PATH")).parent
     logs_directory = output_directory / 'logs'
     outputs_directory = output_directory / 'outputs'
 
@@ -44,7 +45,8 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
 
         # TODO: Try to pass the MAGTYPE as a commandline argument
         os.environ['MAGTYPE'] = 'mag'
-
+        os.environ['PDK_ROOT'] = str(pdk_root.absolute())
+        print(magicrc_file_path)
         # Erase box
         gds_ut_box_erased_path = outputs_directory / f"{project_config['user_module']}_erased.gds"
         tcl_erase_box_file_path = parent_directory / 'erase_box.tcl'

@@ -15,6 +15,7 @@
 
 import argparse
 import datetime
+import json
 import logging
 import os
 import subprocess
@@ -45,14 +46,34 @@ def log_info(precheck_config, project_config):
         logging.info(f"{{{{Tools Info}}}} KLayout: v{klayout_version} | Magic: v{magic_version}")
     with open(pdks_info_path, 'w') as pdks_info:
         try:
-            pdk_dir = f"{precheck_config['pdk_path'].parent}/%s"
-            open_pdks_v_cmd = ['git', '-C', pdk_dir % 'open_pdks', 'rev-parse', '--verify', 'HEAD']
-            skywater_pdk_v_cmd = ['git', '-C', pdk_dir % 'skywater-pdk', 'rev-parse', '--verify', 'HEAD']
-            open_pdks_version = subprocess.check_output(open_pdks_v_cmd, encoding='utf-8').rstrip()
-            skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
-            pdks_info.write(f"Open PDKs {open_pdks_version}\n")
-            pdks_info.write(f"Skywater PDK {skywater_pdk_version}")
-            logging.info(f"{{{{PDKs Info}}}} PDK: {precheck_config['pdk_path'].name} | Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
+            volare_node_info = Path.joinpath(precheck_config['pdk_path'], '.config/nodeinfo.json')
+            if volare_node_info.is_file():
+                node_info = json.loads(open(volare_node_info, 'r').read())
+                reference = node_info['reference']
+                open_pdks_version = node_info['commit']['open_pdks']
+                foundry_name = node_info['foundry-name']
+                node_name = node_info['node']
+
+                base_pdk_version = None
+                if 'gf180mcu_pdk' in reference.keys():
+                    base_pdk_version = reference['gf180mcu_pdk']
+                elif 'skywater_pdk' in reference.keys():
+                    base_pdk_version = reference['skywater_pdk']
+                else:
+                    raise ValueError("Contains unrecognized PDK type \n {}".format(node_info)) 
+
+                pdks_info.write(f"Open PDKs {open_pdks_version}\n")
+                pdks_info.write(f"{foundry_name} {node_name} {base_pdk_version}")
+                logging.info(f"{{{{PDKs Info}}}} PDK: {precheck_config['pdk_path'].name} | Open PDKs: {open_pdks_version} | {foundry_name} {node_name}: {base_pdk_version}")
+            else:
+                pdk_dir = f"{precheck_config['pdk_path'].parent}/%s"
+                open_pdks_v_cmd = ['git', '-C', pdk_dir % 'open_pdks', 'rev-parse', '--verify', 'HEAD']
+                skywater_pdk_v_cmd = ['git', '-C', pdk_dir % 'skywater-pdk', 'rev-parse', '--verify', 'HEAD']
+                open_pdks_version = subprocess.check_output(open_pdks_v_cmd, encoding='utf-8').rstrip()
+                skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
+                pdks_info.write(f"Open PDKs {open_pdks_version}\n")
+                pdks_info.write(f"Skywater PDK {skywater_pdk_version}")
+                logging.info(f"{{{{PDKs Info}}}} PDK: {precheck_config['pdk_path'].name} | Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
         except Exception as e:
             logging.error(f"MPW Precheck failed to get Open PDKs & Skywater PDK versions: {e}")
 
