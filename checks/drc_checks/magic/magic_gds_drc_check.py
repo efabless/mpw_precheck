@@ -74,6 +74,7 @@ def magic_gds_drc_check(gds_ut_path, design_name, pdk_path, output_directory):
     has_esd_fet_as_str = str(check_if_binary_has('sky130_fd_io__signal_5_sym_hv_local_5term', gds_ut_path))
     # TODO(ahmad.nofal@efabless.com): This should be a command line argument
     os.environ['MAGTYPE'] = 'mag'
+    os.environ['PDK_ROOT'] = str(Path(pdk_path).parent)
     run_magic_drc_check_cmd = ['magic', '-noconsole', '-dnull', '-rcfile', magicrc_file_path, magic_drc_tcl_path, gds_ut_path,
                                design_name, pdk_path, design_magic_drc_file_path, design_magic_drc_mag_file_path,
                                ' '.join(sram_modules_in_gds), esd_fet, has_sram_as_str, has_esd_fet_as_str]

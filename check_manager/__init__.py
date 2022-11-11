@@ -50,6 +50,7 @@ class CheckManager:
 class Consistency(CheckManager):
     __ref__ = 'consistency'
     __surname__ = 'Consistency'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -70,6 +71,7 @@ class Consistency(CheckManager):
 class Defaults(CheckManager):
     __ref__ = 'default'
     __surname__ = 'Default'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -95,6 +97,7 @@ class Defaults(CheckManager):
 class Documentation(CheckManager):
     __ref__ = 'documentation'
     __surname__ = 'Documentation'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -111,6 +114,7 @@ class Documentation(CheckManager):
 class GpioDefines(CheckManager):
     __ref__ = 'gpio_defines'
     __surname__ = 'GPIO-Defines'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -131,6 +135,7 @@ class GpioDefines(CheckManager):
 class KlayoutDRC(CheckManager):
     __ref__ = None
     __surname__ = None
+    __supported_pdks__ = None
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -159,26 +164,33 @@ class KlayoutDRC(CheckManager):
 class KlayoutBEOL(KlayoutDRC):
     __ref__ = 'klayout_beol'
     __surname__ = 'Klayout BEOL'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
+        self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'beol=true']
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
 
 
 class KlayoutFEOL(KlayoutDRC):
     __ref__ = 'klayout_feol'
     __surname__ = 'Klayout FEOL'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
+        self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'feol=true']
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
 
 
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -188,16 +200,20 @@ class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
 class KlayoutOffgrid(KlayoutDRC):
     __ref__ = 'klayout_offgrid'
     __surname__ = 'Klayout Offgrid'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
+        self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'offgrid=true']
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
 
 
 class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
     __ref__ = 'klayout_pin_label_purposes_overlapping_drawing'
     __surname__ = 'Klayout Pin Label Purposes Overlapping Drawing'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -208,6 +224,7 @@ class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
 class KlayoutZeroArea(KlayoutDRC):
     __ref__ = 'klayout_zeroarea'
     __surname__ = 'Klayout ZeroArea'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -218,6 +235,7 @@ class KlayoutZeroArea(KlayoutDRC):
 class License(CheckManager):
     __ref__ = 'license'
     __surname__ = 'License'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -269,6 +287,7 @@ class License(CheckManager):
 class MagicDRC(CheckManager):
     __ref__ = 'magic_drc'
     __surname__ = 'Magic DRC'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -294,6 +313,7 @@ class MagicDRC(CheckManager):
 class Makefile(CheckManager):
     __ref__ = 'makefile'
     __surname__ = 'Makefile'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -310,6 +330,7 @@ class Makefile(CheckManager):
 class Manifest(CheckManager):
     __ref__ = 'manifest'
     __surname__ = 'Manifest'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -327,6 +348,7 @@ class Manifest(CheckManager):
 class XOR(CheckManager):
     __ref__ = 'xor'
     __surname__ = 'XOR'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
