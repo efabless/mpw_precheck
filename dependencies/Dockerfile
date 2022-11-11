@@ -50,8 +50,8 @@ RUN yum -y remove git && yum -y remove git-* && \
     yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.1-2.el7.ius.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
- \
-    # Clone Magic
+
+# Clone Magic
 ENV MAGIC_ROOT=./magic
 RUN git clone --depth=1 --branch 8.3.339 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
