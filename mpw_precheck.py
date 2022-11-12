@@ -15,6 +15,7 @@
 
 import argparse
 import datetime
+import json
 import logging
 import os
 import subprocess
@@ -45,16 +46,15 @@ def log_info(precheck_config, project_config):
         logging.info(f"{{{{Tools Info}}}} KLayout: v{klayout_version} | Magic: v{magic_version}")
     with open(pdks_info_path, 'w') as pdks_info:
         try:
-            pdk_dir = f"{precheck_config['pdk_path'].parent}/%s"
-            open_pdks_v_cmd = ['git', '-C', pdk_dir % 'open_pdks', 'rev-parse', '--verify', 'HEAD']
-            skywater_pdk_v_cmd = ['git', '-C', pdk_dir % 'skywater-pdk', 'rev-parse', '--verify', 'HEAD']
-            open_pdks_version = subprocess.check_output(open_pdks_v_cmd, encoding='utf-8').rstrip()
-            skywater_pdk_version = subprocess.check_output(skywater_pdk_v_cmd, encoding='utf-8').rstrip()
-            pdks_info.write(f"Open PDKs {open_pdks_version}\n")
-            pdks_info.write(f"Skywater PDK {skywater_pdk_version}")
-            logging.info(f"{{{{PDKs Info}}}} PDK: {precheck_config['pdk_path'].name} | Open PDKs: {open_pdks_version} | Skywater PDK: {skywater_pdk_version}")
+            with open(precheck_config['pdk_path'] / '.config/nodeinfo.json') as f:
+                pdk_nodeinfo = json.load(f)
+                open_pdks_commit = pdk_nodeinfo['commit']['open_pdks']
+                pdk_commit = pdk_nodeinfo['reference'].get('skywater_pdk', pdk_nodeinfo['reference']['gf180mcu_pdk'])
+            pdks_info.write(f"Open PDKs {open_pdks_commit}\n")
+            pdks_info.write(f"Skywater PDK {pdk_commit}")
+            logging.info(f"{{{{PDKs Info}}}} {precheck_config['pdk_path'].name.upper()}: {pdk_commit} | Open PDKs: {open_pdks_commit}")
         except Exception as e:
-            logging.error(f"MPW Precheck failed to get Open PDKs & Skywater PDK versions: {e}")
+            logging.error(f"MPW Precheck failed to retreive {precheck_config['pdk_path'].name.upper()} PDK & Open PDKs commits: {e}")
 
 
 def run_precheck_sequence(precheck_config, project_config):
@@ -97,6 +97,8 @@ def main(*args, **kwargs):
         sys.exit(255)
 
     log_info(precheck_config, project_config)
+    # note: update to filter sequence based on supported pdks
+    precheck_config['sequence'] = [check for check in sequence if precheck_config['pdk_path'].stem in get_check_manager(check, precheck_config, project_config).__supported_pdks__]
     run_precheck_sequence(precheck_config=precheck_config, project_config=project_config)
 
 

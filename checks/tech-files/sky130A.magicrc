@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # SPDX-License-Identifier: Apache-2.0
-EF
+
 puts stdout "Sourcing design .magicrc for technology sky130A ..."
 
 # Put grid on 0.005 pitch.  This is important, as some commands don't

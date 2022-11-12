@@ -33,7 +33,7 @@ To pull the necessary docker from [dockerhub](https://hub.docker.com/repository/
 
 ### Install the PDK
 
-If you don't have the skywater-pdk installed, please refer to the [caravel](https://github.com/efabless/caravel.git) Makefile.
+If you don't have the pdk installed, please refer to the [caravel](https://github.com/efabless/caravel.git) Makefile.
 
 ## Before Using
 
