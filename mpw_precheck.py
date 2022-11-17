@@ -49,9 +49,9 @@ def log_info(precheck_config, project_config):
             with open(precheck_config['pdk_path'] / '.config/nodeinfo.json') as f:
                 pdk_nodeinfo = json.load(f)
                 open_pdks_commit = pdk_nodeinfo['commit']['open_pdks']
-                pdk_commit = pdk_nodeinfo['reference'].get('skywater_pdk', pdk_nodeinfo['reference']['gf180mcu_pdk'])
+                pdk_commit = pdk_nodeinfo['reference'].get('skywater_pdk', pdk_nodeinfo['reference'].get('gf180mcu_pdk'))
             pdks_info.write(f"Open PDKs {open_pdks_commit}\n")
-            pdks_info.write(f"Skywater PDK {pdk_commit}")
+            pdks_info.write(f"{precheck_config['pdk_path'].name.upper()} PDK {pdk_commit}")
             logging.info(f"{{{{PDKs Info}}}} {precheck_config['pdk_path'].name.upper()}: {pdk_commit} | Open PDKs: {open_pdks_commit}")
         except Exception as e:
             logging.error(f"MPW Precheck failed to retreive {precheck_config['pdk_path'].name.upper()} PDK & Open PDKs commits: {e}")
