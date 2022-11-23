@@ -79,8 +79,7 @@ def main(*args, **kwargs):
 
     # Parse netlists (spice/verilog)
     try:
-        top_netlist_parser = get_netlist_parser(project_config['top_netlist'], project_config['top_module'], 'verilog',  include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
-        #top_netlist_parser = get_netlist_parser(project_config['top_netlist'], project_config['top_module'], project_config['netlist_type'], include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
+        top_netlist_parser = get_netlist_parser(project_config['top_netlist'], project_config['top_module'], project_config['netlist_type'], include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
         user_netlist_parser = get_netlist_parser(project_config['user_netlist'], project_config['user_module'], project_config['netlist_type'], include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
         golden_wrapper_parser = VerilogParser(golden_wrapper_netlist, project_config['user_module'], include_files=include_files, preprocess_define=PREPROCESS_DEFINES)
     except netlist_parser.DataError as e:
