@@ -68,7 +68,8 @@ def get_project_config(project_path, caravel_root):
         project_config['top_module'] = 'caravan'
         project_config['user_module'] = 'user_analog_project_wrapper'
         project_config['golden_wrapper'] = 'user_analog_project_wrapper_empty'
-        project_config['top_netlist'] = caravel_root / "spi/lvs/caravan.spice"
+        #project_config['top_netlist'] = caravel_root / "spi/lvs/caravan.spice"
+        project_config['top_netlist'] = caravel_root / "verilog/gl/caravan.v"
         project_config['user_netlist'] = project_path / "netgen/user_analog_project_wrapper.spice"
     elif digital_gds_path.exists() and not analog_gds_path.exists():
         project_config['type'] = 'digital'
