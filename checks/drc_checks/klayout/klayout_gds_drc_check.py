@@ -1,12 +1,14 @@
 import argparse
 import logging
 import subprocess
+import os
 from pathlib import Path
 
-
 def klayout_gds_drc_check(check_name, drc_script_path, gds_input_file_path, output_directory, klayout_cmd_extra_args=[]):
+    logging.info("in CUSTOM klayout_gds_drc_check")
     report_file_path = output_directory / 'outputs/reports' / f'{check_name}_check.xml'
     logs_directory = output_directory / 'logs'
+    total_file_path = logs_directory / f'{check_name}_check.total'
     run_drc_check_cmd = ['klayout', '-b', '-r', drc_script_path,
                          '-rd', f"input={gds_input_file_path}",
                          '-rd', f"topcell={gds_input_file_path.stem}",
@@ -14,21 +16,39 @@ def klayout_gds_drc_check(check_name, drc_script_path, gds_input_file_path, outp
     run_drc_check_cmd.extend(klayout_cmd_extra_args)
 
     log_file_path = logs_directory / f'{check_name}_check.log'
+    cmd = ' '.join(str(x) for x in run_drc_check_cmd) + ' >& ' + str(log_file_path)
     with open(log_file_path, 'w') as klayout_drc_log:
-        subprocess.run(run_drc_check_cmd, stderr=klayout_drc_log, stdout=klayout_drc_log)
-
-    with open(report_file_path) as klayout_xml_report:
-        drc_content = klayout_xml_report.read()
-        drc_count = drc_content.count('<item>')
-        total_file_path = logs_directory / f'{check_name}_check.total'
-        with open(total_file_path, 'w') as drc_total:
-            drc_total.write(f"{drc_count}")
-        if drc_count == 0:
-            logging.info("No DRC Violations found")
-            return True
-        else:
-            logging.error(f"Total # of DRC violations is {drc_count} Please check {report_file_path} For more details")
+        logging.info(f"run: {cmd}") # helpful reference, print long-cmd once & messages below remain concise
+        p = subprocess.run(run_drc_check_cmd, stderr=klayout_drc_log, stdout=klayout_drc_log)
+        # Check exit-status of all subprocesses
+        stat = p.returncode
+        if stat != 0:
+            logging.error(f"ERROR {check_name} FAILED, stat={stat}, see {log_file_path}")
             return False
+
+    try:
+        with open(report_file_path) as klayout_xml_report:
+            size = os.fstat(klayout_xml_report.fileno()).st_size
+            if size == 0:
+                logging.error(f"ERROR {check_name} WROTE DEGENERATE {report_file_path.name}: empty")
+                return False
+            drc_content = klayout_xml_report.read()
+            drc_count = drc_content.count('<item>')
+            with open(total_file_path, 'w') as drc_total:
+                drc_total.write(f"{drc_count}")
+            if drc_count == 0:
+                logging.info("No DRC Violations found")
+                return True
+            else:
+                logging.error(f"Total # of DRC violations is {drc_count} Please check {report_file_path} For more details")
+                return False
+    # Catch reports not found (vs crude abort with exception).
+    except FileNotFoundError as e:
+        logging.error(f"ERROR {check_name} FAILED TO GENERATE {report_file_path.name}: {e}")
+    except (IOError, OSError) as e:
+        logging.error(f"ERROR {check_name} FAILED TO GENERATE {total_file_path.name}: {e}")
+
+    return False
 
 
 if __name__ == "__main__":

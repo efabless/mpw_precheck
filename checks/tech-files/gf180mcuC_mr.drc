@@ -37,13 +37,13 @@ def getMemSize
     end
   end
   return mSize
-end
+end #def
 
 logger = Logger.new(STDOUT)
 logger.formatter = proc do |severity, datetime, progname, msg|
   # "#{datetime}: Memory Usage (" + getMemSize() + ") : #{msg}\n"
   "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10,40].strip + ") : #{msg}\n"
-end
+end #do
 
 #================================================
 #----------------- FILE SETUP -------------------
@@ -191,7 +191,7 @@ neo_ee_mk      = polygons(88 , 17)
 sramcore       = polygons(108, 5 )
 lvs_rf         = polygons(100, 5 )
 lvs_drain      = polygons(100, 7 )
-ind_mk         = polygons(151, 5 )
+## dup: ind_mk         = polygons(151, 5 )
 hvpolyrs       = polygons(123, 5 )
 lvs_io         = polygons(119, 5 )
 probe_mk       = polygons(13 , 17)
@@ -378,8 +378,8 @@ lvs_rf_count                   = lvs_rf.count()
 poly_count                     = poly_count + lvs_rf_count
 lvs_drain_count                = lvs_drain.count()
 poly_count                     = poly_count + lvs_drain_count
-ind_mk_count                   = ind_mk.count()
-poly_count                     = poly_count + ind_mk_count
+## dup: ind_mk_count                   = ind_mk.count()
+## dup: poly_count                     = poly_count + ind_mk_count
 hvpolyrs_count                 = hvpolyrs.count()
 poly_count                     = poly_count + hvpolyrs_count
 lvs_io_count                   = lvs_io.count()
@@ -452,30 +452,31 @@ natcompsd	 = (nat       & comp.interacting(poly2)) - tgate
 #================================================
 logger.info("Evaluate switches.")
 
+# Coerce optional flag-args to booleans, case-insensitive, survives absence (nil-class).
+FEOL               =     $feol.to_s.downcase=="true"
+BEOL               =     $beol.to_s.downcase=="true"
+BEOL_EXTEND        = BEOL
+CONNECTIVITY_RULES = $conn_drc.to_s.downcase=="true"
+OFFGRID            =  $offgrid.to_s.downcase=="true"
+
 # FEOL
-if $feol == "true"
-  FEOL = $feol
+if ! FEOL
   logger.info("FEOL is disabled.")
 else
-  FEOL = "false"
   logger.info("FEOL is enabled.")
 end # FEOL
 
 # BEOL
-if $beol == "true"
-  BEOL = $beol
+if ! BEOL
   logger.info("BEOL is disabled.")
 else
-  BEOL = "false"
   logger.info("BEOL is enabled.")
 end # BEOL
 
 # connectivity rules
-if $conn_drc == "true"
-  CONNECTIVITY_RULES = $conn_drc
+if CONNECTIVITY_RULES
   logger.info("connectivity rules are enabled.")
 else
-  CONNECTIVITY_RULES = false
   logger.info("connectivity rules are disabled.")
 end # connectivity rules
 
@@ -528,17 +529,11 @@ if $mim_option
   MIM_OPTION = $mim_option
 else
   MIM_OPTION = "Nan"
-end
+end # mim_option
 
 logger.info("MIM Option selected %s" % [MIM_OPTION])
 
 # OFFGRID
-if $offgrid == "true"
-  OFFGRID = true
-else
-  OFFGRID = false
-end # OFFGRID
-
 logger.info("Offgrid enabled  %s" % [OFFGRID])
 
 #================================================
@@ -577,7 +572,7 @@ end #METAL_LEVEL
 #------------- LAYERS CONNECTIONS ---------------
 #================================================
 
-if CONNECTIVITY_RULES
+if CONNECTIVITY_RULES && (FEOL || BEOL)    # required for FEOL or BEOL; But Skip for OFFGRID.
 
   logger.info("Construct connectivity for the design.")
 
@@ -625,10 +620,10 @@ def conn_space(layer,conn_val,not_conn_val, mode)
       # unconnected
       unconnected_errors.data.insert(ep)
     end
-  end
+  end #do
   unconnected_output = unconnected_errors.polygons.or(singularity_errors.polygons(0.001))
   return connected_output, unconnected_output
-end
+end #def
 
 def conn_separation(layer1, layer2, conn_val,not_conn_val, mode)
   if conn_val > not_conn_val
@@ -647,10 +642,10 @@ def conn_separation(layer1, layer2, conn_val,not_conn_val, mode)
       # unconnected
       unconnected_errors.data.insert(ep)
     end
-  end
+  end #do
   unconnected_output = unconnected_errors.polygons(0.001)
   return connected_output, unconnected_output
-end
+end #def
 
 # === IMPLICIT EXTRACTION ===
 if CONNECTIVITY_RULES
@@ -3188,6 +3183,8 @@ end #METAL_TOP
 
 end #BEOL
 
+if BEOL_EXTEND   # were unconditional rules, now specific to BEOL: Not Repeated by each discrete job (by FEOL, OFFGRID)
+
 #================================================
 #---------------------MCELL----------------------
 #================================================
@@ -3571,13 +3568,13 @@ mim11_large_metal2.data.each do |p|
   mim11_metal2_polygon_layer = polygon_layer
   mim11_metal2_polygon_layer.data.insert(p)
   fuse_in_polygon = fusetop.and(mim11_metal2_polygon_layer)
-  if(fuse_in_polygon.area > 10000)
+  if (fuse_in_polygon.area > 10000)
     mim11_bad_metal2_polygon = mim11_metal2_polygon_layer.interacting(fuse_in_polygon)
     mim11_bad_metal2_polygon.data.each do |b|
       b.num_points > 0 && mim11_large_metal2_violation.data.insert(b)
-    end
+    end #do
   end
-end
+end #do
 # Rule MIM.11: Bottom plate of multiple MIM caps can be shared (for common nodes) as long as total MIM area with that single common plate does not exceed MIM.8b rule. is -µm
 logger.info("Executing rule MIM.11")
 mim11_l1  = mim11_large_metal2_violation
@@ -3680,13 +3677,13 @@ mimtm11_large_topmin1_metal.data.each do |p|
   mimtm11_topmin1_metal_polygon_layer = polygon_layer
   mimtm11_topmin1_metal_polygon_layer.data.insert(p)
   fuse_in_polygon = fusetop.and(mimtm11_topmin1_metal_polygon_layer)
-  if(fuse_in_polygon.area > 10000)
+  if (fuse_in_polygon.area > 10000)
     mimtm11_bad_topmin1_metal_polygon = mimtm11_topmin1_metal_polygon_layer.interacting(fuse_in_polygon)
     mimtm11_bad_topmin1_metal_polygon.data.each do |b|
       b.num_points > 0 && mimtm11_large_topmin1_metal_violation.data.insert(b)
-    end
+    end #do
   end
-end
+end #do
 # Rule MIMTM.11: Bottom plate of multiple MIM caps can be shared (for common nodes) as long as total MIM area with that single common plate does not exceed MIMTM.8b rule. is -µm
 logger.info("Executing rule MIMTM.11")
 mimtm11_l1  = mimtm11_large_topmin1_metal_violation
@@ -5034,6 +5031,8 @@ sm11_l1  = metal1.and(sramcore).width(0.22.um, euclidian).polygons(0.001).not_in
 sm11_l1.output("S.M1.1_LV", "S.M1.1_LV : min. metal1 width : 0.22µm")
 sm11_l1.forget
 
+end # BEOL_EXTEND   # previously unconditional top-level block, now rolled into BEOL
+
 #================================================
 #-----------------GEOMETRY RULES-----------------
 #================================================
@@ -5353,9 +5352,9 @@ logger.info("Executing rule lvs_drain_OFFGRID")
 lvs_drain.ongrid(0.005).output("lvs_drain_OFFGRID", "OFFGRID : OFFGRID vertex on lvs_drain")
 lvs_drain.with_angle(0 .. 45).output("lvs_drain_angle", "ACUTE : non 45 degree angle lvs_drain")
 
-logger.info("Executing rule ind_mk_OFFGRID")
-ind_mk.ongrid(0.005).output("ind_mk_OFFGRID", "OFFGRID : OFFGRID vertex on ind_mk")
-ind_mk.with_angle(0 .. 45).output("ind_mk_angle", "ACUTE : non 45 degree angle ind_mk")
+## dup: logger.info("Executing rule ind_mk_OFFGRID")
+## dup: ind_mk.ongrid(0.005).output("ind_mk_OFFGRID", "OFFGRID : OFFGRID vertex on ind_mk")
+## dup: ind_mk.with_angle(0 .. 45).output("ind_mk_angle", "ACUTE : non 45 degree angle ind_mk")
 
 logger.info("Executing rule hvpolyrs_OFFGRID")
 hvpolyrs.ongrid(0.005).output("hvpolyrs_OFFGRID", "OFFGRID : OFFGRID vertex on hvpolyrs")
@@ -5469,7 +5468,7 @@ end #OFFGRID-ANGLES
 
 if   File.readable?("/proc/self/status")
   puts File.foreach("/proc/self/status").grep(/^(VmPeak|VmHWM)/)
-end
+end #VmPeak
 
 exec_end_time = Time.now
 run_time = exec_end_time - exec_start_time
