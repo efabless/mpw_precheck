@@ -60,7 +60,9 @@ def main(*args, **kwargs):
             logging.warning(f"{{{{CONSISTENCY CHECK FAILED}}}} {path.name} file was not found in {path.parent}.")
             return False
 
-    top_module_checks = [NetlistChecks.hierarchy, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.submodule_hooks]
+    # removing top_module_checks until we can properly review what is being done
+    # top_module_checks = [NetlistChecks.hierarchy, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.submodule_hooks]
+    top_module_checks = []
     user_module_checks = [NetlistChecks.ports, NetlistChecks.complexity, NetlistChecks.modeling, NetlistChecks.layout]
 
     # enable power check for digital projects only
