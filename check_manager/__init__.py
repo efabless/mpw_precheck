@@ -114,7 +114,7 @@ class Documentation(CheckManager):
 class GpioDefines(CheckManager):
     __ref__ = 'gpio_defines'
     __surname__ = 'GPIO-Defines'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['sky130A', 'sky130B','gf180mcuC']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -194,7 +194,10 @@ class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/met_min_ca_density.lydrc"
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/gf180mcu_density.lydrc"
+        else:
+            self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/met_min_ca_density.lydrc"
 
 
 class KlayoutOffgrid(KlayoutDRC):
