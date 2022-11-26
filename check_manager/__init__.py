@@ -114,7 +114,7 @@ class Documentation(CheckManager):
 class GpioDefines(CheckManager):
     __ref__ = 'gpio_defines'
     __surname__ = 'GPIO-Defines'
-    __supported_pdks__ = ['sky130A', 'sky130B','gf180mcuC']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -190,7 +190,7 @@ class KlayoutFEOL(KlayoutDRC):
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
