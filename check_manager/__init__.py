@@ -351,15 +351,20 @@ class Manifest(CheckManager):
 class XOR(CheckManager):
     __ref__ = 'xor'
     __surname__ = 'XOR'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
 
     def run(self):
         # TODO(nofal): This should be a single file across the entire precheck
-        magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
-        gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
+
+        if 'gf180mcu' in self.precheck_config['pdk_path'].stem:
+            magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
+            gds_golden_wrapper_file_path = Path(__file__).parent.parent / "_default_content/gds/user_project_wrapper_gf180mcu.gds"
+        else:
+            magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
+            gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
 
         self.result = xor_check.gds_xor_check(self.precheck_config['input_directory'],
                                               self.precheck_config['output_directory'],

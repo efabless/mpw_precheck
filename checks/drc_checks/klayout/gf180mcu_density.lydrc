@@ -26,10 +26,7 @@ deep
 comp_layer = "22/0"
 comp_dummy_layer = "22/4"
 
-
 # ---------------
-
-comp = polygons(comp_wildcard)
 
 chip_boundary = input(235,4)
 #area = (m4+m4fill).area
