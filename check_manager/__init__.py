@@ -124,7 +124,8 @@ class GpioDefines(CheckManager):
                                               output_directory=self.precheck_config['output_directory'],
                                               project_type=self.project_config['type'],
                                               user_defines_v=Path("verilog/rtl/user_defines.v"),
-                                              include_extras=[])
+                                              include_extras=[],
+                                              precheck_config=self.precheck_config)
         if self.result:
             logging.info("{{GPIO-DEFINES CHECK PASSED}} The user verilog/rtl/user_defines.v is valid.")
         else:
