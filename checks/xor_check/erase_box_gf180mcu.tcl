@@ -11,24 +11,24 @@ select top cell
 #
 # flatten perimeter outside of PR boundary including power rings
 #
-box 0 9.52um 7.89um 2989.28um
+box -9.58um 0 0 2980.20um
 flatten -nolabels -dobox xor_target
-box 2992.08um 9.52um 3000um 2989.28um
+box 2980.20um 0 2989.90um 2980.20um
 flatten -nolabels -dobox xor_target
-box 0 0 3000um 9.52um
+box -9.58um -8.22um 2989.90um 0
 flatten -nolabels -dobox xor_target
-box 0um 2989.28um 3000um 3000um
+box -9.58um 2980.20um 2989.90um 2991.34um
 flatten -nolabels -dobox xor_target
 #
 # load new cell and erase power straps from user_project_area
 load xor_target
-box values 0 9.52um 7.89um 2989.28um
+box values -9.58um 0 0 2980.20um
 erase metal5
-box values 7.89um 2989.28um 2992.08um 3000um
+box values 0 2980.20um 2980.20um 2991.34um
 erase metal4
-box values 2992.08um 9.52um 3000um 2989.28um
+box values 2980.20um 0 2989.90um 2980.20um
 erase metal5
-box values 7.89um 0 2992.08um 9.52um
+box values 0 -8.22um 2980.20um 0
 erase metal4
 #
 # write gds
