@@ -370,7 +370,8 @@ class XOR(CheckManager):
                                               self.precheck_config['output_directory'],
                                               magicrc_file_path,
                                               gds_golden_wrapper_file_path,
-                                              self.project_config)
+                                              self.project_config,
+                                              self.precheck_config)
         if self.result:
             logging.info("{{XOR CHECK PASSED}} The GDS file has no XOR violations.")
         else:
