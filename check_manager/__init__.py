@@ -114,7 +114,7 @@ class Documentation(CheckManager):
 class GpioDefines(CheckManager):
     __ref__ = 'gpio_defines'
     __surname__ = 'GPIO-Defines'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -124,7 +124,8 @@ class GpioDefines(CheckManager):
                                               output_directory=self.precheck_config['output_directory'],
                                               project_type=self.project_config['type'],
                                               user_defines_v=Path("verilog/rtl/user_defines.v"),
-                                              include_extras=[])
+                                              include_extras=[],
+                                              precheck_config=self.precheck_config)
         if self.result:
             logging.info("{{GPIO-DEFINES CHECK PASSED}} The user verilog/rtl/user_defines.v is valid.")
         else:
@@ -190,11 +191,14 @@ class KlayoutFEOL(KlayoutDRC):
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/met_min_ca_density.lydrc"
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/gf180mcu_density.lydrc"
+        else:
+            self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/met_min_ca_density.lydrc"
 
 
 class KlayoutOffgrid(KlayoutDRC):
@@ -348,21 +352,27 @@ class Manifest(CheckManager):
 class XOR(CheckManager):
     __ref__ = 'xor'
     __surname__ = 'XOR'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
 
     def run(self):
         # TODO(nofal): This should be a single file across the entire precheck
-        magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
-        gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
+
+        if 'gf180mcu' in self.precheck_config['pdk_path'].stem:
+            magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
+            gds_golden_wrapper_file_path = Path(__file__).parent.parent / "_default_content/gds/user_project_wrapper_empty_gf180mcu.gds"
+        else:
+            magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
+            gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
 
         self.result = xor_check.gds_xor_check(self.precheck_config['input_directory'],
                                               self.precheck_config['output_directory'],
                                               magicrc_file_path,
                                               gds_golden_wrapper_file_path,
-                                              self.project_config)
+                                              self.project_config,
+                                              self.precheck_config)
         if self.result:
             logging.info("{{XOR CHECK PASSED}} The GDS file has no XOR violations.")
         else:

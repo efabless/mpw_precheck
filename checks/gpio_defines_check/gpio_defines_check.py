@@ -44,7 +44,6 @@ from pyverilog.vparser.parser import ParseError, parse
 # Choosen illegal value for `USER_CONFIG_GPIO_<int>_INIT directives.
 VAL_ILLEGAL = "13'hXXXX"  # consistent with, in gpio_modes_base.v : `define GPIO_MODE_INVALID 13'hXXXX
 VAL_ILLEGAL_CF = VAL_ILLEGAL.casefold()
-LEGALREX = re.compile("^13'[hH][0-9a-fA-F]+$")  # matches a 'good' 13-bit hex-literal (no X's)
 
 # compile REX just once.
 MODREX = re.compile("^__gpioModeObserve[0-9]+$")
@@ -61,7 +60,14 @@ def main(*args, **kwargs):
     project_type = kwargs["project_type"]
     user_defines_v = kwargs["user_defines_v"]
     include_extras_v = kwargs["include_extras"]
+    precheck_config =  kwargs["precheck_config"]
     errs = 0
+
+    if 'gf180mcu' in precheck_config['pdk_path'].stem:
+        LEGALREX = re.compile("^10'[hH][0-9a-fA-F]+$")  # matches a 'good' 10-bit hex-literal (no X's)
+    else:
+        LEGALREX = re.compile("^13'[hH][0-9a-fA-F]+$")  # matches a 'good' 13-bit hex-literal (no X's)
+
 
     gpio_defines_report = output_directory / 'outputs/reports/gpio_defines.report'
 
