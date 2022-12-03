@@ -18,14 +18,32 @@
 require 'time'
 require "logger"
 
+STDOUT.sync = true    # Prompt logger output.
+STDERR.sync = true    # Avoids msg loss if process killed by kernel.
+
 exec_start_time = Time.now
 
-logger = Logger.new(STDOUT)
+# non forking way to get mem-size.
+def getMemSize
+  mSize = " "
 
+  if File.readable?("/proc/self/status")
+    pSize = File.foreach("/proc/self/status").grep(/^VmSize/)[0]
+    if pSize
+      tok = pSize.split
+      if tok.length == 3
+        mSize = tok[1,2].join
+      end
+    end
+  end
+  return mSize
+end #def
+
+logger = Logger.new(STDOUT)
 logger.formatter = proc do |severity, datetime, progname, msg|
-  "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10,40].strip + ") : #{msg}
-"
-end
+  # "#{datetime}: Memory Usage (" + getMemSize() + ") : #{msg}\n"
+  "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10,40].strip + ") : #{msg}\n"
+end #do
 
 #================================================
 #----------------- FILE SETUP -------------------
@@ -50,44 +68,41 @@ if $report
     logger.info("GF180MCU Klayout DRC runset output at: %s" % [$report])
     report("DRC Run Report at", $report)
 else
-    logger.info("GF180MCU Klayout DRC runset output at default location." % [File.join(File.dirname(RBA::CellView::active.filename), "gf180_drc.lyrdb")])
+    logger.info("GF180MCU Klayout DRC runset output at default location." % [File.join(File.dirname(RBA::CellView::active.filename), "gf180_drc.lyrdb").path])
     report("DRC Run Report at", File.join(File.dirname(RBA::CellView::active.filename), "gf180_drc.lyrdb"))
 end
 
 if $thr
-    threads($thr)
     logger.info("Number of threads to use %s" % [$thr])
+    threads($thr)
 else
-    threads(%x("nproc"))
-    logger.info("Number of threads to use #{%x("nproc")}")
-end
-
-#=== PRINT DETAILS ===
-if $verbose == "true"
-  logger.info("Verbose mode: #{$verbose}")
-  verbose(true)
-else
-  verbose(false)
-  logger.info("Verbose mode: false")
+    logger.info("Number of threads to use 16")
+    threads(16)
 end
 
 # === TILING MODE ===
 if $run_mode == "tiling"
-  tiles(500.um)
-  tile_borders(10.um)
+  # use a tile size of 1mm - not used in deep mode-
+  # tiles(500.um)
+  # use a tile border of 10 micron:
+  # tile_borders(10.um)
+  tiles(1000)
   logger.info("Tiling  mode is enabled.")
 
-elsif $run_mode == "flat"
+elsif $run_mode == "deep"
+  #=== HIER MODE ===
+  deep
+  logger.info("deep  mode is enabled.")
 
+elsif $run_mode == "flat"
   #=== FLAT MODE ===
   flat
   logger.info("flat  mode is enabled.")
 
 else
-
-  #=== HIER MODE ===
-  deep
-  logger.info("deep  mode is enabled.")
+  #=== FLAT MODE ===
+  flat
+  logger.info("flat  mode is enabled.")
 
 end # run_mode
 
@@ -364,8 +379,8 @@ lvs_rf_count                   = lvs_rf.count()
 poly_count                     = poly_count + lvs_rf_count
 lvs_drain_count                = lvs_drain.count()
 poly_count                     = poly_count + lvs_drain_count
-ind_mk_count                   = ind_mk.count()
-poly_count                     = poly_count + ind_mk_count
+## dup: ind_mk_count                   = ind_mk.count()
+## dup: poly_count                     = poly_count + ind_mk_count
 hvpolyrs_count                 = hvpolyrs.count()
 poly_count                     = poly_count + hvpolyrs_count
 lvs_io_count                   = lvs_io.count()
@@ -438,30 +453,31 @@ natcompsd	 = (nat       & comp.interacting(poly2)) - tgate
 #================================================
 logger.info("Evaluate switches.")
 
+# Coerce optional flag-args to booleans, case-insensitive, survives absence (nil-class).
+FEOL               =     $feol.to_s.downcase=="true"
+BEOL               =     $beol.to_s.downcase=="true"
+BEOL_EXTEND        = BEOL
+CONNECTIVITY_RULES = $conn_drc.to_s.downcase=="true"
+OFFGRID            =  $offgrid.to_s.downcase=="true"
+
 # FEOL
-if $feol == "false"
-  FEOL = $feol
+if ! FEOL
   logger.info("FEOL is disabled.")
 else
-  FEOL = "true"
   logger.info("FEOL is enabled.")
 end # FEOL
 
 # BEOL
-if $beol == "false"
-  BEOL = $beol
+if ! BEOL
   logger.info("BEOL is disabled.")
 else
-  BEOL = "true"
   logger.info("BEOL is enabled.")
 end # BEOL
 
 # connectivity rules
-if $conn_drc == "true"
-  CONNECTIVITY_RULES = $conn_drc
+if CONNECTIVITY_RULES
   logger.info("connectivity rules are enabled.")
 else
-  CONNECTIVITY_RULES = false
   logger.info("connectivity rules are disabled.")
 end # connectivity rules
 
@@ -563,7 +579,7 @@ end #METAL_LEVEL
 #------------- LAYERS CONNECTIONS ---------------
 #================================================
 
-if CONNECTIVITY_RULES
+if CONNECTIVITY_RULES && (FEOL || BEOL)    # required for FEOL or BEOL; But Skip for OFFGRID.
 
   logger.info("Construct connectivity for the design.")
 
@@ -5349,9 +5365,9 @@ logger.info("Executing rule lvs_drain_OFFGRID")
 lvs_drain.ongrid(0.005).output("lvs_drain_OFFGRID", "OFFGRID : OFFGRID vertex on lvs_drain")
 lvs_drain.with_angle(0 .. 45).output("lvs_drain_angle", "ACUTE : non 45 degree angle lvs_drain")
 
-logger.info("Executing rule ind_mk_OFFGRID")
-ind_mk.ongrid(0.005).output("ind_mk_OFFGRID", "OFFGRID : OFFGRID vertex on ind_mk")
-ind_mk.with_angle(0 .. 45).output("ind_mk_angle", "ACUTE : non 45 degree angle ind_mk")
+## dup: logger.info("Executing rule ind_mk_OFFGRID")
+## dup: ind_mk.ongrid(0.005).output("ind_mk_OFFGRID", "OFFGRID : OFFGRID vertex on ind_mk")
+## dup: ind_mk.with_angle(0 .. 45).output("ind_mk_angle", "ACUTE : non 45 degree angle ind_mk")
 
 logger.info("Executing rule hvpolyrs_OFFGRID")
 hvpolyrs.ongrid(0.005).output("hvpolyrs_OFFGRID", "OFFGRID : OFFGRID vertex on hvpolyrs")
@@ -5463,7 +5479,11 @@ border.with_angle(0 .. 45).output("border_angle", "ACUTE : non 45 degree angle b
 
 end #OFFGRID-ANGLES
 
+if   File.readable?("/proc/self/status")
+  puts File.foreach("/proc/self/status").grep(/^(VmPeak|VmHWM)/)
+end #VmPeak
 
 exec_end_time = Time.now
 run_time = exec_end_time - exec_start_time
 logger.info("DRC Total Run time %f seconds" % [run_time])
+
