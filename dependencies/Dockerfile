@@ -47,7 +47,7 @@ RUN iverilog -V
 # precheck deps
 RUN apt-get update -qq \
  && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
-    python3 python3-pip git make \
+    python3 python3-pip git make procps \
  && apt-get autoclean && apt-get clean && apt-get -y autoremove \
  && rm -rf /var/lib/apt/lists/*
 RUN python3 -m pip install awscli boto3 colorama coloredlogs klayout numpy PySpice pyverilog pyyaml requests strsimpy
