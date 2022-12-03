@@ -1486,16 +1486,14 @@ pl1a_l1.forget
 
 # Rule PL.2_3.3V: Gate Width (Channel Length). is 0.28µm
 logger.info("Executing rule PL.2_3.3V")
-pl2_l1  = tgate.not(otp_mk).not(ymtp_mk).width(0.28.um, euclidian).polygons(0.001).not_interacting(v5_xtor).not_interacting(dualgate)
+pl2_l1  = poly2.edges.and(tgate.edges).not(otp_mk).not(ymtp_mk).width(0.28.um, euclidian).polygons(0.001).not_interacting(v5_xtor).not_interacting(dualgate)
 pl2_l1.output("PL.2_3.3V", "PL.2_3.3V : Gate Width (Channel Length). : 0.28µm")
 pl2_l1.forget
 
-pl_2_5v_n = ngate.and(v5_xtor).and(dualgate).space(0.6.um, euclidian).polygons
-pl_2_5v_p = pgate.and(v5_xtor).and(dualgate).space(0.5.um, euclidian).polygons
-
-pl_2_6v_n = ngate.not(v5_xtor).and(dualgate).space(0.7.um, euclidian).polygons
-pl_2_6v_p = pgate.not(v5_xtor).and(dualgate).space(0.55.um, euclidian).polygons
-
+pl_2_5v_n = comp.not(poly2).edges.and(ngate.edges).and(v5_xtor).and(dualgate).space(0.6.um, euclidian).polygons
+pl_2_5v_p = comp.not(poly2).edges.and(pgate.edges).and(v5_xtor).and(dualgate).space(0.5.um, euclidian).polygons
+pl_2_6v_n = comp.not(poly2).edges.and(ngate.edges).not(v5_xtor).and(dualgate).space(0.7.um, euclidian).polygons
+pl_2_6v_p = comp.not(poly2).edges.and(pgate.edges).not(v5_xtor).and(dualgate).space(0.55.um, euclidian).polygons
 # Rule PL.2_5V: Gate Width (Channel Length).
 logger.info("Executing rule PL.2_5V")
 pl2_l1 = pl_2_5v_n.or(pl_2_5v_p).or(pl_2_6v_n.or(pl_2_6v_p))
@@ -1572,22 +1570,21 @@ pl6_l1.forget
 
 poly_90deg.forget
 
+poly_45deg = poly2.edges.with_angle(-45).or(poly2.edges.with_angle(45))
 # Rule PL.7_3.3V: 45 degree bent gate width is 0.3µm
 logger.info("Executing rule PL.7_3.3V")
-pl7_poss_fail_l1  = tgate.not_interacting(v5_xtor).not_interacting(dualgate).width(0.3.um, euclidian)
-pl7_l1 = pl7_poss_fail_l1.edges.with_angle(-44,46).or(pl7_poss_fail_l1.edges.with_angle(-44,46))
+pl7_l1  = poly_45deg.width(0.3.um, euclidian).polygons(0.001).not_interacting(v5_xtor).not_interacting(dualgate)
 pl7_l1.output("PL.7_3.3V", "PL.7_3.3V : 45 degree bent gate width : 0.3µm")
 pl7_l1.forget
 pl7_poss_fail_l1.forget
 
 # Rule PL.7_5V: 45 degree bent gate width is 0.7µm
 logger.info("Executing rule PL.7_5V")
-pl7_poss_fail_l2  = tgate.overlapping(dualgate).width(0.7.um, euclidian)
-pl7_l2 = pl7_poss_fail_l2.edges.with_angle(-44,46).or(pl7_poss_fail_l2.edges.with_angle(-44,46))
-pl7_l2.output("PL.7_5V", "PL.7_5V : 45 degree bent gate width : 0.7µm")
-pl7_l2.forget
-pl7_poss_fail_l2.forget
+pl7_l1  = poly_45deg.width(0.7.um, euclidian).polygons(0.001).overlapping(dualgate)
+pl7_l1.output("PL.7_5V", "PL.7_5V : 45 degree bent gate width : 0.7µm")
+pl7_l1.forget
 
+poly_45deg.forget
 
 # Rule PL.9: Poly2 inter connect connecting 3.3V and 5V areas (area inside and outside Dualgate) are not allowed. They shall be done though metal lines only.
 logger.info("Executing rule PL.9")
