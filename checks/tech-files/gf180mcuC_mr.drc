@@ -76,8 +76,10 @@ if $thr
     logger.info("Number of threads to use %s" % [$thr])
     threads($thr)
 else
-    logger.info("Number of threads to use 16")
-    threads(16)
+    #logger.info("Number of threads to use 16")
+    #threads(16)
+    logger.info("Number of threads to use 4")
+    threads(4)
 end
 
 # === TILING MODE ===
@@ -4228,7 +4230,7 @@ mdn4a_l1.forget
 # Rule MDN.4b: Max transistor channel width.
 logger.info("Executing rule MDN.4b")
 good_gate = gate_mdn.width(50.001.um, euclidian).polygons(0.001)
-mdn3b_l1 = gate_mdn.not(good_gate)
+mdn4b_l1 = gate_mdn.not(good_gate)
 mdn4b_l1.output("MDN.4b", "MDN.4b : Max transistor channel width. : 50 um ")
 mdn4b_l1.forget
 

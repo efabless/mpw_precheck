@@ -12,8 +12,7 @@ def klayout_gds_drc_check(check_name, drc_script_path, gds_input_file_path, outp
     run_drc_check_cmd = ['klayout', '-b', '-r', drc_script_path,
                          '-rd', f"input={gds_input_file_path}",
                          '-rd', f"topcell={gds_input_file_path.stem}",
-                         '-rd', f"report={report_file_path}",
-                         '-rd', f"run_mode=flat"]
+                         '-rd', f"report={report_file_path}"]
     run_drc_check_cmd.extend(klayout_cmd_extra_args)
 
     log_file_path = logs_directory / f'{check_name}_check.log'
