@@ -18,31 +18,106 @@
 require 'time'
 require "logger"
 
-STDOUT.sync = true    # Prompt logger output.
-STDERR.sync = true    # Avoids msg loss if process killed by kernel.
-
 exec_start_time = Time.now
 
-# non forking way to get mem-size.
+STDOUT.sync = true    # Prompt logger output.
+STDERR.sync = true    # Avoids msg loss if process killed by kernel.
+$errs = 0
+
+# non forking way to get mem-size, if /proc/self/status exists, else revert to subshell/pmap...
 def getMemSize
   mSize = " "
-
-  if File.readable?("/proc/self/status")
-    pSize = File.foreach("/proc/self/status").grep(/^VmSize/)[0]
-    if pSize
-      tok = pSize.split
-      if tok.length == 3
-        mSize = tok[1,2].join
-      end
+  
+  if ! $gms_init        # open status just once, reread thereafter
+    $gms_init = true
+    if       File.readable?("/proc/self/status")
+      $gms_strm = File.open("/proc/self/status", "r")
     end
   end
+
+  if ! $gms_strm        # revert to fork-based lookup ;(
+    return `pmap #{Process.pid} | tail -1`[10,40].strip
+  end
+
+  pSize = $gms_strm.readlines.grep(/^VmSize/)[0]
+  if pSize
+    tok = pSize.split
+    if tok.length == 3
+      mSize = tok[1,2].join
+    end
+  end
+
+  # rewind/flush stream for next. By doing it here at end, makes it simpler to also close/reopen for too old ruby
+  $gms_strm.rewind
+  begin
+    $gms_strm.flush     # read new content from start
+  rescue Exception
+    # No .flush if too old (ruby 1.8): Force reopening file everytime.
+    $gms_strm.close
+    $gms_init = false
+  end
+
   return mSize
 end #def
 
+# non forking way to get available-mem, if /proc/meminfo exists.
+# Returns numeric int. If no useful value can be determined: -1.
+# Else returns JUST LARGER INT of: MemAvailable SwapFree, after ignoring the units.
+# That is, it is presumed (not enforced) the units are always "kB".
+# No attempt made to ADD those two: would be more representative.
+def getFreeSize
+  free = -1
+
+  if ! $gfs_init        # open meminfo just once, reread thereafter
+    $gfs_init = true
+    if       File.readable?("/proc/meminfo")
+      $gfs_strm = File.open("/proc/meminfo", "r")
+    end
+  end
+
+  if ! $gfs_strm
+    return free         # -1: unavailable
+  end
+
+  lines = $gfs_strm.readlines
+  [ lines.grep(/^MemAvailable/)[0], lines.grep(/^SwapFree/)[0] ].each do |sval|
+    if sval
+      tok = sval.split       # -> [ "MemAvailable:", "14593528, "kB" ]
+      if tok.length == 3
+        size = tok[1].to_i   # note: "junk".to_i -> 0
+        if size > free
+          free = size
+        end
+      end
+    end
+  end #do
+
+  # rewind/flush stream for next. By doing it here at end, makes it simpler to also close/reopen for too old ruby
+  $gfs_strm.rewind
+  begin
+    $gfs_strm.flush       # read new content from start
+  rescue Exception
+    # No .flush if too old (ruby 1.8): Force reopening file everytime.
+    $gfs_strm.close
+    $gfs_init = false
+  end
+
+  return free
+end #def
+
+# units:KB, threshold below which to report an "available-mem" in logger
+#   Set to -1 to always report available-mem.
+$freeMin = 20*(2**20)   # 20GB as "20M KB"
+
 logger = Logger.new(STDOUT)
 logger.formatter = proc do |severity, datetime, progname, msg|
-  # "#{datetime}: Memory Usage (" + getMemSize() + ") : #{msg}\n"
-  "#{datetime}: Memory Usage (" + `pmap #{Process.pid} | tail -1`[10,40].strip + ") : #{msg}\n"
+  free = getFreeSize()
+  if $freeMin && free && (free > -1) && (free <= $freeMin)
+    str = "#{datetime}: Memory Usage (" + getMemSize() + ")(avail #{free}) : #{msg}\n"
+  else
+    str = "#{datetime}: Memory Usage (" + getMemSize() + ") : #{msg}\n"
+  end
+  str
 end #do
 
 #================================================
@@ -51,8 +126,14 @@ end #do
 
 # optional for a batch launch :   klayout -b -r gf_018mcu.drc -rd input=design.gds -rd report=gp180_drc.lyrdb
 
-logger.info("Starting running GF180MCU Klayout DRC runset on %s" % [$input])
+logger.info("Starting running GF180MCU Klayout DRC runset on %s cell %s" % [$input, $topcell])
 logger.info("Ruby Version for klayout: %s" % [RUBY_VERSION])
+
+if   File.readable?("/proc/meminfo")
+  puts "Memory/Swap config at start (/proc/meminfo):"
+  puts File.foreach("/proc/meminfo").grep(/^(Mem|Swap)/)
+  puts ""
+end #MemSwap
 
 if $input
     if $topcell
@@ -68,27 +149,31 @@ if $report
     logger.info("GF180MCU Klayout DRC runset output at: %s" % [$report])
     report("DRC Run Report at", $report)
 else
-    logger.info("GF180MCU Klayout DRC runset output at default location." % [File.join(File.dirname(RBA::CellView::active.filename), "gf180_drc.lyrdb").path])
+    logger.info("GF180MCU Klayout DRC runset output at default location." % [File.join(File.dirname(RBA::CellView::active.filename), "gf180_drc.lyrdb")])
     report("DRC Run Report at", File.join(File.dirname(RBA::CellView::active.filename), "gf180_drc.lyrdb"))
 end
 
 if $thr
-    logger.info("Number of threads to use %s" % [$thr])
     threads($thr)
+    logger.info("Number of threads to use %s" % [$thr])
 else
-    #logger.info("Number of threads to use 16")
-    #threads(16)
-    logger.info("Number of threads to use 4")
-    threads(4)
+    threads(%x("nproc"))
+    logger.info("Number of threads to use #{%x("nproc")}")
+end
+
+#=== PRINT DETAILS ===
+if $verbose == "true"
+  logger.info("Verbose mode: #{$verbose}")
+  verbose(true)
+else
+  verbose(false)
+  logger.info("Verbose mode: false")
 end
 
 # === TILING MODE ===
 if $run_mode == "tiling"
-  # use a tile size of 1mm - not used in deep mode-
-  # tiles(500.um)
-  # use a tile border of 10 micron:
-  # tile_borders(10.um)
-  tiles(1000)
+  tiles(500.um)
+  tile_borders(10.um)
   logger.info("Tiling  mode is enabled.")
 
 elsif $run_mode == "deep"
@@ -108,6 +193,12 @@ else
 
 end # run_mode
 
+# METAL_LEVEL    Assign BEFORE read-layers, so can avoid reads of unused layers.
+if $metal_level
+  METAL_LEVEL = $metal_level
+else
+  METAL_LEVEL = "5LM"
+end # METAL_LEVEL
 
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
@@ -115,113 +206,124 @@ end # run_mode
 
 logger.info("Read in polygons from layers.")
 
+$logger = logger
+def plyMrg( lnum, ltyp, msg=nil)
+    if msg
+      $logger.info("Executing polygons(#{lnum}, #{ltyp}).merged for #{msg}")
+    else
+      $logger.info("Executing polygons(#{lnum}, #{ltyp}).merged")
+    end
+    return polygons( lnum, ltyp).merged
+end
 
-comp           = polygons(22 , 0 ).merged
-dnwell         = polygons(12 , 0 ).merged
-nwell          = polygons(21 , 0 ).merged
-lvpwell        = polygons(204, 0 ).merged
-dualgate       = polygons(55 , 0 ).merged
-poly2          = polygons(30 , 0 ).merged
-nplus          = polygons(32 , 0 ).merged
-pplus          = polygons(31 , 0 ).merged
-sab            = polygons(49 , 0 ).merged
-esd            = polygons(24 , 0 ).merged
-contact        = polygons(33 , 0 ).merged
-metal1         = polygons(34 , 0 ).merged
-via1           = polygons(35 , 0 ).merged
-metal2         = polygons(36 , 0 ).merged
-via2           = polygons(38 , 0 ).merged
-metal3         = polygons(42 , 0 ).merged
-via3           = polygons(40 , 0 ).merged
-metal4         = polygons(46 , 0 ).merged
-via4           = polygons(41 , 0 ).merged
-metal5         = polygons(81 , 0 ).merged
-via5           = polygons(82 , 0 ).merged
-metaltop       = polygons(53 , 0 ).merged
-pad            = polygons(37 , 0 ).merged
-resistor       = polygons(62 , 0 ).merged
-fhres          = polygons(227, 0 ).merged
-fusetop        = polygons(75 , 0 ).merged
-fusewindow_d   = polygons(96 , 1 ).merged
-polyfuse       = polygons(220, 0 ).merged
-mvsd           = polygons(210, 0 ).merged
-mvpsd          = polygons(11 , 39).merged
-nat            = polygons(5  , 0 ).merged
-comp_dummy     = polygons(22 , 4 ).merged
-poly2_dummy    = polygons(30 , 4 ).merged
-metal1_dummy   = polygons(34 , 4 ).merged
-metal2_dummy   = polygons(36 , 4 ).merged
-metal3_dummy   = polygons(42 , 4 ).merged
-metal4_dummy   = polygons(46 , 4 ).merged
-metal5_dummy   = polygons(81 , 4 ).merged
-metaltop_dummy = polygons(53 , 4 ).merged
-comp_label     = polygons(22 , 10).merged
-poly2_label    = polygons(30 , 10).merged
-metal1_label   = polygons(34 , 10).merged
-metal2_label   = polygons(36 , 10).merged
-metal3_label   = polygons(42 , 10).merged
-metal4_label   = polygons(46 , 10).merged
-metal5_label   = polygons(81 , 10).merged
-metaltop_label = polygons(53 , 10).merged
-metal1_slot    = polygons(34 , 3 ).merged
-metal2_slot    = polygons(36 , 3 ).merged
-metal3_slot    = polygons(42 , 3 ).merged
-metal4_slot    = polygons(46 , 3 ).merged
-metal5_slot    = polygons(81 , 3 ).merged
-metaltop_slot  = polygons(53 , 3 ).merged
-ubmpperi       = polygons(183, 0 ).merged
-ubmparray      = polygons(184, 0 ).merged
-ubmeplate      = polygons(185, 0 ).merged
-schottky_diode = polygons(241, 0 ).merged
-zener          = polygons(178, 0 ).merged
-res_mk         = polygons(110, 5 ).merged
-opc_drc        = polygons(124, 5 ).merged
-ndmy           = polygons(111, 5 ).merged
-pmndmy         = polygons(152, 5 ).merged
-v5_xtor        = polygons(112, 1 ).merged
-cap_mk         = polygons(117, 5 ).merged
-mos_cap_mk     = polygons(166, 5 ).merged
-ind_mk         = polygons(151, 5 ).merged
-diode_mk       = polygons(115, 5 ).merged
-drc_bjt        = polygons(127, 5 ).merged
-lvs_bjt        = polygons(118, 5 ).merged
-mim_l_mk       = polygons(117, 10).merged
-latchup_mk     = polygons(137, 5 ).merged
-guard_ring_mk  = polygons(167, 5 ).merged
-otp_mk         = polygons(173, 5 ).merged
-mtpmark        = polygons(122, 5 ).merged
-neo_ee_mk      = polygons(88 , 17).merged
-sramcore       = polygons(108, 5 ).merged
-lvs_rf         = polygons(100, 5 ).merged
-lvs_drain      = polygons(100, 7 ).merged
-ind_mk         = polygons(151, 5 ).merged
-hvpolyrs       = polygons(123, 5 ).merged
-lvs_io         = polygons(119, 5 ).merged
-probe_mk       = polygons(13 , 17).merged
-esd_mk         = polygons(24 , 5 ).merged
-lvs_source     = polygons(100, 8 ).merged
-well_diode_mk  = polygons(153, 51).merged
-ldmos_xtor     = polygons(226, 0 ).merged
-plfuse         = polygons(125, 5 ).merged
-efuse_mk       = polygons(80 , 5 ).merged
-mcell_feol_mk  = polygons(11 , 17).merged
-ymtp_mk        = polygons(86 , 17).merged
-dev_wf_mk      = polygons(128, 17).merged
-metal1_blk     = polygons(34 , 5 ).merged
-metal2_blk     = polygons(36 , 5 ).merged
-metal3_blk     = polygons(42 , 5 ).merged
-metal4_blk     = polygons(46 , 5 ).merged
-metal5_blk     = polygons(81 , 5 ).merged
-metalt_blk     = polygons(53 , 5 ).merged
-pr_bndry       = polygons(0  , 0 ).merged
-mdiode         = polygons(116, 5 ).merged
-metal1_res     = polygons(110, 11).merged
-metal2_res     = polygons(110, 12).merged
-metal3_res     = polygons(110, 13).merged
-metal4_res     = polygons(110, 14).merged
-metal5_res     = polygons(110, 15).merged
-metal6_res     = polygons(110, 16).merged
-border         = polygons(63 , 0 ).merged
+comp           = plyMrg(22 , 0, "comp" )
+dnwell         = plyMrg(12 , 0, "dnwell" )
+nwell          = plyMrg(21 , 0, "nwell" )
+lvpwell        = plyMrg(204, 0, "lvpwell" )
+dualgate       = plyMrg(55 , 0, "dualgate" )
+poly2          = plyMrg(30 , 0, "poly2" )
+nplus          = plyMrg(32 , 0, "nplus" )
+pplus          = plyMrg(31 , 0, "pplus" )
+sab            = plyMrg(49 , 0, "sab" )
+esd            = plyMrg(24 , 0, "esd" )
+contact        = plyMrg(33 , 0, "contact" )
+metal1         = plyMrg(34 , 0, "metal1" )
+via1           = plyMrg(35 , 0, "via1" )
+metal2         = plyMrg(36 , 0, "metal2" )
+via2           = plyMrg(38 , 0, "via2" )
+metal3         = plyMrg(42 , 0, "metal3" )
+via3           = plyMrg(40 , 0, "via3" )
+metal4         = plyMrg(46 , 0, "metal4" )
+via4           = plyMrg(41 , 0, "via4" )
+metal5         = plyMrg(81 , 0, "metal5" )
+## if METAL_LEVEL == "6LM"
+  via5           = plyMrg(82 , 0, "via5" )
+  metaltop       = plyMrg(53 , 0, "metaltop" )
+  metaltop_dummy = plyMrg(53 , 4, "metaltop_dummy" )
+  metaltop_label = plyMrg(53 , 10, "metaltop_label")
+  metaltop_slot  = plyMrg(53 , 3, "metaltop_slot" )
+  metalt_blk     = plyMrg(53 , 5, "metaltop_blk" )
+## end #6LM
+pad            = plyMrg(37 , 0, "pad" )
+resistor       = plyMrg(62 , 0, "resistor" )
+fhres          = plyMrg(227, 0, "fhres" )
+fusetop        = plyMrg(75 , 0, "fusetop" )
+fusewindow_d   = plyMrg(96 , 1, "fusewindow_d" )
+polyfuse       = plyMrg(220, 0, "polyfuse" )
+mvsd           = plyMrg(210, 0, "mvsd" )
+mvpsd          = plyMrg(11 , 39, "mvpsd")
+nat            = plyMrg(5  , 0, "nat" )
+comp_dummy     = plyMrg(22 , 4, "comp_dummy" )
+poly2_dummy    = plyMrg(30 , 4, "poly2_dummy" )
+metal1_dummy   = plyMrg(34 , 4, "metal1_dummy" )
+metal2_dummy   = plyMrg(36 , 4, "metal2_dummy" )
+metal3_dummy   = plyMrg(42 , 4, "metal3_dummy" )
+metal4_dummy   = plyMrg(46 , 4, "metal4_dummy" )
+metal5_dummy   = plyMrg(81 , 4, "metal5_dummy" )
+comp_label     = plyMrg(22 , 10, "comp_label" )
+poly2_label    = plyMrg(30 , 10, "poly2_label")
+metal1_label   = plyMrg(34 , 10, "metal1_label" )
+metal2_label   = plyMrg(36 , 10, "metal2_label" )
+metal3_label   = plyMrg(42 , 10, "metal3_label" )
+metal4_label   = plyMrg(46 , 10, "metal4_label" )
+metal5_label   = plyMrg(81 , 10, "metal5_label" )
+metal1_slot    = plyMrg(34 , 3, "metal1_slot" )
+metal2_slot    = plyMrg(36 , 3, "metal2_slot" )
+metal3_slot    = plyMrg(42 , 3, "metal3_slot" )
+metal4_slot    = plyMrg(46 , 3, "metal4_slot" )
+metal5_slot    = plyMrg(81 , 3, "metal5_slot" )
+ubmpperi       = plyMrg(183, 0, "ubmpperi" )
+ubmparray      = plyMrg(184, 0, "ubmparray" )
+ubmeplate      = plyMrg(185, 0, "ubmeplate" )
+schottky_diode = plyMrg(241, 0, "schottky_diode" )
+zener          = plyMrg(178, 0, "zener" )
+res_mk         = plyMrg(110, 5, "res_mk" )
+opc_drc        = plyMrg(124, 5, "opc_drc" )
+ndmy           = plyMrg(111, 5, "ndmy" )
+pmndmy         = plyMrg(152, 5, "pmndmy" )
+v5_xtor        = plyMrg(112, 1, "v5_xtor" )
+cap_mk         = plyMrg(117, 5, "cap_mk" )
+mos_cap_mk     = plyMrg(166, 5, "mos_cap_mk" )
+ind_mk         = plyMrg(151, 5, "ind_mk" )
+diode_mk       = plyMrg(115, 5, "diode_mk" )
+drc_bjt        = plyMrg(127, 5, "drc_bjt" )
+lvs_bjt        = plyMrg(118, 5, "lvs_bjt" )
+mim_l_mk       = plyMrg(117, 10, "mim_l_mk" )
+latchup_mk     = plyMrg(137, 5, "latchup_mk" )
+guard_ring_mk  = plyMrg(167, 5, "guard_ring_mk" )
+otp_mk         = plyMrg(173, 5, "otp_mk" )
+mtpmark        = plyMrg(122, 5, "mtpmark" )
+neo_ee_mk      = plyMrg(88 , 17, "neo_ee_mk" )
+sramcore       = plyMrg(108, 5, "sramcore" )
+lvs_rf         = plyMrg(100, 5, "lvs_rf" )
+lvs_drain      = plyMrg(100, 7, "lvs_drain" )
+## dup: ind_mk         = plyMrg(151, 5 )
+hvpolyrs       = plyMrg(123, 5, "hvpolyrs" )
+lvs_io         = plyMrg(119, 5, "lvs_io" )
+probe_mk       = plyMrg(13 , 17, "probe_mk" )
+esd_mk         = plyMrg(24 , 5, "esd_mk" )
+lvs_source     = plyMrg(100, 8, "lvs_source" )
+well_diode_mk  = plyMrg(153, 51, "well_diode_mk" )
+ldmos_xtor     = plyMrg(226, 0, "ldmos_xtor" )
+plfuse         = plyMrg(125, 5, "plfuse" )
+efuse_mk       = plyMrg(80 , 5, "efuse_mk" )
+mcell_feol_mk  = plyMrg(11 , 17, "mcell_feol_mk" )
+ymtp_mk        = plyMrg(86 , 17, "ymtp_mk" )
+dev_wf_mk      = plyMrg(128, 17, "dev_wf_mk" )
+metal1_blk     = plyMrg(34 , 5, "metal1_blk" )
+metal2_blk     = plyMrg(36 , 5, "metal2_blk" )
+metal3_blk     = plyMrg(42 , 5, "metal3_blk" )
+metal4_blk     = plyMrg(46 , 5, "metal4_blk" )
+metal5_blk     = plyMrg(81 , 5, "metal5_blk" )
+pr_bndry       = plyMrg(0  , 0, "pr_bndry" )
+mdiode         = plyMrg(116, 5, "mdiode" )
+metal1_res     = plyMrg(110, 11, "metal1_res" )
+metal2_res     = plyMrg(110, 12, "metal2_res" )
+metal3_res     = plyMrg(110, 13, "metal3_res" )
+metal4_res     = plyMrg(110, 14, "metal4_res" )
+metal5_res     = plyMrg(110, 15, "metal5_res" )
+# no flag to use: metal6_res     = plyMrg(110, 16)
+border         = plyMrg(63 , 0, "border" )
 
 # ================= COUNT POLYGONS =================
 poly_count = 0
@@ -265,10 +367,20 @@ via4_count                     = via4.count()
 poly_count                     = poly_count + via4_count
 metal5_count                   = metal5.count()
 poly_count                     = poly_count + metal5_count
-via5_count                     = via5.count()
-poly_count                     = poly_count + via5_count
-metaltop_count                 = metaltop.count()
-poly_count                     = poly_count + metaltop_count
+## if METAL_LEVEL == "6LM"
+  via5_count                     = via5.count()
+  poly_count                     = poly_count + via5_count
+  metaltop_count                 = metaltop.count()
+  poly_count                     = poly_count + metaltop_count
+  metaltop_dummy_count           = metaltop_dummy.count()
+  poly_count                     = poly_count + metaltop_dummy_count
+  metaltop_label_count           = metaltop_label.count()
+  poly_count                     = poly_count + metaltop_label_count
+  metaltop_slot_count            = metaltop_slot.count()
+  poly_count                     = poly_count + metaltop_slot_count
+  metalt_blk_count               = metalt_blk.count()
+  poly_count                     = poly_count + metalt_blk_count
+## end #6LM
 pad_count                      = pad .count()
 poly_count                     = poly_count + pad_count
 resistor_count                 = resistor.count()
@@ -301,8 +413,6 @@ metal4_dummy_count             = metal4_dummy.count()
 poly_count                     = poly_count + metal4_dummy_count
 metal5_dummy_count             = metal5_dummy.count()
 poly_count                     = poly_count + metal5_dummy_count
-metaltop_dummy_count           = metaltop_dummy.count()
-poly_count                     = poly_count + metaltop_dummy_count
 comp_label_count               = comp_label.count()
 poly_count                     = poly_count + comp_label_count
 poly2_label_count              = poly2_label.count()
@@ -317,8 +427,6 @@ metal4_label_count             = metal4_label.count()
 poly_count                     = poly_count + metal4_label_count
 metal5_label_count             = metal5_label.count()
 poly_count                     = poly_count + metal5_label_count
-metaltop_label_count           = metaltop_label.count()
-poly_count                     = poly_count + metaltop_label_count
 metal1_slot_count              = metal1_slot.count()
 poly_count                     = poly_count + metal1_slot_count
 metal2_slot_count              = metal2_slot.count()
@@ -329,8 +437,6 @@ metal4_slot_count              = metal4_slot.count()
 poly_count                     = poly_count + metal4_slot_count
 metal5_slot_count              = metal5_slot.count()
 poly_count                     = poly_count + metal5_slot_count
-metaltop_slot_count            = metaltop_slot.count()
-poly_count                     = poly_count + metaltop_slot_count
 ubmpperi_count                 = ubmpperi.count()
 poly_count                     = poly_count + ubmpperi_count
 ubmparray_count                = ubmparray.count()
@@ -417,8 +523,6 @@ metal4_blk_count               = metal4_blk.count()
 poly_count                     = poly_count + metal4_blk_count
 metal5_blk_count               = metal5_blk.count()
 poly_count                     = poly_count + metal5_blk_count
-metalt_blk_count               = metalt_blk.count()
-poly_count                     = poly_count + metalt_blk_count
 pr_bndry_count                 = pr_bndry.count()
 poly_count                     = poly_count + pr_bndry_count
 mdiode_count                   = mdiode.count()
@@ -433,8 +537,8 @@ metal4_res_count               = metal4_res.count()
 poly_count                     = poly_count + metal4_res_count
 metal5_res_count               = metal5_res.count()
 poly_count                     = poly_count + metal5_res_count
-metal6_res_count               = metal6_res.count()
-poly_count                     = poly_count + metal6_res_count
+# no flag to use: metal6_res_count               = metal6_res.count()
+#   poly_count                     = poly_count + metal6_res_count
 border_count                   = border.count()
 poly_count                     = poly_count + border_count
 
@@ -483,6 +587,9 @@ else
   logger.info("connectivity rules are disabled.")
 end # connectivity rules
 
+logger.info("METAL_STACK Selected is %s" % [METAL_LEVEL]) # report level 1st, then 2nd (cond.) METAL_TOP
+
+## if METAL_LEVEL=="6LM"   # IFF using metaltop:assign METAL_TOP. To force undef-error if its unused.
 # METAL_TOP
 if $metal_top
   METAL_TOP = $metal_top
@@ -490,16 +597,8 @@ else
   METAL_TOP = "9K"
 end # METAL_TOP
 
-logger.info("METAL_TOP Selected is %s" % [METAL_TOP])
-
-# METAL_LEVEL
-if $metal_level
-  METAL_LEVEL = $metal_level
-else
-  METAL_LEVEL = "5LM"
-end # METAL_LEVEL
-
-logger.info("METAL_STACK Selected is %s" % [METAL_LEVEL])
+logger.info("METAL_TOP Selected is %s" % [METAL_TOP])  # Report IFF we are using metaltop.
+## end #6LM
 
 # WEDGE
 if $wedge == "false"
@@ -535,13 +634,6 @@ else
 end
 
 logger.info("MIM Option selected %s" % [MIM_OPTION])
-
-# OFFGRID
-if $offgrid == "false"
-  OFFGRID = false
-else
-  OFFGRID = true
-end # OFFGRID
 
 logger.info("Offgrid enabled  %s" % [OFFGRID])
 
@@ -602,8 +694,10 @@ if CONNECTIVITY_RULES && (FEOL || BEOL)    # required for FEOL or BEOL; But Skip
   connect(via3,    metal4)
   connect(metal4,  via4)
   connect(via4,    metal5)
-  connect(metal5,  via5)
-  connect(via5,    metaltop)
+##  if METAL_LEVEL == "6LM"    # If GDS has via5,metaltop data but mode!=6LM, this corrupts connectivity.
+    connect(metal5,  via5)
+    connect(via5,    metaltop)
+##  end #6LM
 
 end #CONNECTIVITY_RULES
 
@@ -1579,9 +1673,9 @@ pl7_l1.forget
 
 # Rule PL.7_5V: 45 degree bent gate width is 0.7µm
 logger.info("Executing rule PL.7_5V")
-pl7_l1  = poly_45deg.width(0.7.um, euclidian).polygons(0.001).overlapping(dualgate)
-pl7_l1.output("PL.7_5V", "PL.7_5V : 45 degree bent gate width : 0.7µm")
-pl7_l1.forget
+pl7_l2  = poly_45deg.width(0.7.um, euclidian).polygons(0.001).overlapping(dualgate)
+pl7_l2.output("PL.7_5V", "PL.7_5V : 45 degree bent gate width : 0.7µm")
+pl7_l2.forget
 
 poly_45deg.forget
 
@@ -3199,6 +3293,7 @@ end #METAL_TOP
 
 end #BEOL
 
+if BEOL_EXTEND   # were unconditional rules, now specific to BEOL: Not Repeated by each discrete job (by FEOL, OFFGRID)
 #================================================
 #---------------------MCELL----------------------
 #================================================
@@ -3461,13 +3556,17 @@ hres9_sab_hole.forget
 pplus1_hres10 = pplus.and(sab).drc(width != 0.1.um)
 pplus2_hres10 = pplus.not_overlapping(sab).edges
 # Rule HRES.10: Minimum & maximum Pplus overlap of SAB.
-logger.info("Executing rule HRES.10")
-hres10_l1 = pplus1_hres10.or(pplus2_hres10).extended(0, 0, 0.001, 0.001).interacting(hres_poly)
-hres10_l1.output("HRES.10", "HRES.10 : Minimum & maximum Pplus overlap of SAB.")
-hres10_l1.forget
-
+logger.info("Executing rule HRES.10 (requires flat)")
+begin
+  hres10_l1 = pplus1_hres10.or(pplus2_hres10).extended(0, 0, 0.001, 0.001).interacting(hres_poly)
+  hres10_l1.output("HRES.10", "HRES.10 : Minimum & maximum Pplus overlap of SAB.")
+  hres10_l1.forget
+rescue
+  $errs += 1
+  CHIP.output("HRES.10", "HRES.10: SKIPPED. Internal error, failed to check. Try flat.")
+  logger.error("EXCEPTION in rule HRES.10")
+end
 pplus1_hres10.forget
-
 pplus2_hres10.forget
 
 # rule HRES.11 is not a DRC check
@@ -3582,7 +3681,7 @@ mim11_large_metal2.data.each do |p|
   mim11_metal2_polygon_layer = polygon_layer
   mim11_metal2_polygon_layer.data.insert(p)
   fuse_in_polygon = fusetop.and(mim11_metal2_polygon_layer)
-  if(fuse_in_polygon.area > 10000)
+  if (fuse_in_polygon.area > 10000)
     mim11_bad_metal2_polygon = mim11_metal2_polygon_layer.interacting(fuse_in_polygon)
     mim11_bad_metal2_polygon.data.each do |b|
       b.num_points > 0 && mim11_large_metal2_violation.data.insert(b)
@@ -3691,7 +3790,7 @@ mimtm11_large_topmin1_metal.data.each do |p|
   mimtm11_topmin1_metal_polygon_layer = polygon_layer
   mimtm11_topmin1_metal_polygon_layer.data.insert(p)
   fuse_in_polygon = fusetop.and(mimtm11_topmin1_metal_polygon_layer)
-  if(fuse_in_polygon.area > 10000)
+  if (fuse_in_polygon.area > 10000)
     mimtm11_bad_topmin1_metal_polygon = mimtm11_topmin1_metal_polygon_layer.interacting(fuse_in_polygon)
     mimtm11_bad_topmin1_metal_polygon.data.each do |b|
       b.num_points > 0 && mimtm11_large_topmin1_metal_violation.data.insert(b)
@@ -5044,6 +5143,8 @@ sm11_l1  = metal1.and(sramcore).width(0.22.um, euclidian).polygons(0.001).not_in
 sm11_l1.output("S.M1.1_LV", "S.M1.1_LV : min. metal1 width : 0.22µm")
 sm11_l1.forget
 
+end # BEOL_EXTEND   # previously unconditional top-level block, now rolled into BEOL
+
 #================================================
 #-----------------GEOMETRY RULES-----------------
 #================================================
@@ -5467,9 +5568,9 @@ logger.info("Executing rule metal5_res_OFFGRID")
 metal5_res.ongrid(0.005).output("metal5_res_OFFGRID", "OFFGRID : OFFGRID vertex on metal5_res")
 metal5_res.with_angle(0 .. 45).output("metal5_res_angle", "ACUTE : non 45 degree angle metal5_res")
 
-logger.info("Executing rule metal6_res_OFFGRID")
-metal6_res.ongrid(0.005).output("metal6_res_OFFGRID", "OFFGRID : OFFGRID vertex on metal6_res")
-metal6_res.with_angle(0 .. 45).output("metal6_res_angle", "ACUTE : non 45 degree angle metal6_res")
+# no flag to use: logger.info("Executing rule metal6_res_OFFGRID")
+#   metal6_res.ongrid(0.005).output("metal6_res_OFFGRID", "OFFGRID : OFFGRID vertex on metal6_res")
+#   metal6_res.with_angle(0 .. 45).output("metal6_res_angle", "ACUTE : non 45 degree angle metal6_res")
 
 logger.info("Executing rule border_OFFGRID")
 border.ongrid(0.005).output("border_OFFGRID", "OFFGRID : OFFGRID vertex on border")
@@ -5485,3 +5586,7 @@ exec_end_time = Time.now
 run_time = exec_end_time - exec_start_time
 logger.info("DRC Total Run time %f seconds" % [run_time])
 
+logger.info("DRC Total program errors: %d" % [$errs])
+if $errs
+  exit 2
+end
