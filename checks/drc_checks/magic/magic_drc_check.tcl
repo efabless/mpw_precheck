@@ -14,15 +14,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-set GDS_UT_PATH [lindex $argv 6]
-set DESIGN_NAME [lindex $argv 7]
-set PDK_PATH [lindex $argv 8]
-set DRC_REPORT [lindex $argv 9]
-set DRC_MAG [lindex $argv 10]
-set SRAM_MODULES [lindex $argv 11]
-set ESD_FET [lindex $argv 12]
-set HAS_SRAM [lindex $argv 13]
-set HAS_ESD_FET [lindex $argv 14]
+set GDS_UT_PATH [lindex $argv end-8]
+set DESIGN_NAME [lindex $argv end-7]
+set PDK_PATH [lindex $argv end-6]
+set DRC_REPORT [lindex $argv end-5]
+set DRC_MAG [lindex $argv end-4]
+set SRAM_MODULES [lindex $argv end-3]
+set ESD_FET [lindex $argv end-2]
+set HAS_SRAM [lindex $argv end-1]
+set HAS_ESD_FET [lindex $argv end]
 
 if { $HAS_ESD_FET } {
     gds noduplicates yes

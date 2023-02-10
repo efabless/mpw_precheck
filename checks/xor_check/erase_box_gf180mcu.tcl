@@ -1,7 +1,7 @@
 drc off
-set gds_input [lindex $argv 6]
-set out_file [lindex $argv 7]
-set cell_name [lindex $argv 8]
+set gds_input [lindex $argv end-2]
+set out_file [lindex $argv end-1]
+set cell_name [lindex $argv end]
 undo disable
 tech unlock *
 cif istyle sky130(vendor)
