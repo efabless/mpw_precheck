@@ -5587,6 +5587,6 @@ run_time = exec_end_time - exec_start_time
 logger.info("DRC Total Run time %f seconds" % [run_time])
 
 logger.info("DRC Total program errors: %d" % [$errs])
-if $errs
+if $errs > 0
   exit 2
 end
