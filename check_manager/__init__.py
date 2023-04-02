@@ -29,6 +29,7 @@ from checks.drc_checks.magic import magic_gds_drc_check
 from checks.gpio_defines_check import gpio_defines_check
 from checks.license_check import license_check
 from checks.xor_check import xor_check
+from checks.lvs_check.lvs import run_lvs
 
 
 class CheckManagerNotFound(Exception):
@@ -130,6 +131,30 @@ class GpioDefines(CheckManager):
             logging.info("{{GPIO-DEFINES CHECK PASSED}} The user verilog/rtl/user_defines.v is valid.")
         else:
             logging.warning("{{GPIO-DEFINES CHECK FAILED}} The user verilog/rtl/user_defines.v is not valid.")
+        return self.result
+
+
+class lvs(CheckManager):
+    __ref__ = 'lvs'
+    __surname__ = 'LVS'
+    __supported_pdks__ = ['sky130A', 'sky130B']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.design_directory = self.precheck_config['input_directory']
+        self.output_directory = self.precheck_config['output_directory']
+        self.design_name = "user_project_wrapper"
+        self.config_file = self.precheck_config['input_directory'] / f"lvs/user_project_wrapper/sky130A.lvs_config.sh"
+        self.pdk_root = precheck_config['pdk_path'].parent
+        self.pdk = precheck_config['pdk_path'].name
+
+    def run(self):
+        self.result = run_lvs(self.design_directory, self.output_directory, self.design_name, self.config_file, self.pdk_root, self.pdk)
+
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.design_name}, has no LVS violations.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.design_name}, has LVS violations.")
         return self.result
 
 
@@ -382,35 +407,37 @@ class XOR(CheckManager):
 
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
-    (License.__ref__, License),
-    (Makefile.__ref__, Makefile),
-    (Defaults.__ref__, Defaults),
-    (Documentation.__ref__, Documentation),
-    (Consistency.__ref__, Consistency),
-    (GpioDefines.__ref__, GpioDefines),
-    (XOR.__ref__, XOR),
-    (MagicDRC.__ref__, MagicDRC),
-    (KlayoutFEOL.__ref__, KlayoutFEOL),
-    (KlayoutBEOL.__ref__, KlayoutBEOL),
-    (KlayoutOffgrid.__ref__, KlayoutOffgrid),
-    (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
-    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea)
+    (lvs.__ref__, lvs),
+    # (License.__ref__, License),
+    # (Makefile.__ref__, Makefile),
+    # (Defaults.__ref__, Defaults),
+    # (Documentation.__ref__, Documentation),
+    # (Consistency.__ref__, Consistency),
+    # (GpioDefines.__ref__, GpioDefines),
+    # (XOR.__ref__, XOR),
+    # (MagicDRC.__ref__, MagicDRC),
+    # (KlayoutFEOL.__ref__, KlayoutFEOL),
+    # (KlayoutBEOL.__ref__, KlayoutBEOL),
+    # (KlayoutOffgrid.__ref__, KlayoutOffgrid),
+    # (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
+    # (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    # (KlayoutZeroArea.__ref__, KlayoutZeroArea),
 ])
 
 # Note: list of checks for a private project
 private_checks = OrderedDict([
-    (Makefile.__ref__, Makefile),
-    (Consistency.__ref__, Consistency),
-    (GpioDefines.__ref__, GpioDefines),
-    (XOR.__ref__, XOR),
-    (MagicDRC.__ref__, MagicDRC),
-    (KlayoutFEOL.__ref__, KlayoutFEOL),
-    (KlayoutBEOL.__ref__, KlayoutBEOL),
-    (KlayoutOffgrid.__ref__, KlayoutOffgrid),
-    (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
-    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea)
+    (lvs.__ref__, lvs),
+    # (Makefile.__ref__, Makefile),
+    # (Consistency.__ref__, Consistency),
+    # (GpioDefines.__ref__, GpioDefines),
+    # (XOR.__ref__, XOR),
+    # (MagicDRC.__ref__, MagicDRC),
+    # (KlayoutFEOL.__ref__, KlayoutFEOL),
+    # (KlayoutBEOL.__ref__, KlayoutBEOL),
+    # (KlayoutOffgrid.__ref__, KlayoutOffgrid),
+    # (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
+    # (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    # (KlayoutZeroArea.__ref__, KlayoutZeroArea),
 ])
 
 

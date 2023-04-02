@@ -1,0 +1,13 @@
+#! /bin/bash
+
+# Returns the x,y coordinates in microns of the given instance in the given ext file
+
+if [[ $# != 2 ]]; then
+	echo usage: ${0##*/} instance ext_file
+	exit 1
+fi
+
+instance=$1
+extfile=$2
+
+zgrep "^use .* $instance " $extfile | awk '{printf "%s %.2f %.2f\n", $3, $6 / 200., $9 / 200}'

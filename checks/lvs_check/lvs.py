@@ -1,0 +1,43 @@
+import argparse
+import logging
+import subprocess
+import os
+from pathlib import Path
+
+def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
+    logs_directory = output_directory / 'logs'
+    log_file_path = logs_directory / 'be_check.total'
+    os.environ['UPRJ_ROOT'] = f"{design_directory}"
+    os.environ['LVS_ROOT'] = f'{os.getcwd()}/checks/lvs_check/'
+    os.environ['PDK'] = f'{pdk}'
+    os.environ['PDK_ROOT'] = f'{pdk_root}'
+    lvs_cmd = ['sh', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{config_file}', f'{design_name}']
+
+    with open(log_file_path, 'w') as lvs_log:
+        logging.info("run: run_be_checks")  # helpful reference, print long-cmd once & messages below remain concise
+        p = subprocess.run(lvs_cmd, stderr=lvs_log, stdout=lvs_log)
+        # Check exit-status of all subprocesses
+        stat = p.returncode
+        if stat != 0:
+            logging.error(f"ERROR LVS FAILED, stat={stat}, see {log_file_path}")
+            return False
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
+    parser = argparse.ArgumentParser(description='Runs LVS on a given design.')
+    parser.add_argument('--design_directory', '-g', required=True, help='Design Directory')
+    parser.add_argument('--output_directory', '-o', required=True, help='Output Directory')
+    parser.add_argument('--design_name', '-d', required=True, help='Design Name')
+    parser.add_argument('--config_file', '-c', required=True, help='LVS config file')
+    parser.add_argument('--pdk_path', '-p', required=True, help='pdk path')
+    args = parser.parse_args()
+    output_directory = Path(args.output_directory)
+    design_directory = Path(args.design_directory)
+    config_file = Path(args.config_file)
+    design_name = args.design_name
+    pdk_path = Path(args.pdk_path)
+    pdk = pdk_path.name
+    pdk_root = pdk_path.parent
+
+    run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk)

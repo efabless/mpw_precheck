@@ -41,15 +41,18 @@ RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cai
     yum install -y csh libglu libX11-devel ncurses-devel tcl-devel tk-devel wget && \
     yum install -y git patch ruby && \
     yum install -y iverilog && \
+    yum install -y m4 && \
+    yum install -y gettext-devel bison byacc readline-devel && \
+    yum install -y build-essential autoconf pkg-config nasm libtool automake && \
     yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.12-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 # uninstall current version of git and install latest version available in rhel/7
-RUN yum -y remove git && yum -y remove git-* && \
-    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.1-2.el7.ius.x86_64.rpm && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+# RUN yum -y remove git && yum -y remove git-* && \
+#     yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.1-2.el7.ius.x86_64.rpm && \
+#     yum clean all && \
+#     rm -rf /var/cache/yum
 
 # Clone Magic
 ENV MAGIC_ROOT=./magic
@@ -76,3 +79,23 @@ WORKDIR $PRECHECKER_ROOT
 # GOLDEN CARAVEL
 ENV GOLDEN_CARAVEL=/opt/caravel
 RUN git clone --branch mpw-9a --depth=1 https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress
+
+
+# Clone netgen
+ENV NETGEN_ROOT=./netgen
+RUN git clone --depth=1 --branch 1.5.251 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
+WORKDIR $NETGEN_ROOT
+RUN scl enable devtoolset-8 -- ./configure --prefix=/build && \
+    scl enable devtoolset-8 -- make -j4 && \
+    scl enable devtoolset-8 -- make install
+
+
+# Clone cvc
+ENV CVC_ROOT=./cvc_rv
+WORKDIR $CVC_ROOT
+RUN curl -L https://github.com/d-m-bailey/cvc/files/8736220/cvc-1.1.3.tar.gz | tar -xzC . --strip-components=1
+RUN scl enable devtoolset-8 -- autoreconf -i && \
+    scl enable devtoolset-8 -- autoconf && \
+    scl enable devtoolset-8 -- ./configure --disable-nls --prefix=/build && \
+    scl enable devtoolset-8 -- sed -i 's/api.parser.class/parser_class_name/' src/cdlParser.yy && \
+    scl enable devtoolset-8 -- make -j4 install
