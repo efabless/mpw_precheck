@@ -23,11 +23,10 @@ if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
 	fi
 fi
 
-BASE_NAME=${DESIGN_NAME//[A-Z0-9][A-Z0-9]_/} # remove leading 2 byte prefices
-if [[ (! -f $WORK_ROOT/$DESIGN_NAME/$DESIGN_NAME.power) && -f $LVS_ROOT/cvc/$BASE_NAME.$PDK.power ]]; then
-	cp $LVS_ROOT/cvc/$BASE_NAME.$PDK.power $WORK_ROOT/$DESIGN_NAME/$DESIGN_NAME.power
+# BASE_NAME=${DESIGN_NAME//[A-Z0-9][A-Z0-9]_/} # remove leading 2 byte prefices
+if [[ (! -f $WORK_ROOT/$DESIGN_NAME/$DESIGN_NAME.power) && -f $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power ]]; then
+	cp $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power $WORK_ROOT/$DESIGN_NAME/$DESIGN_NAME.power
 fi
-
 start_time=$SECONDS
 cvc $LVS_ROOT/cvc/cvcrc.$PDK
 

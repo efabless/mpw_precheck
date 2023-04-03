@@ -6,9 +6,10 @@ from pathlib import Path
 
 def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
     logs_directory = output_directory / 'logs'
-    log_file_path = logs_directory / 'be_check.total'
+    log_file_path = logs_directory / 'be_check.log'
     os.environ['UPRJ_ROOT'] = f"{design_directory}"
     os.environ['LVS_ROOT'] = f'{os.getcwd()}/checks/lvs_check/'
+    os.environ['WORK_ROOT'] = f"{design_directory}/lvs/{design_name}"
     os.environ['PDK'] = f'{pdk}'
     os.environ['PDK_ROOT'] = f'{pdk_root}'
     lvs_cmd = ['sh', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{config_file}', f'{design_name}']
