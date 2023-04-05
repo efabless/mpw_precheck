@@ -1,21 +1,30 @@
 #! /bin/bash
 
-: "${LVS_ROOT:=$(pwd)}"
-: "${LOG_ROOT:=$(pwd)}"
-: "${SIGNOFF_ROOT:=$(pwd)}"
-: "${WORK_ROOT:=$(pwd)}"
-export LVS_ROOT LOG_ROOT SIGNOFF_ROOT WORK_ROOT
-
 export DESIGN_NAME=$1
-export RESULTS_DIR=$WORK_ROOT/$DESIGN_NAME/ext
+
+# Check for LVS_ROOT
+if [[ -z "$LVS_ROOT" ]]; then
+	echo "LVS_ROOT not set."
+	exit 1
+fi
+
+: "${LOG_ROOT:=$(pwd)/$DESIGN_NAME}"
+: "${SIGNOFF_ROOT:=$(pwd)/$DESIGN_NAME}"
+: "${WORK_ROOT:=$(pwd)/$DESIGN_NAME}"
+export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
+
+mkdir -p $LOG_ROOT $SIGNOFF_ROOT $WORK_ROOT
+
+export RESULTS_DIR=$WORK_ROOT/ext
 
 echo " "
 echo "Running CVC..."
 
+# Create cdl file from extracted spice file if it doesn't exist
 if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
 	if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.gds.spice ]]; then
 		echo "Could not create cdl file from $RESULTS_DIR/$DESIGN_NAME.gds.spice"
-		exit 1
+		exit 2
 	else
 		echo "Creating $RESULTS_DIR/$DESIGN_NAME.cdl"
 		$LVS_ROOT/spi2cdl $RESULTS_DIR/$DESIGN_NAME.gds.spice |
@@ -23,22 +32,37 @@ if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
 	fi
 fi
 
-# BASE_NAME=${DESIGN_NAME//[A-Z0-9][A-Z0-9]_/} # remove leading 2 byte prefices
-if [[ (! -f $WORK_ROOT/$DESIGN_NAME/$DESIGN_NAME.power) && -f $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power ]]; then
-	cp $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power $WORK_ROOT/$DESIGN_NAME/$DESIGN_NAME.power
+# Copy default power file to work area if it doesn't exist
+if [[ ! -f $WORK_ROOT/$DESIGN_NAME.power ]]; then
+	if [[ -f $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power ]]; then
+		cp $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power $WORK_ROOT/$DESIGN_NAME.power
+	else
+		echo "
+ERROR: Could not find $WORK_ROOT/$DESIGN_NAME.power"
+		exit 2
+	fi
 fi
+
 start_time=$SECONDS
 cvc $LVS_ROOT/cvc/cvcrc.$PDK
+cvc_status=$?
 
 runtime=$((SECONDS - start_time))
 hours=$((runtime / 3600))
 minutes=$(((runtime % 3600) / 60))
 seconds=$(((runtime % 3600) % 60))
-printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$WORK_ROOT/$DESIGN_NAME/cvc.log
+printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$WORK_ROOT/cvc.log
 
 if [[ $WORK_ROOT != $LOG_ROOT ]]; then
-	cp $WORK_ROOT/$DESIGN_NAME/cvc.log $LOG_ROOT/$DESIGN_NAME/.
+	cp $WORK_ROOT/cvc.log $LOG_ROOT/.
 fi
 if [[ $WORK_ROOT != $SIGNOFF_ROOT ]]; then
-	cp $WORK_ROOT/$DESIGN_NAME/cvc.log $SIGNOFF_ROOT/$DESIGN_NAME/.
+	cp $WORK_ROOT/cvc.log $SIGNOFF_ROOT/.
+fi
+
+if [[ $cvc_status -eq 0 && $(awk '/^CVC: Total:/ {print $NF}' $WORK_ROOT/cvc.log) -gt 0 ]]; then
+	# CVC finished normally, but detected errors
+	exit 3
+else
+	exit $cvc_status
 fi

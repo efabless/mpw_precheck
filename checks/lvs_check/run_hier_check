@@ -41,20 +41,18 @@ if [[ $# -eq 6 ]]; then  # only if prefix is specified
 	GDS_PREFIX_FILTER="-e s/^($5)*// -e s/\/($5)*/\//"
 fi
 
-: "${LOG_ROOT:=$(pwd)}"
-: "${LVS_ROOT:=$(pwd)}"
-: "${SIGNOFF_ROOT:=$(pwd)}"
-: "${WORK_ROOT:=$(pwd)}"
-export LOG_ROOT LVS_ROOT SIGNOFF_ROOT WORK_ROOT
+: "${LOG_ROOT:=$(pwd)/log/$TOP_SOURCE}"
+: "${SIGNOFF_ROOT:=$(pwd)/signoff/$TOP_SOURCE}"
+: "${WORK_ROOT:=$(pwd)/work/$TOP_SOURCE}"
+export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
-mkdir -p $LOG_ROOT/$TOP_SOURCE
-mkdir -p $SIGNOFF_ROOT/$TOP_SOURCE
-mkdir -p $WORK_ROOT/$TOP_SOURCE
-mkdir -p $WORK_ROOT/$TOP_LAYOUT
+mkdir -p $LOG_ROOT
+mkdir -p $SIGNOFF_ROOT
+mkdir -p $WORK_ROOT
 
-log_file=$LOG_ROOT/$TOP_SOURCE/hier.log
-verilog_cell_file=$WORK_ROOT/$TOP_SOURCE/verilog.cells
-layout_cell_file=$WORK_ROOT/$TOP_LAYOUT/layout.cells
+log_file=$LOG_ROOT/hier.log
+verilog_cell_file=$WORK_ROOT/verilog.cells
+layout_cell_file=$WORK_ROOT/layout.cells
 
 echo " "
 echo "Running hierarchical comparison between verilog and layout..."
@@ -124,11 +122,11 @@ if [[ $(echo $SOURCE_FILES | wc -w) -gt 0 ]]; then
 			}' - | \
 		grep -v // | \
 		sed -E $PRIMITIVE_PREFIX_FILTER | \
-		sort > $WORK_ROOT/$TOP_SOURCE/verilog.hier
+		sort > $WORK_ROOT/verilog.hier
 else
 	echo "No verilog files..."
-	rm -f $WORK_ROOT/$TOP_SOURCE/verilog.hier $verilog_cell_file
-	touch $WORK_ROOT/$TOP_SOURCE/verilog.hier 
+	rm -f $WORK_ROOT/verilog.hier $verilog_cell_file
+	touch $WORK_ROOT/verilog.hier
 	cat > $verilog_cell_file <<-EOF
 		$TOP_SOURCE
 	EOF
@@ -146,8 +144,8 @@ if [[ $LAYOUT_FILE ]]; then
 	if [[ "$EXT" == "txt" ]]; then
 		TEXT_FILE=$BASE_LAYOUT	
 	elif [[ "$EXT" == "gds" || "$EXT" == "oas" ]]; then
-		TEXT_FILE=$WORK_ROOT/$TOP_LAYOUT/layout.txt
-		cat > $WORK_ROOT/$TOP_LAYOUT/gds2txt.py <<-EOF
+		TEXT_FILE=$WORK_ROOT/layout.txt
+		cat > $WORK_ROOT/gds2txt.py <<-EOF
 			import pya
 			
 			app = pya.Application.instance()
@@ -173,7 +171,7 @@ if [[ $LAYOUT_FILE ]]; then
 		
 			app.exit(0)
 		EOF
-		klayout -b -rm $WORK_ROOT/$TOP_LAYOUT/gds2txt.py | \
+		klayout -b -rm $WORK_ROOT/gds2txt.py | \
 			tee -a $log_file
 		gzip -f $TEXT_FILE
 		CAT=zcat
@@ -198,21 +196,21 @@ if [[ $LAYOUT_FILE ]]; then
 			}
 		}' - | \
 		sed -E $GDS_PREFIX_FILTER $PRIMITIVE_PREFIX_FILTER | \
-		sort -u > $WORK_ROOT/$TOP_LAYOUT/layout.hier
+		sort -u > $WORK_ROOT/layout.hier
 	$CAT $TEXT_FILE | \
 		grep STRNAME | \
-		awk '{print $2}' > $WORK_ROOT/$TOP_LAYOUT/layout.cells
+		awk '{print $2}' > $WORK_ROOT/layout.cells
 		
-elif [[ -f $WORK_ROOT/$TOP_LAYOUT/layout.hier ]]; then
-	echo "Reusing $WORK_ROOT/$TOP_LAYOUT/layout.hier"
+elif [[ -f $WORK_ROOT/layout.hier ]]; then
+	echo "Reusing $WORK_ROOT/layout.hier"
 else
-	echo "Could not locate $WORK_ROOT/$TOP_LAYOUT/layout.hier"
+	echo "Could not locate $WORK_ROOT/layout.hier"
 	exit 1
 fi
 
-comm -23 $WORK_ROOT/$TOP_SOURCE/verilog.hier $WORK_ROOT/$TOP_LAYOUT/layout.hier | \
+comm -23 $WORK_ROOT/verilog.hier $WORK_ROOT/layout.hier | \
 	awk '{print $1}' | \
-	fgrep -f - $WORK_ROOT/$TOP_SOURCE/verilog.hier $WORK_ROOT/$TOP_LAYOUT/layout.hier | \
+	fgrep -f - $WORK_ROOT/verilog.hier $WORK_ROOT/layout.hier | \
 	sed 's/:/ /' | \
 	awk '	BEGIN {
 			print "verilog,,layout";
@@ -244,13 +242,13 @@ comm -23 $WORK_ROOT/$TOP_SOURCE/verilog.hier $WORK_ROOT/$TOP_LAYOUT/layout.hier 
 				match_count += 1;
 				print verilog[match_count] "," instances[verilog[match_count]];
 			}
-		}' - > $SIGNOFF_ROOT/$TOP_SOURCE/hier.csv
+		}' - > $SIGNOFF_ROOT/hier.csv
 
-if [[ $(cat $SIGNOFF_ROOT/$TOP_SOURCE/hier.csv | wc -l) -eq 1 ]]; then
+if [[ $(cat $SIGNOFF_ROOT/hier.csv | wc -l) -eq 1 ]]; then
 	echo "Hierarchy check for $TOP_SOURCE passed." | \
 		tee -a $log_file
 else
-	echo "Hierarchy check for $TOP_SOURCE failed. See $SIGNOFF_ROOT/$TOP_SOURCE/hier.csv" | \
+	echo "Hierarchy check for $TOP_SOURCE failed. See $SIGNOFF_ROOT/hier.csv" | \
 		tee -a $log_file
 fi
 

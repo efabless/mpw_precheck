@@ -56,17 +56,15 @@ echo "SOURCE FILE(S): $LVS_SPICE_FILES $LVS_VERILOG_FILES"
 echo "TOP LAYOUT: $TOP_LAYOUT"
 echo "LAYOUT FILE: $LAYOUT_FILE"
 
-: "${LOG_ROOT:=$(pwd)/$TOP_SOURCE}"
 : "${LVS_ROOT:=$(pwd)}"
+: "${LOG_ROOT:=$(pwd)/$TOP_SOURCE}"
 : "${SIGNOFF_ROOT:=$(pwd)/$TOP_SOURCE}"
 : "${WORK_ROOT:=$(pwd)/$TOP_SOURCE}"
 export LOG_ROOT LVS_ROOT SIGNOFF_ROOT WORK_ROOT
 
-mkdir -p $LOG_ROOT/$TOP_SOURCE
-mkdir -p $LOG_ROOT/$TOP_LAYOUT
-mkdir -p $SIGNOFF_ROOT/$TOP_SOURCE
-mkdir -p $WORK_ROOT/$TOP_SOURCE
-mkdir -p $WORK_ROOT/$TOP_LAYOUT
+mkdir -p $LOG_ROOT
+mkdir -p $SIGNOFF_ROOT
+mkdir -p $WORK_ROOT
 
 if [[ -z "$PDK_ROOT" || -z "$PDK" ]]; then
 	echo "PDK_ROOT and/or PDK not set."
@@ -82,66 +80,66 @@ else
 	exit 1
 fi
 
-if [[ ! -f $WORK_ROOT/$TOP_LAYOUT/layout.cells || ! -f $WORK_ROOT/$TOP_SOURCE/verilog.cells ]]; then
+if [[ ! -f $WORK_ROOT/layout.cells || ! -f $WORK_ROOT/verilog.cells ]]; then
 	$LVS_ROOT/run_hier_check $TOP_SOURCE "$LVS_VERILOG_FILES" $TOP_LAYOUT $LAYOUT_FILE
 fi
 
 echo $EXTRACT_FLATGLOB | \
-	sed 's/  */\n/g' > $WORK_ROOT/$TOP_LAYOUT/flatglob
+	sed 's/  */\n/g' > $WORK_ROOT/flatglob
 
 # create work abstract file based on actual cells used (pseudo globbing)
 echo $EXTRACT_ABSTRACT | \
-	sed 's/  */\n/g' > $WORK_ROOT/$TOP_LAYOUT/abstract
-if [[ -f $WORK_ROOT/$TOP_LAYOUT/layout.cells ]]; then
-	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/$TOP_LAYOUT/abstract | \
-		grep -f - $WORK_ROOT/$TOP_LAYOUT/layout.cells > $WORK_ROOT/$TOP_LAYOUT/abstract.glob
+	sed 's/  */\n/g' > $WORK_ROOT/abstract
+if [[ -f $WORK_ROOT/layout.cells ]]; then
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/abstract | \
+		grep -f - $WORK_ROOT/layout.cells > $WORK_ROOT/abstract.glob
 else
-	cp $WORK_ROOT/$TOP_LAYOUT/abstract $WORK_ROOT/$TOP_LAYOUT/abstract.glob
+	cp $WORK_ROOT/abstract $WORK_ROOT/abstract.glob
 fi
 
 # create work flatten file based on actual cells used (pseudo globbing)
 echo $LVS_FLATTEN | \
-	sed 's/  */\n/g' > $WORK_ROOT/$TOP_SOURCE/flatten
-if [[ -f $WORK_ROOT/$TOP_LAYOUT/layout.cells && -f $WORK_ROOT/$TOP_SOURCE/verilog.cells ]]; then
+	sed 's/  */\n/g' > $WORK_ROOT/flatten
+if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	# Do pseudo globbing against layout and verilog. "*" expansion only.
-	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/$TOP_SOURCE/flatten | \
-		grep -f - $WORK_ROOT/$TOP_LAYOUT/layout.cells $WORK_ROOT/$TOP_SOURCE/verilog.cells | \
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/flatten | \
+		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells | \
 		sed 's/.*cells://' | \
-		sort -u > $WORK_ROOT/$TOP_SOURCE/flatten.glob
+		sort -u > $WORK_ROOT/flatten.glob
 else
-	cp $WORK_ROOT/$TOP_SOURCE/flatten $WORK_ROOT/$TOP_SOURCE/flatten.glob
+	cp $WORK_ROOT/flatten $WORK_ROOT/flatten.glob
 fi
 
 # create work noflatten file based on actual cells used (pseudo globbing)
 echo $LVS_NOFLATTEN | \
-	sed 's/  */\n/g' > $WORK_ROOT/$TOP_SOURCE/noflatten
-if [[ -f $WORK_ROOT/$TOP_LAYOUT/layout.cells && -f $WORK_ROOT/$TOP_SOURCE/verilog.cells ]]; then
+	sed 's/  */\n/g' > $WORK_ROOT/noflatten
+if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	# Do pseudo globbing against layout and verilog. "*" expansion only.
-	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/$TOP_SOURCE/noflatten | \
-		grep -f - $WORK_ROOT/$TOP_LAYOUT/layout.cells $WORK_ROOT/$TOP_SOURCE/verilog.cells | \
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/noflatten | \
+		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells | \
 		sed 's/.*cells://' | \
-		sort -u > $WORK_ROOT/$TOP_SOURCE/noflatten.glob
+		sort -u > $WORK_ROOT/noflatten.glob
 else
-	cp $WORK_ROOT/$TOP_SOURCE/noflatten $WORK_ROOT/$TOP_SOURCE/noflatten.glob
+	cp $WORK_ROOT/noflatten $WORK_ROOT/noflatten.glob
 fi
 
 # create work ignore file based on actual cells used (pseudo globbing)
 echo $LVS_IGNORE | \
-	sed 's/  */\n/g' > $WORK_ROOT/$TOP_SOURCE/ignore
-if [[ -f $WORK_ROOT/$TOP_LAYOUT/layout.cells && -f $WORK_ROOT/$TOP_SOURCE/verilog.cells ]]; then
+	sed 's/  */\n/g' > $WORK_ROOT/ignore
+if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	# Do pseudo globbing against layout and verilog. "*" expansion only.
-	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/$TOP_SOURCE/ignore | \
-		grep -f - $WORK_ROOT/$TOP_LAYOUT/layout.cells $WORK_ROOT/$TOP_SOURCE/verilog.cells | \
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/ignore | \
+		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells | \
 		sed 's/.*cells://' | \
-		sort -u > $WORK_ROOT/$TOP_SOURCE/ignore.glob
+		sort -u > $WORK_ROOT/ignore.glob
 else
-	cp $WORK_ROOT/$TOP_SOURCE/noflatten $WORK_ROOT/$TOP_SOURCE/noflatten.glob
+	cp $WORK_ROOT/noflatten $WORK_ROOT/noflatten.glob
 fi
 
 # Add any cells that should be flattened before extraction to 'flatten'. globbing allowed.
-export FLATGLOB_CELLS="`cat $WORK_ROOT/$TOP_LAYOUT/flatglob 2>/dev/null | grep -v '^#'`"
+export FLATGLOB_CELLS="`cat $WORK_ROOT/flatglob 2>/dev/null | grep -v '^#'`"
 # Add any empty cells that should be extracted as black-boxes to 'abstract'. (globbed version is 'abstract.glob')
-export ABSTRACT_CELLS="`cat $WORK_ROOT/$TOP_LAYOUT/abstract.glob 2>/dev/null | grep -v '^#'`"
+export ABSTRACT_CELLS="`cat $WORK_ROOT/abstract.glob 2>/dev/null | grep -v '^#'`"
 
 # Verify that magic and netgen are executable.
 if [[ $LAYOUT_FILE ]]; then  # only if gds is specified
@@ -156,7 +154,7 @@ if ! which netgen >& /dev/null; then
 fi
 
 #  Create extraction result directories. No error if they already exist.
-EXT_DIR=$WORK_ROOT/$TOP_LAYOUT/ext
+EXT_DIR=$WORK_ROOT/ext
 mkdir -p $EXT_DIR
 
 if [[ $LAYOUT_FILE ]]; then
@@ -172,7 +170,7 @@ if [[ $LAYOUT_FILE ]]; then
 
 	#  1. Extract gds_file 
 	#  Note: uses the same extraction commands as sconnect, so symbolic links to the EXT_DIR may be used
-	date "+BEGIN: %c" > $LOG_ROOT/$TOP_LAYOUT/ext.log
+	date "+BEGIN: %c" > $LOG_ROOT/ext.log
 	start_time=$SECONDS
 
 	echo " "
@@ -185,14 +183,15 @@ if [[ $LAYOUT_FILE ]]; then
 	fi
 
 	env TOP=$TOP_LAYOUT RUN_DIR=$EXT_DIR magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc.well $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl < /dev/null | \
-		tee -a $LOG_ROOT/$TOP_LAYOUT/ext.log 2>&1
+		tee -a $LOG_ROOT/ext.log 2>&1
+	ext_status=${PIPESTATUS[0]}
 
-	date "+END: %c" >> $LOG_ROOT/$TOP_LAYOUT/ext.log
+	date "+END: %c" >> $LOG_ROOT/ext.log
 	runtime=$(( SECONDS - start_time ))
 	hours=$((runtime / 3600))
 	minutes=$(( (runtime % 3600) / 60 ))
 	seconds=$(( (runtime % 3600) % 60 ))
-	printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >> $LOG_ROOT/$TOP_LAYOUT/ext.log
+	printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >> $LOG_ROOT/ext.log
 
 	# Compress large ext files
 	find $EXT_DIR -name '*.ext' -size +1M -exec gzip {} \;
@@ -207,18 +206,25 @@ else
 	echo "Reusing $EXT_DIR/$TOP_LAYOUT.gds.spice."
 fi
 
+# Check that extraction completed successfully
+if [[ ${magic_status:=0} -ne 0 || $(grep 'exttospice finished.' $LOG_ROOT/ext.log | wc -l) -ne 1 ]]; then
+	echo "
+Error: extraction did not complete successfully"
+	exit 4
+fi
+
 #  5. Compare
 echo $LVS_SPICE_FILES | \
 	sed 's/  */\n/g' | \
-	awk 'NF > 0' > $WORK_ROOT/$TOP_SOURCE/spice_files
+	awk 'NF > 0' > $WORK_ROOT/spice_files
 echo $LVS_VERILOG_FILES | \
 	sed 's/  */\n/g' | \
-	awk 'NF > 0' > $WORK_ROOT/$TOP_SOURCE/verilog_files
+	awk 'NF > 0' > $WORK_ROOT/verilog_files
 
-cp $LVS_ROOT/tech/${PDK}_setup.tcl $WORK_ROOT/$TOP_SOURCE/${PDK}_setup.tcl
+cp $LVS_ROOT/tech/${PDK}_setup.tcl $WORK_ROOT/${PDK}_setup.tcl
 
 while read cell ; do
-	cat >> $WORK_ROOT/$TOP_SOURCE/${PDK}_setup.tcl <<-flatten
+	cat >> $WORK_ROOT/${PDK}_setup.tcl <<-flatten
 		if { [lsearch \$cells1 $cell] > 0 } {
 			puts stdout "Flattening $cell in layout"
 			flatten class {-circuit1 $cell}
@@ -228,10 +234,10 @@ while read cell ; do
 			flatten class {-circuit2 $cell}
 		}
 	flatten
-done < $WORK_ROOT/$TOP_SOURCE/flatten.glob
+done < $WORK_ROOT/flatten.glob
 
 while read cell ; do
-	cat >> $WORK_ROOT/$TOP_SOURCE/${PDK}_setup.tcl <<-ignore
+	cat >> $WORK_ROOT/${PDK}_setup.tcl <<-ignore
 		if { [lsearch \$cells1 $cell] > 0 } {
 			puts stdout "Ignoring $cell in layout"
 			ignore class {-circuit1 $cell}
@@ -241,65 +247,83 @@ while read cell ; do
 			ignore class {-circuit2 $cell}
 		}
 	ignore
-done < $WORK_ROOT/$TOP_SOURCE/ignore.glob
+done < $WORK_ROOT/ignore.glob
 
-cat > $WORK_ROOT/$TOP_SOURCE/lvs.script <<-script
-puts "Reading layout $WORK_ROOT/$TOP_LAYOUT/ext/$TOP_LAYOUT.gds.spice..."
-set layout [readnet spice $WORK_ROOT/$TOP_LAYOUT/ext/$TOP_LAYOUT.gds.spice]
+cat > $WORK_ROOT/lvs.script <<-script
+puts "Reading layout $WORK_ROOT/ext/$TOP_LAYOUT.gds.spice..."
+set layout [readnet spice $WORK_ROOT/ext/$TOP_LAYOUT.gds.spice]
 set source [readnet spice /dev/null]
 script
 
 while read spice_file ; do
-	cat >> $WORK_ROOT/$TOP_SOURCE/lvs.script <<-spice
+	cat >> $WORK_ROOT/lvs.script <<-spice
 		puts "Reading source $spice_file..."
 		readnet spice $spice_file \$source
 	spice
-done < $WORK_ROOT/$TOP_SOURCE/spice_files
+done < $WORK_ROOT/spice_files
 while read verilog_file ; do
-	cat >> $WORK_ROOT/$TOP_SOURCE/lvs.script <<-verilog
+	cat >> $WORK_ROOT/lvs.script <<-verilog
 		puts "Reading source $verilog_file..."
 		readnet verilog $verilog_file \$source
 	verilog
-done < $WORK_ROOT/$TOP_SOURCE/verilog_files
+done < $WORK_ROOT/verilog_files
 
-cat >> $WORK_ROOT/$TOP_SOURCE/lvs.script <<-lvs
-	lvs "\$layout $TOP_LAYOUT" "\$source $TOP_SOURCE" $WORK_ROOT/$TOP_SOURCE/${PDK}_setup.tcl $SIGNOFF_ROOT/$TOP_SOURCE/lvs.report -blackbox -json -noflatten=$WORK_ROOT/$TOP_SOURCE/noflatten.glob
+cat >> $WORK_ROOT/lvs.script <<-lvs
+	lvs "\$layout $TOP_LAYOUT" "\$source $TOP_SOURCE" $WORK_ROOT/${PDK}_setup.tcl $SIGNOFF_ROOT/lvs.report -blackbox -json -noflatten=$WORK_ROOT/noflatten.glob
 lvs
 
-date "+BEGIN: %c" > $LOG_ROOT/$TOP_SOURCE/lvs.log
+date "+BEGIN: %c" > $LOG_ROOT/lvs.log
 start_time=$SECONDS
 
 echo " "
-netgen -batch source $WORK_ROOT/$TOP_SOURCE/lvs.script 2>&1 | \
-	tee -a $LOG_ROOT/$TOP_SOURCE/lvs.log 
+netgen -batch source $WORK_ROOT/lvs.script 2>&1 | \
+	tee -a $LOG_ROOT/lvs.log
+netgen_status=${PIPESTATUS[0]}
+
+if [[ $netgen_status -ne 0 ]]; then
+	echo "
+Error: netgen ended abnormally."
+	exit $netgen_status
+fi
 
 # Check for circuits that were compared as black boxes. 
 awk '
 /Circuit 1 .* will not flatten/ {print $4, "is a black box in the layout"}
 /Circuit 2 .* will not flatten/ {print $4, "is a black box in the source"}
-' $SIGNOFF_ROOT/$TOP_SOURCE/lvs.report > $SIGNOFF_ROOT/$TOP_SOURCE/lvs.unflattened
+' $SIGNOFF_ROOT/lvs.report > $SIGNOFF_ROOT/lvs.unflattened
 awk '
 /__fill/ {next}  # ignore abstract devices
 /__tapvpwrvgnd/ {next}
 /__fakediode/ {next}
 /sky130_fd_pr__/ {next}  # ignore primitive devices
 /Matching pins/ {print $4, "is a black box in the layout and source"}
-' $LOG_ROOT/$TOP_SOURCE/lvs.log >> $SIGNOFF_ROOT/$TOP_SOURCE/lvs.unflattened
-if [[ -s $SIGNOFF_ROOT/$TOP_SOURCE/lvs.unflattened ]]; then
-	echo "Warning: device level LVS may be incomplete due to $(cat $SIGNOFF_ROOT/$TOP_SOURCE/lvs.unflattened | wc -l) unflattened cell(s): see $SIGNOFF_ROOT/$TOP_SOURCE/lvs.unflattened" | \
-		tee -a $SIGNOFF_ROOT/$TOP_SOURCE/lvs.report | \
-		tee -a $LOG_ROOT/$TOP_SOURCE/lvs.log
+' $LOG_ROOT/lvs.log >> $SIGNOFF_ROOT/lvs.unflattened
+if [[ -s $SIGNOFF_ROOT/lvs.unflattened ]]; then
+	echo "Warning: device level LVS may be incomplete due to $(cat $SIGNOFF_ROOT/lvs.unflattened | wc -l) unflattened cell(s): see $SIGNOFF_ROOT/lvs.unflattened" | \
+		tee -a $SIGNOFF_ROOT/lvs.report | \
+		tee -a $LOG_ROOT/lvs.log
+	lvs_warning=1
 fi
 
-if [[ -s $WORK_ROOT/$TOP_SOURCE/ignore.glob && $(cat $WORK_ROOT/$TOP_SOURCE/ignore.glob | wc -w) -gt 0 ]]; then
-	echo "Warning: device level LVS may be incomplete because $(cat $WORK_ROOT/$TOP_SOURCE/ignore.glob | wc -l) cell(s) was/were ignored: see $WORK_ROOT/$TOP_SOURCE/ignore.glob" | \
-		tee -a $SIGNOFF_ROOT/$TOP_SOURCE/lvs.report | \
-		tee -a $LOG_ROOT/$TOP_SOURCE/lvs.log
+if [[ -s $WORK_ROOT/ignore.glob ]]; then
+	echo "Warning: device level LVS may be incomplete because $(cat $WORK_ROOT/ignore.glob | wc -l) cell(s) was/were ignored: see $WORK_ROOT/ignore.glob" | \
+		tee -a $SIGNOFF_ROOT/lvs.report | \
+		tee -a $LOG_ROOT/lvs.log
+	lvs_warning=1
 fi
 
-date "+END: %c" >> $LOG_ROOT/$TOP_SOURCE/lvs.log
+date "+END: %c" >> $LOG_ROOT/lvs.log
 runtime=$(( SECONDS - start_time ))
 hours=$((runtime / 3600))
 minutes=$(( (runtime % 3600) / 60 ))
 seconds=$(( (runtime % 3600) % 60 ))
-printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >> $LOG_ROOT/$TOP_SOURCE/lvs.log
+printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >> $LOG_ROOT/lvs.log
+
+# Set exit code if lvs passed conditionally
+if [[ ${lvs_warning:=0} -eq 0 ]]; then
+	exit 0
+else
+	echo "
+Warning: possible lvs discrepancy"
+	exit 5
+fi
