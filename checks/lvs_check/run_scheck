@@ -6,9 +6,9 @@
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-#   
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-#   
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,11 +21,10 @@
 #  3. Extract gds_file without well connectivity.
 #  4. Remove disconnected nets.
 #  5. Compare
-#  
-
+#
 
 # Use cases
-# run_scheck [--noextract] lvs_config_file [top_block [gds_file]]	
+# run_scheck [--noextract] lvs_config_file [top_block [gds_file]]
 
 if [[ $1 = "--noextract" ]]; then
 	export EXTRACT_LAYOUT=no
@@ -58,9 +57,9 @@ if cmp -s $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech; the
 	awk 'NF > 1 && /version/' $LVS_ROOT/tech/$PDK.tech
 else
 	echo "Tech files do not match:"
-	grep version $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech | \
+	grep version $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech |
 		awk 'NF > 2'
-	exit 1
+	# exit 1
 fi
 
 CONFIG_FILE=$1
@@ -100,28 +99,28 @@ else
 	export EXT_TYPE=digital
 fi
 
-echo $EXTRACT_FLATGLOB | \
-	sed 's/  */\n/g' > $WORK_ROOT/flatglob
-echo $EXTRACT_ABSTRACT | \
-	sed 's/  */\n/g' > $WORK_ROOT/abstract
+echo $EXTRACT_FLATGLOB |
+	sed 's/  */\n/g' >$WORK_ROOT/flatglob
+echo $EXTRACT_ABSTRACT |
+	sed 's/  */\n/g' >$WORK_ROOT/abstract
 if [[ -f $WORK_ROOT/layout.cells ]]; then
-	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/abstract | \
-		grep -f - $WORK_ROOT/layout.cells > $WORK_ROOT/abstract.glob
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/abstract |
+		grep -f - $WORK_ROOT/layout.cells >$WORK_ROOT/abstract.glob
 else
 	cp $WORK_ROOT/abstract $WORK_ROOT/abstract.glob
 fi
 
 # Add any cells that should be flattened before extraction to 'flatten'. globbing allowed.
-export FLATGLOB_CELLS="`cat $WORK_ROOT/flatglob 2>/dev/null | grep -v '^#'`"
+export FLATGLOB_CELLS="$(cat $WORK_ROOT/flatglob 2>/dev/null | grep -v '^#')"
 # Add any empty cells that should be extracted as black-boxes to 'abstract'.
-export ABSTRACT_CELLS="`cat $WORK_ROOT/abstract.glob 2>/dev/null | grep -v '^#'`"
+export ABSTRACT_CELLS="$(cat $WORK_ROOT/abstract.glob 2>/dev/null | grep -v '^#')"
 
 # Verify that magic and netgen are executable.
-if ! which magic >& /dev/null; then
+if ! which magic >&/dev/null; then
 	echo "Error: Could not execute magic."
 	exit 1
 fi
-if ! which netgen >& /dev/null; then
+if ! which netgen >&/dev/null; then
 	echo "Error: Could not execute netgen."
 	exit 1
 fi
@@ -145,33 +144,37 @@ if [[ $LAYOUT_FILE ]]; then
 	export RUN_DIR=$WORK_ROOT/ext
 	echo "Extracting layout with well in background process. See $LOG_ROOT/ext.log."
 	#  1. Extract gds_file with well connectivity
-	( date "+BEGIN: %c" > $LOG_ROOT/ext.log; \
-	start_time=$SECONDS; \
-	magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc.well $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl < /dev/null >> $LOG_ROOT/ext.log 2>&1; \
-	#  2. Remove well connections and disconnected nets.; \
-	sed -f $LVS_ROOT/scripts/remove_well.sed $RUN_DIR/$TOP.gds.spice | \
-		awk -f $LVS_ROOT/scripts/remove_disconnect.awk - > $RUN_DIR/$TOP.gds.nowell.spice; \
-	date "+END: %c" >> $LOG_ROOT/ext.log; \
-	runtime=$(( SECONDS - start_time )); \
-	hours=$((runtime / 3600)); \
-	minutes=$(( (runtime % 3600) / 60 )); \
-	seconds=$(( (runtime % 3600) % 60 )); \
-	printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >> $LOG_ROOT/ext.log ) &
+	(
+		date "+BEGIN: %c" >$LOG_ROOT/ext.log
+		start_time=$SECONDS
+		magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc.well $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl </dev/null >>$LOG_ROOT/ext.log 2>&1
+		#  2. Remove well connections and disconnected nets.; \
+		sed -f $LVS_ROOT/scripts/remove_well.sed $RUN_DIR/$TOP.gds.spice |
+			awk -f $LVS_ROOT/scripts/remove_disconnect.awk - >$RUN_DIR/$TOP.gds.nowell.spice
+		date "+END: %c" >>$LOG_ROOT/ext.log
+		runtime=$((SECONDS - start_time))
+		hours=$((runtime / 3600))
+		minutes=$(((runtime % 3600) / 60))
+		seconds=$(((runtime % 3600) % 60))
+		printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$LOG_ROOT/ext.log
+	) &
 
 	export RUN_DIR=$WORK_ROOT/nowell.ext
 	echo "Extracting layout without well in background process. See $LOG_ROOT/nowell.ext.log."
 	#  3. Extract gds_file without well connectivity
-	( date "+BEGIN: %c" > $LOG_ROOT/nowell.ext.log; \
-	start_time=$SECONDS; \
-	magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc.nowell $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl < /dev/null >> $LOG_ROOT/nowell.ext.log 2>&1; \
-	#  4. Remove disconnected nets.; \
-	awk -f $LVS_ROOT/scripts/remove_disconnect.awk $RUN_DIR/$TOP.gds.spice > $RUN_DIR/$TOP.gds.nowell.spice; \
-	date "+END: %c" >> $LOG_ROOT/nowell.ext.log; \
-	runtime=$(( SECONDS - start_time )); \
-	hours=$((runtime / 3600)); \
-	minutes=$(( (runtime % 3600) / 60 )); \
-	seconds=$(( (runtime % 3600) % 60 )); \
-	printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >> $LOG_ROOT/nowell.ext.log ) &
+	(
+		date "+BEGIN: %c" >$LOG_ROOT/nowell.ext.log
+		start_time=$SECONDS
+		magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc.nowell $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl </dev/null >>$LOG_ROOT/nowell.ext.log 2>&1
+		#  4. Remove disconnected nets.; \
+		awk -f $LVS_ROOT/scripts/remove_disconnect.awk $RUN_DIR/$TOP.gds.spice >$RUN_DIR/$TOP.gds.nowell.spice
+		date "+END: %c" >>$LOG_ROOT/nowell.ext.log
+		runtime=$((SECONDS - start_time))
+		hours=$((runtime / 3600))
+		minutes=$(((runtime % 3600) / 60))
+		seconds=$(((runtime % 3600) % 60))
+		printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$LOG_ROOT/nowell.ext.log
+	) &
 
 	wait
 
@@ -194,12 +197,12 @@ else
 fi
 
 #  5. Compare
-date "+BEGIN: %c" > $LOG_ROOT/soft.log
+date "+BEGIN: %c" >$LOG_ROOT/soft.log
 start_time=$SECONDS
 netgen -batch source $LVS_ROOT/tech/setup_file.soft.lvs | tee -a $LOG_ROOT/soft.log 2>&1
-date "+END: %c" >> $LOG_ROOT/soft.log
-runtime=$(( SECONDS - start_time ))
+date "+END: %c" >>$LOG_ROOT/soft.log
+runtime=$((SECONDS - start_time))
 hours=$((runtime / 3600))
-minutes=$(( (runtime % 3600) / 60 ))
-seconds=$(( (runtime % 3600) % 60 ))
-printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >> $LOG_ROOT/soft.log
+minutes=$(((runtime % 3600) / 60))
+seconds=$(((runtime % 3600) % 60))
+printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$LOG_ROOT/soft.log

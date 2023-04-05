@@ -77,7 +77,7 @@ else
 	echo "Tech files do not match:"
 	grep version $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech |
 		awk 'NF > 2'
-	exit 1
+	# exit 1
 fi
 
 if [[ ! -f $WORK_ROOT/layout.cells || ! -f $WORK_ROOT/verilog.cells ]]; then

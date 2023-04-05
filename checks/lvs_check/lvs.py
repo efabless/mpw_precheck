@@ -3,17 +3,21 @@ import logging
 import subprocess
 import os
 from pathlib import Path
+from datetime import datetime
 
 def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
+    tag = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    if not os.path.isdir(f"{design_directory}/lvs/{design_name}/{tag}"):
+        os.mkdir(f"{design_directory}/lvs/{design_name}/{tag}")
     logs_directory = output_directory / 'logs'
     log_file_path = logs_directory / 'be_check.log'
     if not os.path.isdir(logs_directory):
         os.mkdir(logs_directory)
     os.environ['UPRJ_ROOT'] = f"{design_directory}"
     os.environ['LVS_ROOT'] = f'{os.getcwd()}/checks/lvs_check/'
-    os.environ['WORK_ROOT'] = f"{design_directory}/lvs/{design_name}"
-    os.environ['LOG_ROOT'] = f"{design_directory}/lvs/{design_name}/logs"
-    os.environ['SIGNOFF_ROOT'] = f"{design_directory}/lvs/{design_name}/output"
+    os.environ['WORK_ROOT'] = f"{design_directory}/lvs/{design_name}/{tag}"
+    os.environ['LOG_ROOT'] = f"{design_directory}/lvs/{design_name}/{tag}/logs"
+    os.environ['SIGNOFF_ROOT'] = f"{design_directory}/lvs/{design_name}/{tag}/output"
     os.environ['PDK'] = f'{pdk}'
     os.environ['PDK_ROOT'] = f'{pdk_root}'
     lvs_cmd = ['sh', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{config_file}', f'{design_name}']
