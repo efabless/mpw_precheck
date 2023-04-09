@@ -30,6 +30,8 @@ def run_lvs(design_directory, output_directory, design_name, config_file, pdk_ro
         if stat != 0:
             logging.error(f"ERROR LVS FAILED, stat={stat}, see {log_file_path}")
             return False
+        else:
+            return True
 
 
 if __name__ == "__main__":
