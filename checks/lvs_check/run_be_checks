@@ -80,7 +80,7 @@ hier_status=$?
 $LVS_ROOT/run_scheck $CONFIG_FILE $TOP_LAYOUT $LAYOUT_FILE
 scheck_status=$?
 
-$LVS_ROOT/run_full_lvs $CONFIG_FILE $TOP_SOURCE $TOP_LAYOUT
+$LVS_ROOT/run_full_lvs --noextract $CONFIG_FILE $TOP_SOURCE $TOP_LAYOUT
 lvs_status=$?
 
 if [[ $TOP_SOURCE = "user_project_wrapper" ]]; then

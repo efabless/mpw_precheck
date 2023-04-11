@@ -143,8 +143,11 @@ class lvs(CheckManager):
         super().__init__(precheck_config, project_config)
         self.design_directory = self.precheck_config['input_directory']
         self.output_directory = self.precheck_config['output_directory']
-        self.design_name = "user_project_wrapper"
-        self.config_file = self.precheck_config['input_directory'] / f"lvs/user_project_wrapper/sky130A.lvs_config.sh"
+        if self.project_config['type'] == "analog":
+            self.design_name = "user_analog_project_wrapper"
+        else:
+            self.design_name = "user_project_wrapper"
+        self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/sky130A.lvs_config.sh"
         self.pdk_root = precheck_config['pdk_path'].parent
         self.pdk = precheck_config['pdk_path'].name
 
