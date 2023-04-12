@@ -44,7 +44,7 @@ ERROR: Could not find $WORK_ROOT/$DESIGN_NAME.power"
 fi
 
 start_time=$SECONDS
-cvc $LVS_ROOT/cvc/cvcrc.$PDK
+cvc_rv $LVS_ROOT/cvc/cvcrc.$PDK
 cvc_status=$?
 
 runtime=$((SECONDS - start_time))
