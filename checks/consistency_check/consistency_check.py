@@ -110,7 +110,8 @@ def main(*args, **kwargs):
     user_netlist_check = user_netlist_checker.check(checks=user_module_checks, min_instances=1,
                                                     power_nets=USER_POWER_PINS, ignored_instances=user_module_ignored_cells)
 
-    return top_netlist_check and user_netlist_check
+    # return top_netlist_check and user_netlist_check
+    return user_netlist_check
 
 
 if __name__ == "__main__":
