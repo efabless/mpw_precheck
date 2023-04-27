@@ -33,11 +33,11 @@ if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
 fi
 
 # Copy default power file to work area if it doesn't exist
-shopt -u nocasematch
-BASE_NAME=${DESIGN_NAME//[A-Z0-9][A-Z0-9]_}  # remove leading 2 byte prefices
+#shopt -u nocasematch
+#BASE_NAME=${DESIGN_NAME//[A-Z0-9][A-Z0-9]_}  # remove leading 2 byte prefices
 if [[ ! -f $WORK_ROOT/$DESIGN_NAME.power ]]; then
-	if [[ -f $LVS_ROOT/cvc/$BASE_NAME.$PDK.power ]]; then
-		cp $LVS_ROOT/cvc/$BASE_NAME.$PDK.power $WORK_ROOT/$DESIGN_NAME.power
+	if [[ -f $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power ]]; then
+		cp $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power $WORK_ROOT/$DESIGN_NAME.power
 	else
 		echo "
 ERROR: Could not find $WORK_ROOT/$DESIGN_NAME.power"
