@@ -56,11 +56,10 @@ echo "SOURCE FILE(S): $LVS_SPICE_FILES $LVS_VERILOG_FILES"
 echo "TOP LAYOUT: $TOP_LAYOUT"
 echo "LAYOUT FILE: $LAYOUT_FILE"
 
-: "${LVS_ROOT:=$(pwd)}"
 : "${LOG_ROOT:=$(pwd)/$TOP_SOURCE}"
 : "${SIGNOFF_ROOT:=$(pwd)/$TOP_SOURCE}"
 : "${WORK_ROOT:=$(pwd)/$TOP_SOURCE}"
-export LOG_ROOT LVS_ROOT SIGNOFF_ROOT WORK_ROOT
+export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
 mkdir -p $LOG_ROOT
 mkdir -p $SIGNOFF_ROOT
@@ -77,7 +76,8 @@ else
 	echo "Tech files do not match:"
 	grep version $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech |
 		awk 'NF > 2'
-	# exit 1
+	echo "Results may be incorrect. Contact efabless to update the soft connection rules."
+	#exit 1
 fi
 
 if [[ ! -f $WORK_ROOT/layout.cells || ! -f $WORK_ROOT/verilog.cells ]]; then
@@ -105,6 +105,7 @@ if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/flatten |
 		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
 		sed 's/.*cells://' |
+		awk 'NF > 0' |
 		sort -u >$WORK_ROOT/flatten.glob
 else
 	cp $WORK_ROOT/flatten $WORK_ROOT/flatten.glob
@@ -118,6 +119,7 @@ if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/noflatten |
 		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
 		sed 's/.*cells://' |
+		awk 'NF > 0' |
 		sort -u >$WORK_ROOT/noflatten.glob
 else
 	cp $WORK_ROOT/noflatten $WORK_ROOT/noflatten.glob
@@ -131,6 +133,7 @@ if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/ignore |
 		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
 		sed 's/.*cells://' |
+		awk 'NF > 0' |
 		sort -u >$WORK_ROOT/ignore.glob
 else
 	cp $WORK_ROOT/noflatten $WORK_ROOT/noflatten.glob
@@ -216,9 +219,11 @@ fi
 #  5. Compare
 echo $LVS_SPICE_FILES |
 	sed 's/  */\n/g' |
+	grep -v '^#' |
 	awk 'NF > 0' >$WORK_ROOT/spice_files
 echo $LVS_VERILOG_FILES |
 	sed 's/  */\n/g' |
+	grep -v '^#' |
 	awk 'NF > 0' >$WORK_ROOT/verilog_files
 
 cp $LVS_ROOT/tech/${PDK}_setup.tcl $WORK_ROOT/${PDK}_setup.tcl
@@ -276,15 +281,11 @@ date "+BEGIN: %c" >$LOG_ROOT/lvs.log
 start_time=$SECONDS
 
 echo " "
+: "${NETGEN_COLUMNS:=80}"
+export NETGEN_COLUMNS
 netgen -batch source $WORK_ROOT/lvs.script 2>&1 |
 	tee -a $LOG_ROOT/lvs.log
 netgen_status=${PIPESTATUS[0]}
-
-if [[ $netgen_status -ne 0 ]]; then
-	echo "
-Error: netgen ended abnormally."
-	exit $netgen_status
-fi
 
 # Check for circuits that were compared as black boxes.
 awk '
@@ -292,10 +293,10 @@ awk '
 /Circuit 2 .* will not flatten/ {print $4, "is a black box in the source"}
 ' $SIGNOFF_ROOT/lvs.report >$SIGNOFF_ROOT/lvs.unflattened
 awk '
-/__fill/ {next}  # ignore abstract devices
+/__fill/ {next} # ignore abstract devices
 /__tapvpwrvgnd/ {next}
 /__fakediode/ {next}
-/sky130_fd_pr__/ {next}  # ignore primitive devices
+/sky130_fd_pr__/ {next} # ignore primitive devices
 /Matching pins/ {print $4, "is a black box in the layout and source"}
 ' $LOG_ROOT/lvs.log >>$SIGNOFF_ROOT/lvs.unflattened
 if [[ -s $SIGNOFF_ROOT/lvs.unflattened ]]; then
@@ -319,11 +320,31 @@ minutes=$(((runtime % 3600) / 60))
 seconds=$(((runtime % 3600) % 60))
 printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$LOG_ROOT/lvs.log
 
-# Set exit code if lvs passed conditionally
-if [[ ${lvs_warning:=0} -eq 0 ]]; then
-	exit 0
-else
+# Set exit code
+if [[ $netgen_status -ne 0 ]]; then
+	echo "
+Error: netgen ended abnormally."
+
+# Missing 'Final result' line.
+elif [[ $(grep 'Final result:' $SIGNOFF_ROOT/lvs.report | wc -l) -ne 1 ]]; then
+	netgen_status=4
+	echo "
+Error: netgen did not complete."
+
+# Did not uniquely match.
+elif [[ $(grep 'Final result: Circuits match uniquely\.' $SIGNOFF_ROOT/lvs.report | wc -l) -ne 1 ]]; then
+	netgen_status=4
+	echo "
+Error: LVS mismatch."
+
+# Uniquely matched, but cells were black-boxed or ignored.
+elif [[ ${lvs_warning:=0} -ne 0 ]]; then
+	netgen_status=5
 	echo "
 Warning: possible lvs discrepancy"
-	exit 5
+
+else
+	netgen_status=0
 fi
+
+exit $netgen_status

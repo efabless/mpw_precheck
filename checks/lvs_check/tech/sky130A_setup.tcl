@@ -392,7 +392,6 @@ foreach dev $devices {
 #---------------------------------------------------------------
 #Added programatically.
 
-
 #---------------------------------------------------------------
 # Allow the fill, decap, etc., cells to be parallelized
 #---------------------------------------------------------------
@@ -497,7 +496,7 @@ foreach cell $cells1 {
     if {[regexp {([A-Z][A-Z0-9]_)*sky130_sram_([^_]+)_([^_]+)_([^_]+)_([^_]+)_(.+)} $cell match prefix memory_size memory_type matrix io cellname]} {
 	if {([lsearch $cells2 $cell] < 0) && \
 		([lsearch $cells2 $cellname] >= 0) && \
-		([lsearch $cells1 $cellname] < 0)} { 
+		([lsearch $cells1 $cellname] < 0)} {
 	    # netlist with the N names should always be the second netlist
 	    equate classes "-circuit2 $cellname" "-circuit1 $cell"
 	    puts stdout "Equating $cell in circuit 1 and $cellname in circuit 2"
@@ -508,13 +507,20 @@ foreach cell $cells1 {
 
 # Equate prefixed layout cells with corresponding source
 foreach cell $cells1 {
-    if {[regexp {([A-Z][A-Z0-9]_)*(.*)} $cell match prefix cellname]} {
+    set layout $cell
+    while {[regexp {([A-Z][A-Z0-9]_)(.*)} $layout match prefix cellname]} {
 	if {([lsearch $cells2 $cell] < 0) && \
 		([lsearch $cells2 $cellname] >= 0)} {
 	    # netlist with the N names should always be the second netlist
 	    equate classes "-circuit2 $cellname" "-circuit1 $cell"
 	    puts stdout "Equating $cell in circuit 1 and $cellname in circuit 2"
+	    #if  { [lsearch $cells1 $cellname] > 0 } {
+		#equate classes "-circuit2 $cellname" "-circuit1 $cellname"
+		#puts stdout "Equating $cellname in circuit 1 and $cellname in circuit 2"
+	    #}
+	    #equate pins "-circuit1 $cell" "-circuit2 $cellname"
 	}
+	set layout $cellname
     }
 }
 

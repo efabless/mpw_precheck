@@ -22,8 +22,8 @@ foreach cell $::env(ABSTRACT_CELLS) {
 load $::env(TOP) -dereference
 cd $::env(RUN_DIR)
 extract no all
+extract do aliases
 extract do local
-extract no labelcheck
 extract unique notopports
 extract
 

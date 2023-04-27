@@ -6,9 +6,9 @@
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-#   
+#
 #       http://www.apache.org/licenses/LICENSE-2.0
-#   
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,7 @@
 #  1. Extract verilog hierarchy, limit to TOP_CIRCUIT and child subcircuits.
 #  2. Extract gds/oas hierachy, if necessary.
 #  3. Compare
-#  
+#
 
 # Use case
 # run_hier_check top_source verilog_files top_layout layout_file [primitive_prefix [gds_prefix]]
@@ -57,18 +57,18 @@ layout_cell_file=$WORK_ROOT/layout.cells
 echo " "
 echo "Running hierarchical comparison between verilog and layout..."
 
-date "+BEGIN: %c" > $log_file
+date "+BEGIN: %c" >$log_file
 start_time=$SECONDS
 
 if [[ $(echo $SOURCE_FILES | wc -w) -gt 0 ]]; then
-	echo "Creating $verilog_cell_file from the following files..." | \
+	echo "Creating $verilog_cell_file from the following files..." |
 		tee -a $log_file
-	echo $SOURCE_FILES | \
-		sed -e 's/  */\n/g' | \
-		sed -e 's/^/	/' | \
+	echo $SOURCE_FILES |
+		sed -e 's/  */\n/g' |
+		sed -e 's/^/	/' |
 		tee -a $log_file
 
-	sed '/^[ 	]*module[ 	].*[^ 	](/s/(/ (/' `echo $SOURCE_FILES` | \
+	sed '/^[ 	]*module[ 	].*[^ 	](/s/(/ (/' $(echo $SOURCE_FILES) |
 		awk -v top=$TOP_SOURCE '
 			$1 ~ /^\/\*/ {
 				while ( ! /\*\// ) {
@@ -119,15 +119,15 @@ if [[ $(echo $SOURCE_FILES | wc -w) -gt 0 ]]; then
 					print_subckt[subckts[subckt_it]] = 1;
 					AddPrintSubckts(subcells[subckts[subckt_it]]);
 				}
-			}' - | \
-		grep -v // | \
-		sed -E $PRIMITIVE_PREFIX_FILTER | \
-		sort > $WORK_ROOT/verilog.hier
+			}' - |
+		grep -v // |
+		sed -E $PRIMITIVE_PREFIX_FILTER |
+		sort >$WORK_ROOT/verilog.hier
 else
 	echo "No verilog files..."
 	rm -f $WORK_ROOT/verilog.hier $verilog_cell_file
 	touch $WORK_ROOT/verilog.hier
-	cat > $verilog_cell_file <<-EOF
+	cat >$verilog_cell_file <<-EOF
 		$TOP_SOURCE
 	EOF
 fi
@@ -142,23 +142,23 @@ if [[ $LAYOUT_FILE ]]; then
 	fi
 	EXT=${BASE_LAYOUT##*.}
 	if [[ "$EXT" == "txt" ]]; then
-		TEXT_FILE=$BASE_LAYOUT	
+		TEXT_FILE=$BASE_LAYOUT
 	elif [[ "$EXT" == "gds" || "$EXT" == "oas" ]]; then
 		TEXT_FILE=$WORK_ROOT/layout.txt
-		cat > $WORK_ROOT/gds2txt.py <<-EOF
+		cat >$WORK_ROOT/gds2txt.py <<-EOF
 			import pya
-			
+
 			app = pya.Application.instance()
 			opt = pya.SaveLayoutOptions()
 			layout_view = pya.Layout()
-			
+
 			input_layout = "$LAYOUT_FILE"
 			output = "$TEXT_FILE"
 			# Setting the name of the output file and setting the substitution character
 			print("[INFO] Changing from " + input_layout + "\n	to " + output)
 			opt.set_format_from_filename(output)
 			opt.oasis_substitution_char=''
-			
+
 			# Reading the input file and writing it to the output file name
 			layout_view.read(input_layout)
 			for cell_it in layout_view.each_cell():
@@ -168,16 +168,16 @@ if [[ $LAYOUT_FILE ]]; then
 			opt.select_cell(myIndex)
 			opt.add_layer(0, pya.LayerInfo())
 			layout_view.write(output, opt)
-		
+
 			app.exit(0)
 		EOF
-		klayout -b -rm $WORK_ROOT/gds2txt.py | \
+		klayout -b -rm $WORK_ROOT/gds2txt.py |
 			tee -a $log_file
 		gzip -f $TEXT_FILE
 		CAT=zcat
 	fi
 
-	$CAT $TEXT_FILE | \
+	$CAT $TEXT_FILE |
 	awk '
 		/^STRNAME/ {
 			module = $2;
@@ -194,13 +194,13 @@ if [[ $LAYOUT_FILE ]]; then
 			for ( key in hier ) {
 				print key, hier[key];
 			}
-		}' - | \
-		sed -E $GDS_PREFIX_FILTER $PRIMITIVE_PREFIX_FILTER | \
-		sort -u > $WORK_ROOT/layout.hier
-	$CAT $TEXT_FILE | \
-		grep STRNAME | \
-		awk '{print $2}' > $WORK_ROOT/layout.cells
-		
+		}' - |
+		sed -E $GDS_PREFIX_FILTER $PRIMITIVE_PREFIX_FILTER |
+		sort -u >$WORK_ROOT/layout.hier
+	$CAT $TEXT_FILE |
+		grep STRNAME |
+		awk '{print $2}' >$WORK_ROOT/layout.cells
+
 elif [[ -f $WORK_ROOT/layout.hier ]]; then
 	echo "Reusing $WORK_ROOT/layout.hier"
 else
@@ -208,10 +208,10 @@ else
 	exit 1
 fi
 
-comm -23 $WORK_ROOT/verilog.hier $WORK_ROOT/layout.hier | \
-	awk '{print $1}' | \
-	fgrep -f - $WORK_ROOT/verilog.hier $WORK_ROOT/layout.hier | \
-	sed 's/:/ /' | \
+comm -23 $WORK_ROOT/verilog.hier $WORK_ROOT/layout.hier |
+	awk '{print $1}' |
+	fgrep -f - $WORK_ROOT/verilog.hier $WORK_ROOT/layout.hier |
+	sed 's/:/ /' |
 	awk '	BEGIN {
 			print "verilog,,layout";
 		}
@@ -242,19 +242,19 @@ comm -23 $WORK_ROOT/verilog.hier $WORK_ROOT/layout.hier | \
 				match_count += 1;
 				print verilog[match_count] "," instances[verilog[match_count]];
 			}
-		}' - > $SIGNOFF_ROOT/hier.csv
+		}' - >$SIGNOFF_ROOT/hier.csv
 
 if [[ $(cat $SIGNOFF_ROOT/hier.csv | wc -l) -eq 1 ]]; then
-	echo "Hierarchy check for $TOP_SOURCE passed." | \
+	echo "Hierarchy check for $TOP_SOURCE passed." |
 		tee -a $log_file
 else
-	echo "Hierarchy check for $TOP_SOURCE failed. See $SIGNOFF_ROOT/hier.csv" | \
+	echo "Hierarchy check for $TOP_SOURCE failed. See $SIGNOFF_ROOT/hier.csv" |
 		tee -a $log_file
 fi
 
-date "+END: %c" >> $log_file
-runtime=$(( SECONDS - start_time ))
+date "+END: %c" >>$log_file
+runtime=$((SECONDS - start_time))
 hours=$((runtime / 3600))
-minutes=$(( (runtime % 3600) / 60 ))
-seconds=$(( (runtime % 3600) % 60 ))
-printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >> $log_file
+minutes=$(((runtime % 3600) / 60))
+seconds=$(((runtime % 3600) % 60))
+printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$log_file

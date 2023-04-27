@@ -17,10 +17,6 @@ catch {format $env(NETGEN_COLUMNS)}
 set cells1 [cells list -all -circuit1]
 set cells2 [cells list -all -circuit2]
 
-# NOTE:  In accordance with the LVS manager GUI, the schematic is
-# always circuit2, so some items like property "par1" only need to
-# be specified for circuit2.
-
 #-------------------------------------------
 # Resistors (except metal)
 #-------------------------------------------
@@ -70,16 +66,51 @@ foreach dev $devices {
 	property "-circuit2 $dev" parallel {value par}
 	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
 	# Ignore these properties
-	property "-circuit2 $dev" delete mult isHv
+	property "-circuit2 $dev" delete mult
     }
 }
 
 #-------------------------------------------
-# MRM (metal) resistors and poly resistor
+# poly resistor
 #-------------------------------------------
 
 set devices {}
 lappend devices sky130_fd_pr__res_generic_po
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	permute "-circuit1 $dev" end_a end_b
+	property "-circuit1 $dev" series enable
+	property "-circuit1 $dev" series {w critical}
+	property "-circuit1 $dev" series {l add}
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" parallel {value par}
+	property "-circuit1 $dev" tolerance {l 0.01} {w 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete mult
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	permute "-circuit2 $dev" end_a end_b
+	property "-circuit2 $dev" series enable
+	property "-circuit2 $dev" series {w critical}
+	property "-circuit2 $dev" series {l add}
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" parallel {value par}
+	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete mult
+    }
+}
+
+#-------------------------------------------
+# MRM (metal) resistors
+#-------------------------------------------
+
+set devices {}
 lappend devices sky130_fd_pr__res_generic_l1
 lappend devices sky130_fd_pr__res_generic_m1
 lappend devices sky130_fd_pr__res_generic_m2
@@ -91,28 +122,28 @@ foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
 	permute "-circuit1 $dev" end_a end_b
 	property "-circuit1 $dev" series enable
-	#property "-circuit1 $dev" series {w critical}
-	#property "-circuit1 $dev" series {l add}
+	property "-circuit1 $dev" series {w critical}
+	property "-circuit1 $dev" series {l add}
 	property "-circuit1 $dev" parallel enable
-	#property "-circuit1 $dev" parallel {l critical}
-	#property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
 	property "-circuit1 $dev" parallel {value par}
-	property "-circuit1 $dev" tolerance {l 0.01} {w 0.01}
+	property "-circuit1 $dev" tolerance {l 10.0} {w 10.0}
 	# Ignore these properties
-	property "-circuit1 $dev" delete mult l w
+	property "-circuit1 $dev" delete mult
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	permute "-circuit2 $dev" end_a end_b
 	property "-circuit2 $dev" series enable
-	#property "-circuit2 $dev" series {w critical}
-	#property "-circuit2 $dev" series {l add}
+	property "-circuit2 $dev" series {w critical}
+	property "-circuit2 $dev" series {l add}
 	property "-circuit2 $dev" parallel enable
-	#property "-circuit2 $dev" parallel {l critical}
-	#property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
 	property "-circuit2 $dev" parallel {value par}
-	property "-circuit2 $dev" tolerance {l 0.01} {w 0.01}
+	property "-circuit2 $dev" tolerance {l 10.0} {w 10.0}
 	# Ignore these properties
-	property "-circuit2 $dev" delete mult l w
+	property "-circuit2 $dev" delete mult
     }
 }
 
@@ -138,9 +169,6 @@ lappend devices sky130_fd_pr__special_nfet_latch
 lappend devices sky130_fd_pr__cap_var_lvt
 lappend devices sky130_fd_pr__cap_var_hvt
 lappend devices sky130_fd_pr__cap_var
-lappend devices sky130_fd_pr__nfet_20v0_nvt
-lappend devices sky130_fd_pr__nfet_20v0
-lappend devices sky130_fd_pr__pfet_20v0
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
@@ -164,11 +192,45 @@ foreach dev $devices {
 }
 
 #---------------------------------------------------------------------
+# Extended drain MOSFET devices.  These have asymmetric source and
+# drain, and so the source and drain are not permutable.
+#---------------------------------------------------------------------
+
+set devices {}
+lappend devices sky130_fd_pr__nfet_20v0_zvt
+lappend devices sky130_fd_pr__nfet_20v0_nvt
+lappend devices sky130_fd_pr__nfet_20v0_iso
+lappend devices sky130_fd_pr__nfet_20v0
+lappend devices sky130_fd_pr__pfet_20v0
+lappend devices sky130_fd_pr__nfet_g5v0d16v0
+lappend devices sky130_fd_pr__pfet_g5v0d16v0
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" parallel enable
+	property "-circuit1 $dev" parallel {l critical}
+	property "-circuit1 $dev" parallel {w add}
+	property "-circuit1 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit1 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs area perim topography
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" parallel enable
+	property "-circuit2 $dev" parallel {l critical}
+	property "-circuit2 $dev" parallel {w add}
+	property "-circuit2 $dev" tolerance {w 0.01} {l 0.01}
+	# Ignore these properties
+	property "-circuit2 $dev" delete as ad ps pd mult sa sb sd nf nrd nrs area perim topography
+    }
+}
+
+#---------------------------------------------------------------------
 # (MOS) ESD transistors.  Note that the ESD transistors have a flanged
 # gate.  Magic disagrees slightly on how to interpret the width of the
 # devices, so the tolerance is increased to 7% to cover the difference
 #---------------------------------------------------------------------
 
+set devices {}
 lappend devices sky130_fd_pr__esd_nfet_g5v0d10v5
 lappend devices sky130_fd_pr__esd_pfet_g5v0d10v5
 
@@ -211,16 +273,18 @@ foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" parallel {area add}
+	property "-circuit1 $dev" parallel {pj add}
 	property "-circuit1 $dev" parallel {value add}
-	property "-circuit1 $dev" tolerance {area 0.02}
+	property "-circuit1 $dev" tolerance {area 0.02} {pj 0.02}
 	# Ignore these properties
 	property "-circuit1 $dev" delete mult perim
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" parallel {area add}
+	property "-circuit2 $dev" parallel {pj add}
 	property "-circuit2 $dev" parallel {value add}
-	property "-circuit2 $dev" tolerance {area 0.02}
+	property "-circuit2 $dev" tolerance {area 0.02} {pj 0.02}
 	# Ignore these properties
 	property "-circuit2 $dev" delete mult perim
     }
@@ -265,6 +329,10 @@ lappend devices sky130_fd_pr__npn_05v5_W1p00L1p00
 lappend devices sky130_fd_pr__npn_05v5_W1p00L2p00
 lappend devices sky130_fd_pr__pnp_05v5_W0p68L0p68
 lappend devices sky130_fd_pr__pnp_05v5_W3p40L3p40
+lappend devices sky130_fd_pr__rf_npn_05v5_W1p00L1p00
+lappend devices sky130_fd_pr__rf_npn_05v5_W1p00L2p00
+lappend devices sky130_fd_pr__rf_pnp_05v5_W0p68L0p68
+lappend devices sky130_fd_pr__rf_pnp_05v5_W3p40L3p40
 lappend devices sky130_fd_pr__npn_05v5
 lappend devices sky130_fd_pr__pnp_05v5
 lappend devices sky130_fd_pr__npn_11v0
@@ -322,69 +390,29 @@ foreach dev $devices {
 #---------------------------------------------------------------
 # e.g., ignore class "-circuit2 sky130_fc_sc_hd__decap_3"
 #---------------------------------------------------------------
-Added programatically.
-
-#if { [info exist ::env(MAGIC_EXT_USE_GDS)] && $::env(MAGIC_EXT_USE_GDS) } {
-#    foreach cell $cells1 {
-#        if {[regexp {.*sky130_.._sc_[^_]+__decap_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit1 $cell"
-#        }
-#        if {[regexp {.*sky130_ef_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit1 $cell"
-#        }
-#        if {[regexp {.*sky130_fd_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit1 $cell"
-#        }
-#        if {[regexp {.*sky130_fd_sc_[^_]+__tapvpwrvgnd_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit1 $cell"
-#        }
-#        if {[regexp {.*sky130_ef_sc_[^_]+__fakediode_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit1 $cell"
-#        }
-#    }
-#    foreach cell $cells2 {
-#        if {[regexp {.*sky130_.._sc_[^_]+__decap_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit2 $cell"
-#        }
-#        if {[regexp {.*sky130_fd_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit2 $cell"
-#        }
-#        if {[regexp {.*sky130_fd_sc_[^_]+__tapvpwrvgnd_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit2 $cell"
-#        }
-#        if {[regexp {.*sky130_ef_sc_[^_]+__fakediode_[[:digit:]]+} $cell match]} {
-#            ignore class "-circuit2 $cell"
-#        }
-#    }
-#}
+#Added programatically.
 
 #---------------------------------------------------------------
 # Allow the fill, decap, etc., cells to be parallelized
 #---------------------------------------------------------------
 
 foreach cell $cells1 {
-    if {[regexp {.*sky130_ef_sc_[^_]+__decap_[[:digit:]]+} $cell match]} {
+    if {[regexp {.*sky130_.._sc_[^_]+__decap_[[:digit:]]+} $cell match]} {
 	property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {.*sky130_fd_sc_[^_]+__decap_[[:digit:]]+} $cell match]} {
+    if {[regexp {.*sky130_.._sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
 	property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {.*sky130_ef_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
+    if {[regexp {.*sky130_.._sc_[^_]+__tapvpwrvgnd_[[:digit:]]+} $cell match]} {
 	property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {.*sky130_fd_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
+    if {[regexp {.*sky130_.._sc_[^_]+__diode_[[:digit:]]+} $cell match]} {
 	property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {.*sky130_fd_sc_[^_]+__tapvpwrvgnd_[[:digit:]]+} $cell match]} {
+    if {[regexp {.*sky130_.._sc_[^_]+__fill_diode_[[:digit:]]+} $cell match]} {
 	property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {.*sky130_fd_sc_[^_]+__diode_[[:digit:]]+} $cell match]} {
-	property "-circuit1 $cell" parallel enable
-    }
-    if {[regexp {.*sky130_fd_sc_[^_]+__fill_diode_[[:digit:]]+} $cell match]} {
-	property "-circuit1 $cell" parallel enable
-    }
-    if {[regexp {.*sky130_ef_sc_[^_]+__fakediode_[[:digit:]]+} $cell match]} {
+    if {[regexp {.*sky130_.._sc_[^_]+__fakediode_[[:digit:]]+} $cell match]} {
 	property "-circuit1 $cell" parallel enable
     }
 }
@@ -468,7 +496,7 @@ foreach cell $cells1 {
     if {[regexp {([A-Z][A-Z0-9]_)*sky130_sram_([^_]+)_([^_]+)_([^_]+)_([^_]+)_(.+)} $cell match prefix memory_size memory_type matrix io cellname]} {
 	if {([lsearch $cells2 $cell] < 0) && \
 		([lsearch $cells2 $cellname] >= 0) && \
-		([lsearch $cells1 $cellname] < 0)} { 
+		([lsearch $cells1 $cellname] < 0)} {
 	    # netlist with the N names should always be the second netlist
 	    equate classes "-circuit2 $cellname" "-circuit1 $cell"
 	    puts stdout "Equating $cell in circuit 1 and $cellname in circuit 2"
@@ -479,18 +507,20 @@ foreach cell $cells1 {
 
 # Equate prefixed layout cells with corresponding source
 foreach cell $cells1 {
-    if {[regexp {([A-Z][A-Z0-9]_)*(.*)} $cell match prefix cellname]} {
+    set layout $cell
+    while {[regexp {([A-Z][A-Z0-9]_)(.*)} $layout match prefix cellname]} {
 	if {([lsearch $cells2 $cell] < 0) && \
 		([lsearch $cells2 $cellname] >= 0)} {
 	    # netlist with the N names should always be the second netlist
 	    equate classes "-circuit2 $cellname" "-circuit1 $cell"
 	    puts stdout "Equating $cell in circuit 1 and $cellname in circuit 2"
-	    if  { [lsearch $cells1 $cellname] > 0 } {
-		equate classes "-circuit2 $cellname" "-circuit1 $cellname"
-		puts stdout "Equating $cellname in circuit 1 and $cellname in circuit 2"
-	    }
+	    #if  { [lsearch $cells1 $cellname] > 0 } {
+		#equate classes "-circuit2 $cellname" "-circuit1 $cellname"
+		#puts stdout "Equating $cellname in circuit 1 and $cellname in circuit 2"
+	    #}
 	    #equate pins "-circuit1 $cell" "-circuit2 $cellname"
 	}
+	set layout $cellname
     }
 }
 

@@ -23,6 +23,7 @@
 #  5. Compare
 #
 
+
 # Use cases
 # run_scheck [--noextract] lvs_config_file [top_block [gds_file]]
 
@@ -56,10 +57,11 @@ fi
 if cmp -s $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech; then
 	awk 'NF > 1 && /version/' $LVS_ROOT/tech/$PDK.tech
 else
-	echo "Tech files do not match:"
+	echo "WARNING: Tech files do not match:"
 	grep version $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech |
 		awk 'NF > 2'
-	# exit 1
+	echo "Results may be incorrect. Contact efabless to update the soft connection rules."
+	#exit 1
 fi
 
 CONFIG_FILE=$1
@@ -143,12 +145,12 @@ if [[ $LAYOUT_FILE ]]; then
 
 	export RUN_DIR=$WORK_ROOT/ext
 	echo "Extracting layout with well in background process. See $LOG_ROOT/ext.log."
-	#  1. Extract gds_file with well connectivity
 	(
+		#  1. Extract gds_file with well connectivity
 		date "+BEGIN: %c" >$LOG_ROOT/ext.log
 		start_time=$SECONDS
 		magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc.well $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl </dev/null >>$LOG_ROOT/ext.log 2>&1
-		#  2. Remove well connections and disconnected nets.; \
+		#  2. Remove well connections and disconnected nets.
 		sed -f $LVS_ROOT/scripts/remove_well.sed $RUN_DIR/$TOP.gds.spice |
 			awk -f $LVS_ROOT/scripts/remove_disconnect.awk - >$RUN_DIR/$TOP.gds.nowell.spice
 		date "+END: %c" >>$LOG_ROOT/ext.log
@@ -161,12 +163,12 @@ if [[ $LAYOUT_FILE ]]; then
 
 	export RUN_DIR=$WORK_ROOT/nowell.ext
 	echo "Extracting layout without well in background process. See $LOG_ROOT/nowell.ext.log."
-	#  3. Extract gds_file without well connectivity
 	(
+		#  3. Extract gds_file without well connectivity
 		date "+BEGIN: %c" >$LOG_ROOT/nowell.ext.log
 		start_time=$SECONDS
 		magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc.nowell $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl </dev/null >>$LOG_ROOT/nowell.ext.log 2>&1
-		#  4. Remove disconnected nets.; \
+		#  4. Remove disconnected nets.
 		awk -f $LVS_ROOT/scripts/remove_disconnect.awk $RUN_DIR/$TOP.gds.spice >$RUN_DIR/$TOP.gds.nowell.spice
 		date "+END: %c" >>$LOG_ROOT/nowell.ext.log
 		runtime=$((SECONDS - start_time))
@@ -180,6 +182,12 @@ if [[ $LAYOUT_FILE ]]; then
 
 	# Compress large ext files
 	find $WORK_ROOT/*ext -name '*.ext' -size +1M -exec gzip {} \;
+
+	if [[ $(grep 'exttospice finished' $LOG_ROOT/ext.log $LOG_ROOT/nowell.ext.log | wc -l) -ne 2 ]]; then
+		echo "Extraction error: see $LOG_ROOT/ext.log
+and/or $LOG_ROOT/nowell.ext.log"
+		exit 2
+	fi
 else
 	# No gds_file so LVS only. Check for existing extraction results.
 	if [[ ! -f $WORK_ROOT/ext/$TOP.gds.nowell.spice ]]; then
@@ -199,10 +207,20 @@ fi
 #  5. Compare
 date "+BEGIN: %c" >$LOG_ROOT/soft.log
 start_time=$SECONDS
-netgen -batch source $LVS_ROOT/tech/setup_file.soft.lvs | tee -a $LOG_ROOT/soft.log 2>&1
+: "${NETGEN_COLUMNS:=80}"
+export NETGEN_COLUMNS
+netgen -batch source $LVS_ROOT/tech/setup_file.soft.lvs |
+	tee -a $LOG_ROOT/soft.log 2>&1
+scheck_status=${PIPESTATUS[0]}
+if [[ $scheck_status -eq 0 && $(tail $SIGNOFF_ROOT/lvs.soft.report | grep 'Circuits match uniquely\.' | wc -l) -eq 1 ]]; then
+	scheck_status=3
+fi
+
 date "+END: %c" >>$LOG_ROOT/soft.log
 runtime=$((SECONDS - start_time))
 hours=$((runtime / 3600))
 minutes=$(((runtime % 3600) / 60))
 seconds=$(((runtime % 3600) % 60))
 printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$LOG_ROOT/soft.log
+
+exit $scheck_status

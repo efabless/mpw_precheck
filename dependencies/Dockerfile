@@ -56,7 +56,7 @@ RUN yum -y remove git && yum -y remove git-* && \
 
 # Clone Magic
 ENV MAGIC_ROOT=/opt/magic
-RUN git clone --depth=1 --branch 8.3.389 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.394 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
@@ -83,7 +83,7 @@ RUN git clone --branch mpw-9a --depth=1 https://github.com/efabless/caravel-lite
 
 # Clone netgen
 ENV NETGEN_ROOT=/opt/netgen
-RUN git clone --depth=1 --branch 1.5.251 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
+RUN git clone --depth=1 --branch 1.5.253 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
 WORKDIR $NETGEN_ROOT
 RUN scl enable devtoolset-8 -- ./configure --prefix=/build && \
     scl enable devtoolset-8 -- make -j4 && \

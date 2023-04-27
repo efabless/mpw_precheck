@@ -22,13 +22,13 @@ foreach cell $::env(ABSTRACT_CELLS) {
 load $::env(TOP) -dereference
 cd $::env(RUN_DIR)
 extract no all
+extract do aliases
 extract do local
-extract no labelcheck
 extract unique
 extract
 
 ext2spice lvs
-#ext2spice merge conservative
+ext2spice merge conservative
 #ext2spice short resistor
 ext2spice -o $::env(TOP).gds.spice $::env(TOP).ext
 feedback save $::env(TOP)-ext2gds.spice.feedback.txt
