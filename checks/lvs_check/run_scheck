@@ -83,9 +83,9 @@ if [[ $EXTRACT_LAYOUT = no ]]; then
 	export LAYOUT_FILE=
 fi
 
-: "${LOG_ROOT:=$(pwd)/$TOP}"
-: "${SIGNOFF_ROOT:=$(pwd)/$TOP}"
 : "${WORK_ROOT:=$(pwd)/$TOP}"
+: "${LOG_ROOT:=$WORK_ROOT}"
+: "${SIGNOFF_ROOT:=$WORK_ROOT}"
 export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
 echo "TOP: $TOP"
@@ -94,6 +94,11 @@ echo "LAYOUT: $LAYOUT_FILE"
 mkdir -p $LOG_ROOT
 mkdir -p $WORK_ROOT
 mkdir -p $SIGNOFF_ROOT
+
+rm -f $LOG_ROOT/soft.log $SIGNOFF_ROOT/lvs.soft.report
+if [[ $EXTRACT_LAYOUT = yes ]]; then
+	rm -f $LOG_ROOT/ext.log
+fi
 
 if [[ ${TOP/*analog*/analog} = analog ]]; then
 	export EXT_TYPE=analog
@@ -189,7 +194,7 @@ and/or $LOG_ROOT/nowell.ext.log"
 		exit 2
 	fi
 else
-	# No gds_file so LVS only. Check for existing extraction results.
+	# No gds_file so LVS only. Check for existing valid extraction results.
 	if [[ ! -f $WORK_ROOT/ext/$TOP.gds.nowell.spice ]]; then
 		echo "Error: missing $WORK_ROOT/ext/$TOP.gds.nowell.spice"
 		echo "Specify gds_file to create"
@@ -202,6 +207,18 @@ else
 		echo "usage: run_scheck top_block [gds_file]"
 		exit 2
 	fi
+	if [[ $(grep 'exttospice finished.' $LOG_ROOT/ext.log | wc -l) -ne 1 ]]; then
+		echo "
+Error: extraction did not complete successfully. See
+$LOG_ROOT/ext.log"
+		exit 4
+	fi
+	if [[ $(grep 'exttospice finished.' $LOG_ROOT/nowell.ext.log | wc -l) -ne 1 ]]; then
+		echo "
+Error: extraction did not complete successfully. See
+$LOG_ROOT/nowell.ext.log"
+		exit 4
+	fi
 fi
 
 #  5. Compare
@@ -212,7 +229,8 @@ export NETGEN_COLUMNS
 netgen -batch source $LVS_ROOT/tech/setup_file.soft.lvs |
 	tee -a $LOG_ROOT/soft.log 2>&1
 scheck_status=${PIPESTATUS[0]}
-if [[ $scheck_status -eq 0 && $(tail $SIGNOFF_ROOT/lvs.soft.report | grep 'Circuits match uniquely\.' | wc -l) -eq 1 ]]; then
+if [[ $scheck_status -ne 0 || $(tail $SIGNOFF_ROOT/lvs.soft.report | grep 'Circuits match uniquely\.' | wc -l) -ne 1 ]]; then
+	echo "scheck status $scheck_status"
 	scheck_status=3
 fi
 

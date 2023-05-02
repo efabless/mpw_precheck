@@ -16,6 +16,7 @@ export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 mkdir -p $LOG_ROOT $SIGNOFF_ROOT $WORK_ROOT
 
 export RESULTS_DIR=$WORK_ROOT/ext
+rm -f $LOG_ROOT/cvc.log $LOG_ROOT/cvc.error.gz $SIGNOFF_ROOT/cvc.log $SIGNOFF_ROOT/cvc.error.gz
 
 echo " "
 echo "Running CVC..."
@@ -33,8 +34,6 @@ if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
 fi
 
 # Copy default power file to work area if it doesn't exist
-#shopt -u nocasematch
-#BASE_NAME=${DESIGN_NAME//[A-Z0-9][A-Z0-9]_}  # remove leading 2 byte prefices
 if [[ ! -f $WORK_ROOT/$DESIGN_NAME.power ]]; then
 	if [[ -f $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power ]]; then
 		cp $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power $WORK_ROOT/$DESIGN_NAME.power
@@ -45,8 +44,18 @@ ERROR: Could not find $WORK_ROOT/$DESIGN_NAME.power"
 	fi
 fi
 
+# Copy default configuration file
+if [[ ! -f $WORK_ROOT/cvcrc.$PDK ]]; then
+	if [[ -f $LVS_ROOT/cvc/cvcrc.$PDK ]]; then
+		cp $LVS_ROOT/cvc/cvcrc.$PDK $WORK_ROOT/.
+	else
+		echo "
+ERROR: Could not file $WORK_ROOT/cvcrc.$PDK"
+	fi
+fi
+
 start_time=$SECONDS
-cvc_rv $LVS_ROOT/cvc/cvcrc.$PDK
+cvc_rv $WORK_ROOT/cvcrc.$PDK
 cvc_status=$?
 
 runtime=$((SECONDS - start_time))

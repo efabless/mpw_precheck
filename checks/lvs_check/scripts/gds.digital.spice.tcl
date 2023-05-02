@@ -4,7 +4,7 @@
 
 puts "Extracting with top ports unique (digital)"
 drc off
-#cif istyle sky130()
+#cif istyle sky130(legacy)
 
 foreach cell $::env(FLATGLOB_CELLS) {
 	gds flatglob $cell
@@ -12,14 +12,15 @@ foreach cell $::env(FLATGLOB_CELLS) {
 # list cells to be flattened
 puts "Flattening [gds flatglob]"
 gds flatten yes
+puts "Extracting $::env(LAYOUT_FILE)"
 gds read $::env(LAYOUT_FILE)
 
 foreach cell $::env(ABSTRACT_CELLS) {
-	load $cell -dereference
+	load $cell 
 	property LEFview true
 }
 
-load $::env(TOP) -dereference
+load $::env(TOP)
 cd $::env(RUN_DIR)
 extract no all
 extract do aliases

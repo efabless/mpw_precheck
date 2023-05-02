@@ -64,29 +64,39 @@ if [[ $EXTRACT_LAYOUT = no ]]; then
 fi
 
 echo "TOP SOURCE: $TOP_SOURCE"
-echo "SOURCE FILE(S): $(echo $LVS_SPICE_FILES $LVS_VERILOG_FILES | sed -e 's/#[^ ]*//g')"
+echo "SOURCE FILE(S): $(echo $LVS_SPICE_FILES $LVS_VERILOG_FILES | sed -e 's/#[^ ]*//g' -e 's/ /\n/g')"
 echo "TOP LAYOUT: $TOP_LAYOUT"
 echo "LAYOUT FILE: $LAYOUT_FILE"
 
-: "${LOG_ROOT:=$(pwd)/$TOP_SOURCE}"
-: "${SIGNOFF_ROOT:=$(pwd)/$TOP_SOURCE}"
 : "${WORK_ROOT:=$(pwd)/$TOP_SOURCE}"
+: "${LOG_ROOT:=$WORK_ROOT}"
+: "${SIGNOFF_ROOT:=$WORK_ROOT}"
 export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
 mkdir -p $LOG_ROOT $SIGNOFF_ROOT $WORK_ROOT
 
 start_time=$SECONDS
 
-$LVS_ROOT/run_hier_check $TOP_SOURCE "$(echo $LVS_VERILOG_FILES | sed 's/#[^ ]*//g')" $TOP_LAYOUT $LAYOUT_FILE
-hier_status=$?
+if [[ $EXTRACT_LAYOUT = yes ]]; then
+	$LVS_ROOT/run_hier_check $TOP_SOURCE "$(echo $LVS_VERILOG_FILES | sed 's/#[^ ]*//g')" $TOP_LAYOUT $LAYOUT_FILE
+	hier_status=$?
+fi
 
-$LVS_ROOT/run_scheck $CONFIG_FILE $TOP_LAYOUT $LAYOUT_FILE
-scheck_status=$?
+if [[ $EXTRACT_LAYOUT = yes ]]; then
+	$LVS_ROOT/run_scheck $CONFIG_FILE $TOP_LAYOUT $LAYOUT_FILE
+	scheck_status=$?
+else
+	$LVS_ROOT/run_scheck --noextract $CONFIG_FILE $TOP_LAYOUT $LAYOUT_FILE
+	scheck_status=$?
+fi
 
 $LVS_ROOT/run_full_lvs --noextract $CONFIG_FILE $TOP_SOURCE $TOP_LAYOUT
 lvs_status=$?
 
 if [[ $TOP_SOURCE = "user_project_wrapper" ]]; then
+	if [[ -f ${CONFIG_FILE%/*}/$TOP_SOURCE.power ]]; then
+		cp ${CONFIG_FILE%/*}/$TOP_SOURCE.power $WORK_DIR/.
+	fi
 	$LVS_ROOT/run_cvc $TOP_LAYOUT
 	cvc_status=$?
 fi
@@ -94,10 +104,23 @@ fi
 echo "
 Soft check result:"
 tail -n 20 $LOG_ROOT/soft.log | awk '/Final result/,/Logging/' | grep -v ^Logging
+if [[ $scheck_status -ne 0 ]]; then
+	echo "Soft check problem: check the following files
+$LOG_ROOT/ext.log
+$LOG_ROOT/nowell.ext.log
+$LOG_ROOT/soft.log
+$SIGNOFF_ROOT/lvs.soft.report"
+fi
 
 echo "
 LVS result:"
 tail -n 20 $LOG_ROOT/lvs.log | awk '/Final result/,/^END/' | grep -v ^Logging | grep -v "^END"
+if [[ $lvs_status -ne 0 ]]; then
+	echo "LVS problem: check the following files
+$LOG_ROOT/ext.log
+$LOG_ROOT/lvs.log
+$SIGNOFF_ROOT/lvs.report"
+fi
 
 if [[ $TOP_SOURCE = "user_project_wrapper" ]]; then
 	echo "
@@ -120,6 +143,6 @@ No errors detected"
 	exit 0
 else
 	echo "
-WARNING: possible errors"
+WARNING: possible errors SOFT $scheck_status LVS $lvs_status CVC $cvc_status"
 	exit 1
 fi
