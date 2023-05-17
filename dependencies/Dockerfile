@@ -93,7 +93,7 @@ RUN scl enable devtoolset-8 -- ./configure --prefix=/build && \
 # Clone cvc
 ENV CVC_ROOT=/opt/cvc_rv
 WORKDIR $CVC_ROOT
-RUN git clone --depth=1 --branch v1.1.4 https://github.com/d-m-bailey/cvc.git ${CVC_ROOT}
+RUN git clone --depth=1 --branch v1.1.5 https://github.com/d-m-bailey/cvc.git ${CVC_ROOT}
 RUN scl enable devtoolset-8 -- autoreconf -vif ; \
     scl enable devtoolset-8 -- ./configure --disable-nls --prefix=/build ; \
     scl enable devtoolset-8 -- sed -i 's/api.parser.class/parser_class_name/' src/cdlParser.yy ; \

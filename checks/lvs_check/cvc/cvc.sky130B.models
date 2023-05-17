@@ -37,6 +37,7 @@ R sky130_fd_pr__reram_reram_cell R=10
 MN sky130_fd_pr__nfet_01v8 Vth=0.2 Vgs=1.8 Vds=1.8
 MN sky130_fd_pr__nfet_01v8_lvt Vth=0.1 Vgs=1.8 Vds=1.8
 MN sky130_fd_pr__special_nfet_latch Vth=0.2 Vgs=1.8 Vds=1.8
+MN sky130_fd_pr__special_nfet_pass Vth=0.2 Vgs=1.8 Vds=1.8
 MN sky130_fd_pr__nfet_03v3_nvt Vth=0.2 Vgs=3.3 Vds=3.3
 MN sky130_fd_pr__esd_nfet_g5v0d10v5 Vth=0.2
 MN sky130_fd_pr__nfet_05v0_nvt Vth=0.2

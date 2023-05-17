@@ -56,9 +56,9 @@ echo "SOURCE FILE(S): $(echo $LVS_SPICE_FILES $LVS_VERILOG_FILES | sed -e 's/#[^
 echo "TOP LAYOUT: $TOP_LAYOUT"
 echo "LAYOUT FILE: $LAYOUT_FILE"
 
-: "${LOG_ROOT:=$(pwd)/$TOP_SOURCE}"
-: "${SIGNOFF_ROOT:=$(pwd)/$TOP_SOURCE}"
-: "${WORK_ROOT:=$(pwd)/$TOP_SOURCE}"
+echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$TOP_SOURCE}"
+echo "LOG_ROOT    : ${LOG_ROOT:=$WORK_ROOT}"
+echo "SIGNOFF_ROOT: ${SIGNOFF_ROOT:=$WORK_ROOT}"
 export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
 
@@ -250,11 +250,11 @@ done <$WORK_ROOT/flatten.glob
 while read cell; do
 	cat >>$WORK_ROOT/${PDK}_setup.tcl <<-ignore
 		if { [lsearch \$cells1 {$cell}] >= 0 } {
-			puts stdout "Ignoring "{$cell}" in layout"
+			puts stdout {Ignoring $cell in layout}
 			ignore class {-circuit1 $cell}
 		}
 		if { [lsearch \$cells2 {$cell}] >= 0 } {
-			puts stdout "Ignoring "{$cell}" in source"
+			puts stdout {Ignoring $cell in source}
 			ignore class {-circuit2 $cell}
 		}
 	ignore

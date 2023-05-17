@@ -83,9 +83,9 @@ if [[ $EXTRACT_LAYOUT = no ]]; then
 	export LAYOUT_FILE=
 fi
 
-: "${WORK_ROOT:=$(pwd)/$TOP}"
-: "${LOG_ROOT:=$WORK_ROOT}"
-: "${SIGNOFF_ROOT:=$WORK_ROOT}"
+echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$TOP}"
+echo "LOG_ROOT    : ${LOG_ROOT:=$WORK_ROOT}"
+echo "SIGNOFF_ROOT: ${SIGNOFF_ROOT:=$WORK_ROOT}"
 export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
 echo "TOP: $TOP"

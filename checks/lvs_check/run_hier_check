@@ -41,9 +41,9 @@ if [[ $# -eq 6 ]]; then  # only if prefix is specified
 	GDS_PREFIX_FILTER="-e s/^($5)*// -e s/\/($5)*/\//"
 fi
 
-: "${LOG_ROOT:=$(pwd)/log/$TOP_SOURCE}"
-: "${SIGNOFF_ROOT:=$(pwd)/signoff/$TOP_SOURCE}"
-: "${WORK_ROOT:=$(pwd)/work/$TOP_SOURCE}"
+echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$TOP_SOURCE}"
+echo "LOG_ROOT    : ${LOG_ROOT:=$WORK_ROOT}"
+echo "SIGNOFF_ROOT: ${SIGNOFF_ROOT:=$$WORK_ROOT}"
 export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
 mkdir -p $LOG_ROOT
@@ -199,7 +199,8 @@ if [[ $LAYOUT_FILE ]]; then
 		sort -u >$WORK_ROOT/layout.hier
 	$CAT $TEXT_FILE |
 		grep STRNAME |
-		awk '{print $2}' >$WORK_ROOT/layout.cells
+		awk '{print $2}' |
+		sort >$WORK_ROOT/layout.cells
 
 elif [[ -f $WORK_ROOT/layout.hier ]]; then
 	echo "Reusing $WORK_ROOT/layout.hier"

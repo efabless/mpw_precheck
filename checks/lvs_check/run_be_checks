@@ -59,9 +59,6 @@ fi
 
 #get_lvs_config $CONFIG_FILE |
 source $CONFIG_FILE
-if [[ $EXTRACT_LAYOUT = no ]]; then
-	export LAYOUT_FILE=
-fi
 
 echo "TOP SOURCE: $TOP_SOURCE"
 echo "SOURCE FILE(S): $(echo $LVS_SPICE_FILES $LVS_VERILOG_FILES | sed -e 's/#[^ ]*//g' -e 's/ /\n/g')"
@@ -77,7 +74,7 @@ mkdir -p $LOG_ROOT $SIGNOFF_ROOT $WORK_ROOT
 
 start_time=$SECONDS
 
-if [[ $EXTRACT_LAYOUT = yes ]]; then
+if [[ $LAYOUT_FILE ]]; then
 	$LVS_ROOT/run_hier_check $TOP_SOURCE "$(echo $LVS_VERILOG_FILES | sed 's/#[^ ]*//g')" $TOP_LAYOUT $LAYOUT_FILE
 	hier_status=$?
 fi
@@ -93,9 +90,9 @@ fi
 $LVS_ROOT/run_full_lvs --noextract $CONFIG_FILE $TOP_SOURCE $TOP_LAYOUT
 lvs_status=$?
 
-if [[ $TOP_SOURCE = "user_project_wrapper" ]]; then
+if [[ -f $LVS_ROOT/cvc/$TOP_SOURCE.$PDK.power || -f ${CONFIG_FILE%/*}/$TOP_SOURCE.power ]]; then
 	if [[ -f ${CONFIG_FILE%/*}/$TOP_SOURCE.power ]]; then
-		cp ${CONFIG_FILE%/*}/$TOP_SOURCE.power $WORK_DIR/.
+		cp ${CONFIG_FILE%/*}/$TOP_SOURCE.power $WORK_ROOT/$TOP_LAYOUT.power
 	fi
 	$LVS_ROOT/run_cvc $TOP_LAYOUT
 	cvc_status=$?
@@ -122,7 +119,7 @@ $LOG_ROOT/lvs.log
 $SIGNOFF_ROOT/lvs.report"
 fi
 
-if [[ $TOP_SOURCE = "user_project_wrapper" ]]; then
+if [[ -f $LOG_ROOT/cvc.log ]]; then
 	echo "
 CVC result:"
 	grep 'CVC: Total:' $LOG_ROOT/cvc.log
@@ -141,6 +138,7 @@ if [[ $scheck_status -eq 0 && $lvs_status -eq 0 && ${cvc_status:=0} -eq 0 ]]; th
 	echo "
 No errors detected"
 	exit 0
+
 else
 	echo "
 WARNING: possible errors SOFT $scheck_status LVS $lvs_status CVC $cvc_status"

@@ -8,9 +8,9 @@ if [[ -z "$LVS_ROOT" ]]; then
 	exit 1
 fi
 
-: "${LOG_ROOT:=$(pwd)/$DESIGN_NAME}"
-: "${SIGNOFF_ROOT:=$(pwd)/$DESIGN_NAME}"
-: "${WORK_ROOT:=$(pwd)/$DESIGN_NAME}"
+echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$DESIGN_NAME}"
+echo "LOG_ROOT    : ${LOG_ROOT:=$(pwd)/$DESIGN_NAME}"
+echo "SIGNOFF_ROOT: ${SIGNOFF_ROOT:=$(pwd)/$DESIGN_NAME}"
 export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
 mkdir -p $LOG_ROOT $SIGNOFF_ROOT $WORK_ROOT
@@ -22,7 +22,7 @@ echo " "
 echo "Running CVC..."
 
 # Create cdl file from extracted spice file if it doesn't exist
-if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
+if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz || $RESULTS_DIR/$DESIGN_NAME.gds.spice -nt $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
 	if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.gds.spice ]]; then
 		echo "Could not create cdl file from $RESULTS_DIR/$DESIGN_NAME.gds.spice"
 		exit 2
@@ -34,6 +34,8 @@ if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
 fi
 
 # Copy default power file to work area if it doesn't exist
+#shopt -u nocasematch
+#BASE_NAME=${DESIGN_NAME//[A-Z0-9][A-Z0-9]_}  # remove leading 2 byte prefices
 if [[ ! -f $WORK_ROOT/$DESIGN_NAME.power ]]; then
 	if [[ -f $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power ]]; then
 		cp $LVS_ROOT/cvc/$DESIGN_NAME.$PDK.power $WORK_ROOT/$DESIGN_NAME.power
@@ -68,12 +70,17 @@ if [[ $WORK_ROOT != $LOG_ROOT ]]; then
 	cp $WORK_ROOT/cvc.log $LOG_ROOT/.
 fi
 if [[ $WORK_ROOT != $SIGNOFF_ROOT ]]; then
-	cp $WORK_ROOT/cvc.log $SIGNOFF_ROOT/.
+	cp $WORK_ROOT/cvc.error.gz $SIGNOFF_ROOT/.
 fi
 
-if [[ $cvc_status -eq 0 && $(awk '/^CVC: Total:/ {print $NF}' $WORK_ROOT/cvc.log) -gt 0 ]]; then
-	# CVC finished normally, but detected errors
+if [[ $cvc_status -eq 0 && $(grep '^CVC: End:' $WORK_ROOT/cvc.log | wc -l) -ne 1 ]]; then
+	# CVC finished abnormally
 	exit 3
+
+elif [[ $cvc_status -eq 0 && $(awk '/^CVC: Total:/ {print $NF}' $WORK_ROOT/cvc.log) -gt 0 ]]; then
+	# CVC finished normally, but detected errors
+	exit 4
+
 else
 	exit $cvc_status
 fi
