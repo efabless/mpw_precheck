@@ -108,7 +108,7 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--pdk_path', required=True, help="PDK_PATH, points to the installation path of the pdk (variant specific)")
     parser.add_argument('-o', '--output_directory', required=False, help="OUTPUT_DIRECTORY, default=<input_directory>/precheck_results/DD_MMM_YYYY___HH_MM_SS.")
     parser.add_argument('--private', action='store_true', help=f"If provided, precheck skips {open_source_checks.keys() - private_checks.keys()}  checks that qualify the project to be Open Source")
-    parser.add_argument('--no_lvs', action='store_true', help=f"If provided, precheck skips LVS - CVC - Soft connections checks that qualify the project to be Open Source")
+    parser.add_argument('--disable-lvs', action='store_true', help=f"If provided, precheck skips LVS - CVC - Soft connections checks that qualify the project to be Open Source")
     parser.add_argument('checks', metavar='check', type=str, nargs='*', choices=list(open_source_checks.keys()).append([]), help=f"Checks to be run by the precheck: {' '.join(open_source_checks.keys())}")
     args = parser.parse_args()
 
@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
     sequence = args.checks if args.checks else [x for x in private_checks.keys()] if args.private else [x for x in open_source_checks.keys()]
 
-    if args.no_lvs:
+    if args.disable_lvs:
         sequence.remove('lvs')
 
     main(input_directory=args.input_directory,
