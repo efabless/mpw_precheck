@@ -575,6 +575,8 @@ huge_m3 = huge_m3.edges.outside_part(m3.merged)
 
 non_huge_m3.space(0.3, euclidian).output("m3.2", "m3.2 : min. m3 spacing : 0.3um")
 
+m3.with_area(0..0.240).output("m3.6", "m3.6 : min. m3 area : 0.240um²")
+
 (huge_m3.separation(non_huge_m3, 0.4, euclidian) + huge_m3.space(0.4, euclidian)).output("m3.3cd", "m3.3cd : min. 3um.m3 spacing m3 : 0.4um")
 if FLOATING_MET
   m3.not_interacting(via2.or(via3)).output("m3.x", "floating met3, must interact with via2 or via3")
