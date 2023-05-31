@@ -43,14 +43,14 @@ RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cai
     yum install -y iverilog && \
     yum install -y m4 && \
     yum install -y gettext-devel bison byacc readline-devel && \
-    yum install -y flex autotools-dev build-essential autoconf pkg-config nasm libtool automake && \
-    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.12-0.x86_64.rpm && \
+    yum install -y flex autotools-dev build-essential autoconf pkg-config nasm libtool automake autopoint && \
+    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.13-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 # uninstall current version of git and install latest version available in rhel/7
 RUN yum -y remove git && yum -y remove git-* && \
-    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.1-2.el7.ius.x86_64.rpm && \
+    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.2-1.el7.ius.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
