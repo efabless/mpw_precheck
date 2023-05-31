@@ -39,18 +39,19 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
 # General Dependencies
 RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ gdb.x86_64 file.x86_64 time.x86_64 && \
     yum install -y csh libglu libX11-devel ncurses-devel tcl-devel tk-devel wget && \
-    yum install -y git patch ruby && \
-    yum install -y iverilog && \
-    yum install -y m4 && \
-    yum install -y gettext-devel bison byacc readline-devel && \
-    yum install -y flex autotools-dev build-essential autoconf pkg-config nasm libtool automake autopoint && \
-    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.13-0.x86_64.rpm && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+    yum install -y git patch ruby
 
 # uninstall current version of git and install latest version available in rhel/7
 RUN yum -y remove git && yum -y remove git-* && \
     yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.2-1.el7.ius.x86_64.rpm && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+RUN yum install -y iverilog && \
+    yum install -y m4 && \
+    yum install -y gettext-devel bison byacc readline-devel && \
+    yum install -y flex autotools-dev build-essential autoconf pkg-config nasm libtool automake autopoint && \
+    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.13-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
