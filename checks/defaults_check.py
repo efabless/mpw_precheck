@@ -27,6 +27,7 @@ except ImportError:
 
 EXCLUDES = []
 VIEWS = ['gds']
+VERILOG_VIEWS = ['verilog/gl']
 
 
 def get_view(name, directory):
@@ -49,17 +50,17 @@ def has_default_readme(input_directory, default_content_path):
         readme_content = input_directory.open(encoding='utf-8').read()
     except FileNotFoundError:
         logging.error(f"File 'README.md' not found in {input_directory}")
-        return False
+        return True
 
     similarity = 1 - SorensenDice().distance(df_readme_content, readme_content)
     if similarity > 0.75:
         logging.warning("The provided 'README.md' is identical to the default 'README.md'")
-        return False
-    return True
+        return True
+    return False
 
 
 def has_default_content(input_directory, default_content_path):
-    result = True
+    result = False
     for view in VIEWS:
         try:
             for target_file in get_updated_view(input_directory, view):
@@ -73,11 +74,33 @@ def has_default_content(input_directory, default_content_path):
                             similarity = 1 - SorensenDice().distance(default_file_content, target_file_content)
                             if similarity > 0.75:
                                 logging.warning(f"The provided {target_file.name} is too similar to the default file {default_file.name}")
-                                result = False
+                                result = True
                         elif is_binary_file(default_file) and is_binary_file(target_file):
                             if file_hash(default_file) == file_hash(target_file):
                                 logging.warning(f"The provided {target_file.name} is identical to the default file {default_file.name}")
-                                result = False
+                                result = True
+        except FileNotFoundError as not_found_error:
+            logging.error(f"File '{not_found_error.filename}' not found in {input_directory}/{view}")
+            continue
+    return result
+
+
+def has_default_verilog(input_directory, default_content_path):
+    """ Returns true if all files in the default_content_path/VERILOG_VIEWS directories match those in the input_directory
+    """
+    result = True
+    for view in VERILOG_VIEWS:
+        try:
+            for default_file in get_default_view(default_content_path, view):
+                default_file = Path(default_file)
+                this_file_found = False
+                for target_file in get_updated_view(input_directory, view):
+                    target_file = Path(target_file)
+                    if str(default_file) not in EXCLUDES and str(target_file) not in EXCLUDES:
+                        if file_hash(default_file) == file_hash(target_file):
+                            logging.warning(f"The provided {target_file.name} is identical to the default file {default_file.name}")
+                            this_file_found = True
+                result = result and this_file_found
         except FileNotFoundError as not_found_error:
             logging.error(f"File '{not_found_error.filename}' not found in {input_directory}/{view}")
             continue
@@ -93,11 +116,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if has_default_readme(Path(args.input_directory), Path(args.defaults_path)):
-        logging.info("README Clean")
-    else:
         logging.info("README Dirty")
+    else:
+        logging.info("README Clean")
 
     if has_default_content(Path(args.input_directory), Path(args.defaults_path)):
-        logging.info("Content Clean")
-    else:
         logging.info("Content Dirty")
+    else:
+        logging.info("Content Clean")
+
+    if has_default_verilog(Path(args.input_directory), Path(args.defaults_path)):
+        logging.info("Verilog Dirty")
+    else:
+        logging.info("Verilog Clean")

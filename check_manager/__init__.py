@@ -80,17 +80,24 @@ class Defaults(CheckManager):
     def run(self):
         default_readme_result = defaults_check.has_default_readme(self.precheck_config['input_directory'], self.precheck_config['default_content'])
         if default_readme_result:
-            logging.info("{{README DEFAULT CHECK PASSED}} Project 'README.md' was modified and is not identical to the default 'README.md'")
-        else:
             self.result = False
             logging.warning("{{README DEFAULT CHECK FAILED}} Project 'README.md' was not modified and is identical to the default 'README.md'")
+        else:
+            logging.info("{{README DEFAULT CHECK PASSED}} Project 'README.md' was modified and is not identical to the default 'README.md'")
 
         default_content_result = defaults_check.has_default_content(self.precheck_config['input_directory'], self.precheck_config['default_content'])
         if default_content_result:
-            logging.info("{{CONTENT DEFAULT CHECK PASSED}} Project 'gds' was modified and is not identical to the default 'gds'")
-        else:
             self.result = False
             logging.warning("{{CONTENT DEFAULT CHECK FAILED}} Project 'gds' was not modified and is identical to the default 'gds'")
+        else:
+            logging.info("{{CONTENT DEFAULT CHECK PASSED}} Project 'gds' was modified and is not identical to the default 'gds'")
+
+        default_verilog_result = defaults_check.has_default_verilog(self.precheck_config['input_directory'], self.precheck_config['default_content'])
+        if default_verilog_result:
+            self.result = False
+            logging.warning("{{VERILOG DEFAULT CHECK FAILED}} Project 'verilog' was not modified and is identical to the default 'verilog'")
+        else:
+            logging.info("{{VERILOG DEFAULT CHECK PASSED}} Project 'verilog' was modified and is not identical to the default 'verilog'")
 
         return self.result
 
