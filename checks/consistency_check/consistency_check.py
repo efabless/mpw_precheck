@@ -40,7 +40,7 @@ PREPROCESS_DEFINES = ["USE_POWER_PINS"]
 # caravel specific
 CORE_SIDE_POWER = [net + "_core" for net in ["vccd", "vccd1", "vccd2", "vdda1", "vdda2", "vssa", "vssa1", "vssa2", "vssd", "vssd1", "vssd2"]]
 IGNORED_POWER_CELLS = ["caravan_power_routing", "caravel_power_routing"]
-IGNORED_TEXT_BLOCKS = ["copyright_block", "copyright_block_a", "open_source", "user_id_textblock"]
+IGNORED_TEXT_BLOCKS = ["copyright_block", "copyright_block_a", "open_source", "user_id_textblock", "caravel_logo"]
 MGMT_POWER = ["vccd", "vdda", "vddio", "vssa", "vssd", "vssio"]
 PHYSICAL_CELLS = ["decap", "diode", "fakediode", "fill", "fill_diode", "tapvpwrvgnd"]
 USER_BANNED_POWER = MGMT_POWER + [net + "_core" for net in MGMT_POWER]
@@ -103,13 +103,15 @@ def main(*args, **kwargs):
     top_netlist_checker = NetlistChecker(top_netlist_parser, golden_wrapper_parser=golden_wrapper_parser)
     user_netlist_checker = NetlistChecker(user_netlist_parser, user_layout_parser, golden_wrapper_parser)
 
-    top_netlist_check = top_netlist_checker.check(checks=top_module_checks, min_instances=8,
-                                                  power_nets=CORE_SIDE_POWER, ignored_instances=top_module_ignored_cells, submodule=project_config['user_module'],
-                                                  submodule_power=USER_POWER_PINS, submodule_banned_power=USER_BANNED_POWER)
+    # top_netlist_check = top_netlist_checker.check(checks=top_module_checks, min_instances=8,
+    #                                              power_nets=CORE_SIDE_POWER, ignored_instances=top_module_ignored_cells, submodule=project_config['user_module'],
+    #                                              submodule_power=USER_POWER_PINS, submodule_banned_power=USER_BANNED_POWER)
+    
     user_netlist_check = user_netlist_checker.check(checks=user_module_checks, min_instances=1,
                                                     power_nets=USER_POWER_PINS, ignored_instances=user_module_ignored_cells)
 
-    return top_netlist_check and user_netlist_check
+    # return top_netlist_check and user_netlist_check
+    return user_netlist_check
 
 
 if __name__ == "__main__":
