@@ -7,7 +7,9 @@ from datetime import datetime
 
 def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
     tag = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    if not os.path.isdir(f"{design_directory}/lvs/{design_name}/{tag}"):
+    if not os.path.isdir(f"{design_directory}/lvs/{design_name}/lvs_results"):
+        os.mkdir(f"{design_directory}/lvs/{design_name}/lvs_results")
+    if not os.path.isdir(f"{design_directory}/lvs/{design_name}/lvs_results/{tag}"):
         os.mkdir(f"{design_directory}/lvs/{design_name}/lvs_results/{tag}")
     logs_directory = output_directory / 'logs'
     log_file_path = logs_directory / 'be_check.log'
@@ -20,7 +22,7 @@ def run_lvs(design_directory, output_directory, design_name, config_file, pdk_ro
     os.environ['SIGNOFF_ROOT'] = f"{design_directory}/lvs/{design_name}/lvs_results/{tag}/output"
     os.environ['PDK'] = f'{pdk}'
     os.environ['PDK_ROOT'] = f'{pdk_root}'
-    lvs_cmd = ['sh', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{config_file}', f'{design_name}']
+    lvs_cmd = ['sh', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{design_name}']
 
     with open(log_file_path, 'w') as lvs_log:
         logging.info("run: run_be_checks")  # helpful reference, print long-cmd once & messages below remain concise
