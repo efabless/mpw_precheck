@@ -7,7 +7,9 @@ from datetime import datetime
 
 def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
     tag = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    if not os.path.isdir(f"{design_directory}/lvs/{design_name}/{tag}"):
+    if not os.path.isdir(f"{design_directory}/lvs/{design_name}/lvs_results"):
+        os.mkdir(f"{design_directory}/lvs/{design_name}/lvs_results")
+    if not os.path.isdir(f"{design_directory}/lvs/{design_name}/lvs_results/{tag}"):
         os.mkdir(f"{design_directory}/lvs/{design_name}/lvs_results/{tag}")
     logs_directory = output_directory / 'logs'
     log_file_path = logs_directory / 'be_check.log'
