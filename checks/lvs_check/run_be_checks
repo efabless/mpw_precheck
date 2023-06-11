@@ -58,7 +58,7 @@ if [[ ! -f $CONFIG_FILE ]]; then
 fi
 
 #get_lvs_config $CONFIG_FILE |
-source $CONFIG_FILE
+# source $CONFIG_FILE
 
 echo "TOP SOURCE: $TOP_SOURCE"
 echo "SOURCE FILE(S): $(echo $LVS_SPICE_FILES $LVS_VERILOG_FILES | sed -e 's/#[^ ]*//g' -e 's/ /\n/g')"

@@ -4,6 +4,46 @@ import subprocess
 import os
 from pathlib import Path
 from datetime import datetime
+import json
+import re
+
+def parse_config_file(json_file):
+    with open(json_file, "r") as f:
+        data = json.load(f)
+    for key, value in data.items():
+        if type(value) == list:
+            exports = []
+            for val in value:
+                if "$" in val:
+                    words = re.findall(r'\$\w+', val)
+                    for w in words:
+                        env_var = w.split("$")[1]
+                        if env_var in os.environ:
+                            if isinstance(value, str):
+                                val = val.replace(w, os.getenv(env_var))
+                            else:
+                                val = os.path.join(os.path.dirname(val), os.path.splitext(val)[0].replace(w, os.getenv(env_var)) + os.path.splitext(val)[1])
+                        else:
+                            logging.error(f"ERROR LVS FAILED, couldn't find environment variable {w}")
+                            return False
+                exports.append(val)
+            os.environ[key] = ' '.join(exports)
+        else:
+            if "$" in value:
+                words = re.findall(r'\$\w+', value)
+                for w in words:
+                    env_var = w.split("$")[1]
+                    if env_var in os.environ:
+                        if isinstance(value, str):
+                            value = value.replace(w, os.getenv(env_var))
+                        else:
+                            value = os.path.join(os.path.dirname(value), os.path.splitext(value)[0].replace(w, os.getenv(env_var)) + os.path.splitext(value)[1])
+                    else:
+                        logging.error(f"ERROR LVS FAILED, couldn't find environment variable {w}")
+                        return False
+            os.environ[key] = value
+    return True
+
 
 def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
     tag = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -22,6 +62,11 @@ def run_lvs(design_directory, output_directory, design_name, config_file, pdk_ro
     os.environ['SIGNOFF_ROOT'] = f"{design_directory}/lvs/{design_name}/lvs_results/{tag}/output"
     os.environ['PDK'] = f'{pdk}'
     os.environ['PDK_ROOT'] = f'{pdk_root}'
+    if not os.path.exists(f"{config_file}"):
+        logging.error(f"ERROR LVS FAILED, Could not find LVS configuration file {config_file}")
+        return False
+    if not parse_config_file(config_file):
+        return False
     lvs_cmd = ['bash', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{config_file}', f'{design_name}']
 
     with open(log_file_path, 'w') as lvs_log:
