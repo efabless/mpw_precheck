@@ -60,7 +60,6 @@ def parse_config_file(json_file, lvs_env):
             else:
                 logging.error(f"{val} is an absolute path, paths must start with $PDK_ROOT or $UPRJ_ROOT")
                 return False
-
     return True
 
 def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
@@ -90,6 +89,7 @@ def run_lvs(design_directory, output_directory, design_name, config_file, pdk_ro
     os.environ.update(lvs_env)
     with open(log_file_path, 'w') as lvs_log:
         logging.info("run: run_be_checks")  # helpful reference, print long-cmd once & messages below remain concise
+        logging.info(f"LVS output directory: {output_directory}")
         p = subprocess.run(lvs_cmd, stderr=lvs_log, stdout=lvs_log)
         # Check exit-status of all subprocesses
         stat = p.returncode
@@ -117,4 +117,7 @@ if __name__ == "__main__":
     pdk = pdk_path.name
     pdk_root = pdk_path.parent
 
-    run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk)
+    if not run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
+        logging.error("LVS Failed.")
+    else:
+        logging.info("LVS Passed!")
