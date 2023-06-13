@@ -39,21 +39,25 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
 # General Dependencies
 RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ gdb.x86_64 file.x86_64 time.x86_64 && \
     yum install -y csh libglu libX11-devel ncurses-devel tcl-devel tk-devel wget && \
-    yum install -y git patch ruby && \
-    yum install -y iverilog && \
-    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.12-0.x86_64.rpm && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+    yum install -y git patch ruby
 
 # uninstall current version of git and install latest version available in rhel/7
 RUN yum -y remove git && yum -y remove git-* && \
-    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.1-2.el7.ius.x86_64.rpm && \
+    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.2-1.el7.ius.x86_64.rpm && \
+    yum clean all && \
+    rm -rf /var/cache/yum
+
+RUN yum install -y iverilog && \
+    yum install -y m4 && \
+    yum install -y gettext-devel bison byacc readline-devel && \
+    yum install -y flex autotools-dev build-essential autoconf pkg-config nasm libtool automake autopoint && \
+    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.13-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 # Clone Magic
-ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.348 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+ENV MAGIC_ROOT=/opt/magic
+RUN git clone --depth=1 --branch 8.3.394 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
@@ -76,3 +80,23 @@ WORKDIR $PRECHECKER_ROOT
 # GOLDEN CARAVEL
 ENV GOLDEN_CARAVEL=/opt/caravel
 RUN git clone --branch mpw-9d --depth=1 https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress
+
+
+# Clone netgen
+ENV NETGEN_ROOT=/opt/netgen
+RUN git clone --depth=1 --branch 1.5.253 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
+WORKDIR $NETGEN_ROOT
+RUN scl enable devtoolset-8 -- ./configure --prefix=/build && \
+    scl enable devtoolset-8 -- make -j4 && \
+    scl enable devtoolset-8 -- make install
+
+
+# Clone cvc
+ENV CVC_ROOT=/opt/cvc_rv
+WORKDIR $CVC_ROOT
+RUN git clone --depth=1 --branch v1.1.5 https://github.com/d-m-bailey/cvc.git ${CVC_ROOT}
+RUN scl enable devtoolset-8 -- autoreconf -vif ; \
+    scl enable devtoolset-8 -- ./configure --disable-nls --prefix=/build ; \
+    scl enable devtoolset-8 -- sed -i 's/api.parser.class/parser_class_name/' src/cdlParser.yy ; \
+    scl enable devtoolset-8 -- make -j4 ; \
+    scl enable devtoolset-8 -- make install

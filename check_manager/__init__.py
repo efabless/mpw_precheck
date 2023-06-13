@@ -29,6 +29,7 @@ from checks.drc_checks.magic import magic_gds_drc_check
 from checks.gpio_defines_check import gpio_defines_check
 from checks.license_check import license_check
 from checks.xor_check import xor_check
+from checks.lvs_check.lvs import run_lvs
 
 
 class CheckManagerNotFound(Exception):
@@ -130,6 +131,33 @@ class GpioDefines(CheckManager):
             logging.info("{{GPIO-DEFINES CHECK PASSED}} The user verilog/rtl/user_defines.v is valid.")
         else:
             logging.warning("{{GPIO-DEFINES CHECK FAILED}} The user verilog/rtl/user_defines.v is not valid.")
+        return self.result
+
+
+class Lvs(CheckManager):
+    __ref__ = 'lvs'
+    __surname__ = 'LVS'
+    __supported_pdks__ = ['sky130A', 'sky130B']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.design_directory = self.precheck_config['input_directory']
+        self.output_directory = self.precheck_config['output_directory']
+        if self.project_config['type'] == "analog":
+            self.design_name = "user_analog_project_wrapper"
+        else:
+            self.design_name = "user_project_wrapper"
+        self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
+        self.pdk_root = precheck_config['pdk_path'].parent
+        self.pdk = precheck_config['pdk_path'].name
+
+    def run(self):
+        self.result = run_lvs(self.design_directory, self.output_directory, self.design_name, self.config_file, self.pdk_root, self.pdk)
+
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.design_name}, has no LVS violations.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.design_name}, has LVS violations.")
         return self.result
 
 
@@ -395,7 +423,8 @@ open_source_checks = OrderedDict([
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea)
+    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (Lvs.__ref__, Lvs),
 ])
 
 # Note: list of checks for a private project
@@ -410,7 +439,8 @@ private_checks = OrderedDict([
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea)
+    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (Lvs.__ref__, Lvs),
 ])
 
 

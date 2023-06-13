@@ -1,0 +1,361 @@
+#! /bin/bash
+#   run_full_lvs: extract (if necessary) and run lvs with netgen
+
+#   Copyright 2022 D. Mitch Bailey  cvc at shuharisystem dot com
+
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+#  Set LVS parameters in lvs_config file
+
+# Use cases
+# run_full_lvs [--noextract] lvs_config_file [top_source [top_layout]]
+
+if [[ $1 = "--noextract" ]]; then
+	export EXTRACT_LAYOUT=no
+	shift
+else
+	export EXTRACT_LAYOUT=yes
+fi
+
+if [[ $# -lt 1 || $# -gt 3 ]]; then
+	echo "usage: run_full_lvs [--noextract] lvs_config_file [top_source [top_layout]]"
+	exit 1
+fi
+
+CONFIG_FILE=$1
+TOP_SOURCE=$2
+TOP_LAYOUT=${3:-$TOP_SOURCE}
+
+if [[ ! -f $CONFIG_FILE ]]; then
+	echo "Could not find LVS configuration file $CONFIG_FILE"
+	exit 1
+fi
+
+#get_lvs_config $CONFIG_FILE |
+# source $CONFIG_FILE
+if [[ $EXTRACT_LAYOUT = no ]]; then
+	export LAYOUT_FILE=
+fi
+
+echo " "
+echo "Running LVS..."
+
+# Check for PDK_ROOT and PDK
+echo "TOP SOURCE: $TOP_SOURCE"
+echo "SOURCE FILE(S): $(echo $LVS_SPICE_FILES $LVS_VERILOG_FILES | sed -e 's/#[^ ]*//g' -e 's/ /\n/g')"
+echo "TOP LAYOUT: $TOP_LAYOUT"
+echo "LAYOUT FILE: $LAYOUT_FILE"
+
+echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$TOP_SOURCE}"
+echo "LOG_ROOT    : ${LOG_ROOT:=$WORK_ROOT}"
+echo "SIGNOFF_ROOT: ${SIGNOFF_ROOT:=$WORK_ROOT}"
+export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
+
+mkdir -p $LOG_ROOT
+mkdir -p $SIGNOFF_ROOT
+mkdir -p $WORK_ROOT
+
+if [[ -z "$PDK_ROOT" || -z "$PDK" ]]; then
+	echo "PDK_ROOT and/or PDK not set."
+	exit 1
+fi
+
+rm -f $LOG_ROOT/lvs.log $SIGNOFF_ROOT/lvs.report
+if [[ $EXTRACT_LAYOUT = yes ]]; then
+	rm -f $LOG_ROOT/ext.log
+fi
+
+if cmp -s $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech; then
+	awk 'NF > 1 && /version/' $LVS_ROOT/tech/$PDK.tech
+else
+	echo "Tech files do not match:"
+	grep version $PDK_ROOT/$PDK/libs.tech/magic/$PDK.tech $LVS_ROOT/tech/$PDK.tech |
+		awk 'NF > 2'
+	echo "Results may be incorrect. Contact efabless to update the soft connection rules."
+	#exit 1
+fi
+
+if [[ ! -f $WORK_ROOT/layout.cells || ! -f $WORK_ROOT/verilog.cells ]]; then
+	$LVS_ROOT/run_hier_check $TOP_SOURCE "$(echo $LVS_VERILOG_FILES | sed 's/#[^ ]*//g')" $TOP_LAYOUT $LAYOUT_FILE
+fi
+
+echo $EXTRACT_FLATGLOB |
+	sed 's/  */\n/g' >$WORK_ROOT/flatglob
+
+# create work abstract file based on actual cells used (pseudo globbing)
+echo $EXTRACT_ABSTRACT |
+	sed 's/  */\n/g' >$WORK_ROOT/abstract
+if [[ -f $WORK_ROOT/layout.cells ]]; then
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/abstract |
+		grep -f - $WORK_ROOT/layout.cells >$WORK_ROOT/abstract.glob
+else
+	cp $WORK_ROOT/abstract $WORK_ROOT/abstract.glob
+fi
+
+# create work flatten file based on actual cells used (pseudo globbing)
+echo $LVS_FLATTEN |
+	sed 's/  */\n/g' >$WORK_ROOT/flatten
+if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
+	# Do pseudo globbing against layout and verilog. "*" expansion only.
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/flatten |
+		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
+		sed 's/.*cells://' |
+		awk 'NF > 0' |
+		sort -u >$WORK_ROOT/flatten.glob
+else
+	cp $WORK_ROOT/flatten $WORK_ROOT/flatten.glob
+fi
+
+# create work noflatten file based on actual cells used (pseudo globbing)
+echo $LVS_NOFLATTEN |
+	sed 's/  */\n/g' >$WORK_ROOT/noflatten
+if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
+	# Do pseudo globbing against layout and verilog. "*" expansion only.
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/noflatten |
+		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
+		sed 's/.*cells://' |
+		awk 'NF > 0' |
+		sort -u >$WORK_ROOT/noflatten.glob
+else
+	cp $WORK_ROOT/noflatten $WORK_ROOT/noflatten.glob
+fi
+
+# create work ignore file based on actual cells used (pseudo globbing)
+echo $LVS_IGNORE |
+	sed 's/  */\n/g' >$WORK_ROOT/ignore
+if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
+	# Do pseudo globbing against layout and verilog. "*" expansion only.
+	sed -e 's/\*/.*/g' -e 's/^/^/' -e 's/$/$/' $WORK_ROOT/ignore |
+		grep -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
+		sed 's/.*cells://' |
+		awk 'NF > 0' |
+		sort -u >$WORK_ROOT/ignore.glob
+else
+	cp $WORK_ROOT/noflatten $WORK_ROOT/noflatten.glob
+fi
+
+# Add any cells that should be flattened before extraction to 'flatten'. globbing allowed.
+export FLATGLOB_CELLS="$(cat $WORK_ROOT/flatglob 2>/dev/null | grep -v '^#')"
+# Add any empty cells that should be extracted as black-boxes to 'abstract'. (globbed version is 'abstract.glob')
+export ABSTRACT_CELLS="$(cat $WORK_ROOT/abstract.glob 2>/dev/null | grep -v '^#')"
+
+# Verify that magic and netgen are executable.
+if [[ $LAYOUT_FILE ]]; then # only if gds is specified
+	if ! which magic >&/dev/null; then
+		echo "Error: Could not execute magic."
+		exit 1
+	fi
+fi
+if ! which netgen >&/dev/null; then
+	echo "Error: Could not execute netgen."
+	exit 1
+fi
+
+#  Create extraction result directories. No error if they already exist.
+EXT_DIR=$WORK_ROOT/ext
+mkdir -p $EXT_DIR
+
+if [[ $LAYOUT_FILE ]]; then
+	# Specified gds_file, so extract it.
+
+	if [[ ! -f $LAYOUT_FILE ]]; then
+		echo "Error: File not found: $LAYOUT_FILE"
+		exit 2
+	fi
+
+	# Remove any previous extraction results
+	rm -rf $EXT_DIR/*.ext{,.gz}
+
+	#  1. Extract gds_file
+	#  Note: uses the same extraction commands as sconnect, so symbolic links to the EXT_DIR may be used
+	date "+BEGIN: %c" >$LOG_ROOT/ext.log
+	start_time=$SECONDS
+
+	echo " "
+	if [[ -z $LVS_VERILOG_FILES ]]; then
+		echo "Extracting as analog. Top ports connected by name."
+		EXT_TYPE=analog
+	else
+		echo "Extracting as digital. Top ports unique."
+		EXT_TYPE=digital
+	fi
+
+	env TOP=$TOP_LAYOUT RUN_DIR=$EXT_DIR magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc.well $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl </dev/null |
+		tee -a $LOG_ROOT/ext.log 2>&1
+	ext_status=${PIPESTATUS[0]}
+
+	date "+END: %c" >>$LOG_ROOT/ext.log
+	runtime=$((SECONDS - start_time))
+	hours=$((runtime / 3600))
+	minutes=$(((runtime % 3600) / 60))
+	seconds=$(((runtime % 3600) % 60))
+	printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$LOG_ROOT/ext.log
+
+	# Compress large ext files
+	find $EXT_DIR -name '*.ext' -size +1M -exec gzip {} \;
+else
+	# No gds_file so LVS only. Check for existing extraction results.
+	if [[ ! -f $EXT_DIR/$TOP_LAYOUT.gds.spice ]]; then
+		echo "Error: missing $EXT_DIR/$TOP_LAYOUT.gds.spice"
+		echo "Specify gds_file to create"
+		echo "usage: run_full_lvs top_source_block spice_source verilog_source top_layout_block [gds_file]"
+		exit 2
+	fi
+	echo "Reusing $EXT_DIR/$TOP_LAYOUT.gds.spice."
+fi
+
+# Check that extraction completed successfully
+if [[ ${magic_status:=0} -ne 0 || $(grep 'exttospice finished.' $LOG_ROOT/ext.log | wc -l) -ne 1 ]]; then
+	echo "
+Error: extraction did not complete successfully"
+	exit 4
+fi
+
+#  5. Compare
+echo $LVS_SPICE_FILES |
+	sed 's/  */\n/g' |
+	grep -v '^#' |
+	awk 'NF > 0' >$WORK_ROOT/spice_files
+echo $LVS_VERILOG_FILES |
+	sed 's/  */\n/g' |
+	grep -v '^#' |
+	awk 'NF > 0' >$WORK_ROOT/verilog_files
+
+cp $LVS_ROOT/tech/${PDK}_setup.tcl $WORK_ROOT/${PDK}_setup.tcl
+
+while read cell; do
+	cat >>$WORK_ROOT/${PDK}_setup.tcl <<-flatten
+		if { [lsearch \$cells1 {$cell}] >= 0 } {
+			#puts stdout "Flattening $cell in layout"
+			flatten class {-circuit1 $cell}
+		}
+		if { [lsearch \$cells2 {$cell}] >= 0 } {
+			#puts stdout "Flattening $cell in source"
+			flatten class {-circuit2 $cell}
+		}
+	flatten
+done <$WORK_ROOT/flatten.glob
+
+while read cell; do
+	cat >>$WORK_ROOT/${PDK}_setup.tcl <<-ignore
+		if { [lsearch \$cells1 {$cell}] >= 0 } {
+			puts stdout {Ignoring $cell in layout}
+			ignore class {-circuit1 $cell}
+		}
+		if { [lsearch \$cells2 {$cell}] >= 0 } {
+			puts stdout {Ignoring $cell in source}
+			ignore class {-circuit2 $cell}
+		}
+	ignore
+done <$WORK_ROOT/ignore.glob
+
+cat >$WORK_ROOT/lvs.script <<-script
+	puts "Reading layout $WORK_ROOT/ext/$TOP_LAYOUT.gds.spice..."
+	set layout [readnet spice $WORK_ROOT/ext/$TOP_LAYOUT.gds.spice]
+	set source [readnet spice /dev/null]
+script
+
+while read spice_file; do
+	cat >>$WORK_ROOT/lvs.script <<-spice
+		puts "Reading source $spice_file..."
+		readnet spice $spice_file \$source
+	spice
+done <$WORK_ROOT/spice_files
+while read verilog_file; do
+	cat >>$WORK_ROOT/lvs.script <<-verilog
+		puts "Reading source $verilog_file..."
+		readnet verilog $verilog_file \$source
+	verilog
+done <$WORK_ROOT/verilog_files
+
+cat >>$WORK_ROOT/lvs.script <<-lvs
+	lvs "\$layout $TOP_LAYOUT" "\$source $TOP_SOURCE" $WORK_ROOT/${PDK}_setup.tcl $SIGNOFF_ROOT/lvs.report -blackbox -json -noflatten=$WORK_ROOT/noflatten.glob
+lvs
+
+date "+BEGIN: %c" >$LOG_ROOT/lvs.log
+start_time=$SECONDS
+
+echo " "
+: "${NETGEN_COLUMNS:=80}"
+export NETGEN_COLUMNS
+netgen -batch source $WORK_ROOT/lvs.script 2>&1 |
+	tee -a $LOG_ROOT/lvs.log
+netgen_status=${PIPESTATUS[0]}
+
+# Check for circuits that were compared as black boxes.
+awk '
+/Circuit 1 .* will not flatten/ {print $4, "is a black box in the layout"}
+/Circuit 2 .* will not flatten/ {print $4, "is a black box in the source"}
+' $SIGNOFF_ROOT/lvs.report >$SIGNOFF_ROOT/lvs.unflattened
+awk '
+/__fill/ {next} # ignore abstract devices
+/__tapvpwrvgnd/ {next}
+/__fakediode/ {next}
+/sky130_fd_pr__/ {next} # ignore primitive devices
+/Matching pins/ {print $4, "is a black box in the layout and source"}
+' $LOG_ROOT/lvs.log >>$SIGNOFF_ROOT/lvs.unflattened
+if [[ -s $SIGNOFF_ROOT/lvs.unflattened ]]; then
+	echo "Warning: device level LVS may be incomplete due to $(cat $SIGNOFF_ROOT/lvs.unflattened | wc -l) unflattened cell(s): see $SIGNOFF_ROOT/lvs.unflattened" |
+		tee -a $SIGNOFF_ROOT/lvs.report |
+		tee -a $LOG_ROOT/lvs.log
+	lvs_warning=1
+fi
+
+if [[ -s $WORK_ROOT/ignore.glob ]]; then
+	echo "Warning: device level LVS may be incomplete because $(cat $WORK_ROOT/ignore.glob | wc -l) cell(s) was/were ignored: see $WORK_ROOT/ignore.glob" |
+		tee -a $SIGNOFF_ROOT/lvs.report |
+		tee -a $LOG_ROOT/lvs.log
+	lvs_warning=1
+fi
+
+date "+END: %c" >>$LOG_ROOT/lvs.log
+runtime=$((SECONDS - start_time))
+hours=$((runtime / 3600))
+minutes=$(((runtime % 3600) / 60))
+seconds=$(((runtime % 3600) % 60))
+printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$LOG_ROOT/lvs.log
+
+# Set exit code
+if [[ $netgen_status -ne 0 ]]; then
+	echo "
+Error: netgen ended abnormally."
+
+# Missing 'Final result' line.
+elif [[ $(grep 'Final result:' $SIGNOFF_ROOT/lvs.report | wc -l) -ne 1 ]]; then
+	netgen_status=4
+	echo "
+Error: netgen did not complete."
+
+# Did not uniquely match.
+elif [[ $(grep 'Final result: Circuits match uniquely\.' $SIGNOFF_ROOT/lvs.report | wc -l) -ne 1 ]]; then
+	netgen_status=4
+	echo "
+Error: LVS mismatch."
+
+# Property errors
+elif [[ $(grep 'The following cells had property errors:' $SIGNOFF_ROOT/lvs.report | wc -l) -gt 0 ]]; then
+	netgen_status=6
+	echo "
+Error: Property mismatch."
+
+# Uniquely matched, but cells were black-boxed or ignored.
+elif [[ ${lvs_warning:=0} -ne 0 ]]; then
+	netgen_status=5
+	echo "
+Warning: possible lvs discrepancy"
+
+else
+	netgen_status=0
+fi
+
+exit $netgen_status
