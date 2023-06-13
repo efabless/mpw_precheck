@@ -134,7 +134,7 @@ class GpioDefines(CheckManager):
         return self.result
 
 
-class lvs(CheckManager):
+class Lvs(CheckManager):
     __ref__ = 'lvs'
     __surname__ = 'LVS'
     __supported_pdks__ = ['sky130A', 'sky130B']
@@ -147,7 +147,7 @@ class lvs(CheckManager):
             self.design_name = "user_analog_project_wrapper"
         else:
             self.design_name = "user_project_wrapper"
-        self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/sky130A.lvs_config.sh"
+        self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
         self.pdk_root = precheck_config['pdk_path'].parent
         self.pdk = precheck_config['pdk_path'].name
 
@@ -424,7 +424,7 @@ open_source_checks = OrderedDict([
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
     (KlayoutZeroArea.__ref__, KlayoutZeroArea),
-    (lvs.__ref__, lvs),
+    (Lvs.__ref__, Lvs),
 ])
 
 # Note: list of checks for a private project
@@ -440,7 +440,7 @@ private_checks = OrderedDict([
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
     (KlayoutZeroArea.__ref__, KlayoutZeroArea),
-    (lvs.__ref__, lvs),
+    (Lvs.__ref__, Lvs),
 ])
 
 

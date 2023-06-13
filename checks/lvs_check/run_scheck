@@ -23,7 +23,6 @@
 #  5. Compare
 #
 
-
 # Use cases
 # run_scheck [--noextract] lvs_config_file [top_block [gds_file]]
 
@@ -77,7 +76,7 @@ if [[ ! -f $CONFIG_FILE ]]; then
 	exit 1
 fi
 
-source $CONFIG_FILE
+# source $CONFIG_FILE
 export TOP=$TOP_LAYOUT
 if [[ $EXTRACT_LAYOUT = no ]]; then
 	export LAYOUT_FILE=
