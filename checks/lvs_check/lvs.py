@@ -19,78 +19,101 @@ def is_path(string):
     else:
         return False
 
-def replace_env_var(value, lvs_env):
-    words = re.findall(r'\$\w+', value)
-    for w in words:
-        env_var = w.split("$")[1]
-        if env_var in lvs_env:
-            if not is_path(value):
-                value = value.replace(w, lvs_env.get(env_var))
+def substitute_env_variables(string, env):
+    if "$" in string:
+        words = re.findall(r'\$\w+', string)
+        for w in words:
+            env_var = w[1:]  # remove leading '$'
+            if env_var in env:
+                string = string.replace(w, env.get(env_var), 1)  # only replace first occurence. Others will be replaced later.
             else:
-                value = os.path.join(os.path.dirname(value), os.path.splitext(value)[0].replace(w, lvs_env.get(env_var)) + os.path.splitext(value)[1])
-        else:
-            logging.error(f"Could not resolve environment variable {w}")
-            return False
-    return value
+                logging.error(f"ERROR LVS FAILED, couldn't find environment variable {w}")
+                return None
+    return string
+
 
 def parse_config_file(json_file, lvs_env):
-    with open(json_file, "r") as f:
-        data = json.load(f)
-    for key, value in data.items():
-        if type(value) == list:
-            exports = []
-            for val in value:
-                if is_valid(val):
-                    if "$" in val:
-                        val = replace_env_var(val, lvs_env)
-                        if val is False:
+    logging.info(f"Loading LVS environment from {json_file}")
+    try:
+        with open(json_file, "r") as f:
+            data = json.load(f)
+        for key, value in data.items():
+            if type(value) == list:
+                exports = lvs_env[key].split() if key in lvs_env else []
+                for val in value:
+                    if is_valid(val):
+                        val = substitute_env_variables(val, lvs_env)
+                        if val is None:  # could not substitute
                             return False
-                    exports.append(val)
+                        if val not in exports:  # only add if not already in list
+                            exports.append(val)
+                            if key == 'INCLUDE_CONFIGS':  # load child configs
+                                lvs_env['INCLUDE_CONFIGS'] += " " + val  # prevents loading same config twice
+                                if not parse_config_file(val, lvs_env):
+                                    return False
+                    else:
+                        logging.error(f"{val} is an absolute path, paths must start with $PDK_ROOT or $UPRJ_ROOT")
+                        return False
+                if key != 'INCLUDE_CONFIGS':
+                    lvs_env[key] = ' '.join(exports)
+            else:
+                if is_valid(value):
+                    value = substitute_env_variables(value, lvs_env)
+                    if value is None:  # could not substitute
+                        return False
+                    lvs_env[key] = value
                 else:
                     logging.error(f"{val} is an absolute path, paths must start with $PDK_ROOT or $UPRJ_ROOT")
                     return False
-            lvs_env[key] = ' '.join(exports)
+        return True
+    except Exception as err:
+        logging.error(type(err))
+        logging.error(err.args)
+        logging.error(f"Error with file {json_file}")
+        return False
+
+def print_lvs_config(lvs_env):
+    for lvs_key in ['EXTRACT_FLATGLOB', 'EXTRACT_ABSTRACT', 'LVS_FLATTEN', 'LVS_NOFLATTEN', 'LVS_IGNORE', 'LVS_SPICE_FILES', 'LVS_VERILOG_FILES', 'LAYOUT_FILE']:
+        if lvs_key in lvs_env:
+            logging.info(lvs_key + " : " + lvs_env[lvs_key])
         else:
-            if is_valid(value):
-                if "$" in value:
-                    value = replace_env_var(value, lvs_env)
-                    if value is False:
-                        return False
-                lvs_env[key] = value
-            else:
-                logging.error(f"{val} is an absolute path, paths must start with $PDK_ROOT or $UPRJ_ROOT")
-                return False
-    return True
+            logging.warn(f"Missing LVS configuration variable {lvs_key}")
 
 def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
-    tag = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    if not os.path.isdir(f"{design_directory}/lvs/{design_name}/lvs_results"):
-        os.mkdir(f"{design_directory}/lvs/{design_name}/lvs_results")
-    output_directory = f"{design_directory}/lvs/{design_name}/lvs_results/{tag}"
-    if not os.path.isdir(f"{output_directory}"):
-        os.mkdir(f"{output_directory}")
-    log_file_path = f"{output_directory}/be_check.log"
-    if not os.path.isdir(f"{output_directory}/log"):
-        os.mkdir(f"{output_directory}/log")
+    log_path = f"{output_directory}/logs"
+    report_path = f"{output_directory}/outputs/reports"
+    log_file_path = f"{log_path}/be_check.log"
+    tmp_dir = f"{output_directory}/tmp"
+    if not os.path.isdir(log_path):
+        os.mkdir(log_path)
+    if not os.path.isdir(tmp_dir):
+        os.mkdir(f"{tmp_dir}")
+    if not os.path.isdir(f"{output_directory}/outputs"):
+        os.mkdir(f"{output_directory}/outputs")
+    if not os.path.isdir(report_path):
+        os.mkdir(f"{report_path}")
+
     lvs_env = dict()
     lvs_env['UPRJ_ROOT'] = f"{design_directory}"
     lvs_env['LVS_ROOT'] = f'{os.getcwd()}/checks/lvs_check/'
-    lvs_env['WORK_ROOT'] = f"{output_directory}"
-    lvs_env['LOG_ROOT'] = f"{output_directory}/log"
-    lvs_env['SIGNOFF_ROOT'] = f"{output_directory}/output"
+    lvs_env['WORK_ROOT'] = f"{tmp_dir}"
+    lvs_env['LOG_ROOT'] = f"{log_path}"
+    lvs_env['SIGNOFF_ROOT'] = f"{report_path}"
     lvs_env['PDK'] = f'{pdk}'
     lvs_env['PDK_ROOT'] = f'{pdk_root}'
     if not os.path.exists(f"{config_file}"):
         logging.error(f"ERROR LVS FAILED, Could not find LVS configuration file {config_file}")
         return False
+    lvs_env['INCLUDE_CONFIGS'] = f"{config_file}"
     if not parse_config_file(config_file, lvs_env):
         return False
     lvs_cmd = ['bash', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{config_file}', f'{design_name}']
-    os.environ.update(lvs_env)
+    print_lvs_config(lvs_env)
+    lvs_env.update(os.environ)
     with open(log_file_path, 'w') as lvs_log:
-        logging.info("run: run_be_checks")  # helpful reference, print long-cmd once & messages below remain concise
+        logging.info("run: run_be_checks")
         logging.info(f"LVS output directory: {output_directory}")
-        p = subprocess.run(lvs_cmd, stderr=lvs_log, stdout=lvs_log)
+        p = subprocess.run(lvs_cmd, stderr=lvs_log, stdout=lvs_log, env=lvs_env)
         # Check exit-status of all subprocesses
         stat = p.returncode
         if stat != 0:
@@ -117,7 +140,14 @@ if __name__ == "__main__":
     pdk = pdk_path.name
     pdk_root = pdk_path.parent
 
-    if not run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
+    tag = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    lvs_output = f"{output_directory}/{design_name}/lvs_results/{tag}"
+    if not os.path.isdir(f"{output_directory}/{design_name}/lvs_results"):
+        os.mkdir(f"{output_directory}/{design_name}/lvs_results")
+    if not os.path.isdir(lvs_output):
+        os.mkdir(lvs_output)
+
+    if not run_lvs(design_directory, lvs_output, design_name, config_file, pdk_root, pdk):
         logging.error("LVS Failed.")
     else:
         logging.info("LVS Passed!")
