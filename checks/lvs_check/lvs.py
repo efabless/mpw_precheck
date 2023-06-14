@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 import json
 import re
+import shutil
 
 def is_valid(string):
     if string.startswith("/"):
@@ -120,6 +121,8 @@ def run_lvs(design_directory, output_directory, design_name, config_file, pdk_ro
             logging.error(f"ERROR LVS FAILED, stat={stat}, see {log_file_path}")
             return False
         else:
+            if os.path.isdir(f"{tmp_dir}"):
+                shutil.rmtree(tmp_dir)
             return True
 
 
@@ -150,4 +153,6 @@ if __name__ == "__main__":
     if not run_lvs(design_directory, lvs_output, design_name, config_file, pdk_root, pdk):
         logging.error("LVS Failed.")
     else:
+        if os.path.isdir(f"{lvs_output}/tmp"):
+            shutil.rmtree(f"{lvs_output}/tmp")
         logging.info("LVS Passed!")
