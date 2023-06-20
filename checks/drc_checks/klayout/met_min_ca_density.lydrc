@@ -23,27 +23,27 @@ verbose(true)
 
 deep
 
-li1_wildcard = "67/0-4,6-43,45-*"
+li1_wildcard = "67/0-4,6-9,11-43,45-*"
 mcon_wildcard = "67/44"
 li1fill_wildcard = "56/28"
 
-m1_wildcard = "68/0-4,6-43,45-*"
+m1_wildcard = "68/0-4,6-9,11-43,45-*"
 via_wildcard = "68/44"
 m1fill_wildcard = "36/28"
 
-m2_wildcard = "69/0-4,6-43,45-*"
+m2_wildcard = "69/0-4,6-9,11-43,45-*"
 via2_wildcard = "69/44"
 m2fill_wildcard = "41/28"
 
-m3_wildcard = "70/0-4,6-43,45-*"
+m3_wildcard = "70/0-4,6-9,11-43,45-*"
 via3_wildcard = "70/44"
 m3fill_wildcard = "34/28"
 
-m4_wildcard = "71/0-4,6-43,45-*"
+m4_wildcard = "71/0-4,6-9,11-43,45-*"
 via4_wildcard = "71/44"
 m4fill_wildcard = "51/28"
 
-m5_wildcard = "72/0-4,6-43,45-*"
+m5_wildcard = "72/0-4,6-9,11-43,45-*"
 m5fill_wildcard = "59/28"
 
 # ---------------

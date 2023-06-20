@@ -33,7 +33,7 @@ To pull the necessary docker from [dockerhub](https://hub.docker.com/repository/
 
 ### Install the PDK
 
-If you don't have the skywater-pdk installed, please refer to the [caravel](https://github.com/efabless/caravel.git) Makefile.
+If you don't have the pdk installed, please refer to the [caravel](https://github.com/efabless/caravel.git) Makefile.
 
 ## Before Using
 
@@ -77,6 +77,8 @@ The steps are as follows:
     - Remaining User Netlist checks:
       - Ports check: check netlist port names match the golden wrapper ports
       - Layout check: check netlist matches the provided user wrapper layout in terms of the number of instances, and the instance names
+- **GPIO Defines**:
+  - A verilog directives check that validates the project's 'verilog/rtl/user_defines.v' netlist.
 - **XOR**:
   - No modification in the user_project_wrapper(versus default user_project_wrapper.gds in [caravel_user_project](https://github.com/efabless/caravel_user_project.git) for digital projects
     and [caravel_user_project_analog](https://github.com/efabless/caravel_user_project_analog.git) for analog projects) outside the user defined area lower left corner (0,0) and upper right corner (2920, 3520)

@@ -18,8 +18,13 @@
 # syntax = docker/dockerfile:1.0-experimental
 FROM centos:centos7 as build
 
+# ENV VARIABLES
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+ENV LC_CTYPE en_US.UTF-8
+
 # Common development tools and libraries (kitchen sink approach)
-RUN yum -y install centos-release-scl && \
+RUN yum -y install deltarpm.x86_64 centos-release-scl && \
     yum -y install devtoolset-8 devtoolset-8-libatomic-devel && \
     yum -y install https://repo.ius.io/ius-release-el7.rpm && \
     yum -y install -y python36u python36u-devel python36u-libs python36u-pip python36u-tkinter && \
@@ -29,38 +34,30 @@ RUN yum -y install centos-release-scl && \
 # Set python 3.6 as default python3
 RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
 RUN pip3.6 install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir awscli boto3 colorama coloredlogs klayout numpy pyyaml requests strsimpy
-
-# Install pyverilog & pyspice
-RUN pip install --no-cache-dir https://github.com/PyHDI/Pyverilog/archive/develop.zip && \
-    pip install --no-cache-dir pyspice
+    pip3.6 install --no-cache-dir awscli boto3 colorama coloredlogs klayout numpy PySpice pyverilog pyyaml requests strsimpy
 
 # General Dependencies
 RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ gdb.x86_64 file.x86_64 time.x86_64 && \
     yum install -y csh libglu libX11-devel ncurses-devel tcl-devel tk-devel wget && \
-    yum install -y git patch ruby && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+    yum install -y git patch ruby
 
 # uninstall current version of git and install latest version available in rhel/7
 RUN yum -y remove git && yum -y remove git-* && \
-    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.1-2.el7.ius.x86_64.rpm && \
+    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.2-1.el7.ius.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
-# Install iverilog
 RUN yum install -y iverilog && \
-    yum clean all && \
-    rm -rf /var/cache/yum
-
-# Install Klayout
-RUN yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.10-0.x86_64.rpm && \
+    yum install -y m4 && \
+    yum install -y gettext-devel bison byacc readline-devel && \
+    yum install -y flex autotools-dev build-essential autoconf pkg-config nasm libtool automake autopoint && \
+    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.27.13-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
 # Clone Magic
-ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.315 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+ENV MAGIC_ROOT=/opt/magic
+RUN git clone --depth=1 --branch 8.3.394 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
@@ -73,9 +70,6 @@ RUN scl enable devtoolset-8 -- ./configure --prefix=/build CFLAGS='-g -O0 -m64 -
     scl enable devtoolset-8 -- make install
 
 # ENV VARIABLES
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-ENV LC_CTYPE en_US.UTF-8
 ENV BUILD_PATH=/build/
 ENV LD_LIBRARY_PATH=$BUILD_PATH/lib:$BUILD_PATH/lib/Linux-x86_64:$LD_LIBRARY_PATH
 ENV MANPATH=$BUILD_PATH/share/man:$MANPATH
@@ -85,4 +79,24 @@ WORKDIR $PRECHECKER_ROOT
 
 # GOLDEN CARAVEL
 ENV GOLDEN_CARAVEL=/opt/caravel
-RUN git clone --depth=1 --branch mpw-7a https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress
+RUN git clone --branch mpw-9d --depth=1 https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress
+
+
+# Clone netgen
+ENV NETGEN_ROOT=/opt/netgen
+RUN git clone --depth=1 --branch 1.5.253 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
+WORKDIR $NETGEN_ROOT
+RUN scl enable devtoolset-8 -- ./configure --prefix=/build && \
+    scl enable devtoolset-8 -- make -j4 && \
+    scl enable devtoolset-8 -- make install
+
+
+# Clone cvc
+ENV CVC_ROOT=/opt/cvc_rv
+WORKDIR $CVC_ROOT
+RUN git clone --depth=1 --branch v1.1.5 https://github.com/d-m-bailey/cvc.git ${CVC_ROOT}
+RUN scl enable devtoolset-8 -- autoreconf -vif ; \
+    scl enable devtoolset-8 -- ./configure --disable-nls --prefix=/build ; \
+    scl enable devtoolset-8 -- sed -i 's/api.parser.class/parser_class_name/' src/cdlParser.yy ; \
+    scl enable devtoolset-8 -- make -j4 ; \
+    scl enable devtoolset-8 -- make install

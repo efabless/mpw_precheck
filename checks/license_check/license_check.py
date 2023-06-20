@@ -25,8 +25,8 @@ APPROVED_LICENSES_PATH = Path(__file__).parent / "_licenses/_approved_licenses"
 PROHIBITED_LICENSES_PATH = Path(__file__).parent / "_licenses/_prohibited_licenses"
 
 # Directories, files and file_extensions ignored for license check
-IGNORED_DIRS = [".git", ".github", "caravel", "gl", "third_party"]
-IGNORED_EXTS = [".cfg", ".csv", ".def", ".drc", ".gds", ".gz", ".hex", ".jpg", ".lef", ".log", ".mag", ".md", ".out", ".pdf", ".png", ".pyc", ".rdb", ".spice", ".svg", ".txt", ".vcd", ".xml"]
+IGNORED_DIRS = [".git", ".github", "caravel", "dependencies", "gl", "mgmt_core_wrapper", "precheck_results", "lvs_results", "runs", "signoff", "third_party", "venv"]
+IGNORED_EXTS = [".cells", ".cfg", ".csv", ".def", ".drc", ".gds", ".gz", ".hex", ".jpg", ".json", ".lef", ".lib", ".log", ".mag", ".md", ".out", ".pdf", ".png", ".pyc", ".rdb", ".sdc", ".sdf", ".spef", ".spice", ".svg", ".txt", ".vcd", ".xml"]
 IGNORED_FILES = [".git", ".gitignore", ".gitmodules", "info.yaml", "LICENSE", "manifest", "OPENLANE_VERSION", "PDK_SOURCES"]
 
 # Default values for base license files
@@ -62,7 +62,7 @@ def verify_license_compliance(path):
             approved_license = check_license(path, APPROVED_LICENSES_PATH)
             if approved_license:
                 logging.info(f"An approved LICENSE ({approved_license}) was found in {path.parent}.")
-                return True
+                return approved_license
             else:
                 logging.warning(f"An identifiable LICENSE file was not found in {path.parent}.")
                 return False
@@ -92,7 +92,7 @@ def check_dir_spdx_compliance(non_compliant_list, path, license_key=None):
     for root, dirs, files in os.walk(path):
         for file in files:
             file_under_test = Path(root) / file
-            if not any(ignored_dir in str(file_under_test.parent) for ignored_dir in IGNORED_DIRS):
+            if not any(ignored_dir in Path(file_under_test.parent).parts for ignored_dir in IGNORED_DIRS):
                 result = check_file_spdx_compliance(file_under_test, license_key)
                 if result:
                     non_compliant_list.append(result)

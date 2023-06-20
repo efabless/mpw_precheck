@@ -1,0 +1,1 @@
+lvs "$::env(WORK_ROOT)/ext/$::env(TOP).gds.nowell.spice $::env(TOP)" "$::env(WORK_ROOT)/nowell.ext/$::env(TOP).gds.nowell.spice $::env(TOP)" $::env(LVS_ROOT)/tech/$::env(PDK)_setup.tcl $::env(SIGNOFF_ROOT)/lvs.soft.report -json -noflatten=noflatten

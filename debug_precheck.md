@@ -58,15 +58,6 @@ Investigate the specific coordinates of the failures in the design gds. Use `$IN
 
 #### Default content check failed
 
-Use non-default values in info.yaml for the following fields
-
-- owner
-- orgranization
-- organization_url
-- description
-- git_url
-- project_name
-
 Submit content other than the default content
 
 - gds

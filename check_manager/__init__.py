@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 Efabless Corporation
+# SPDX-FileCopyrightText: 2020-2022 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,8 +26,10 @@ from checks import manifest_check
 from checks.consistency_check import consistency_check
 from checks.drc_checks.klayout import klayout_gds_drc_check
 from checks.drc_checks.magic import magic_gds_drc_check
+from checks.gpio_defines_check import gpio_defines_check
 from checks.license_check import license_check
 from checks.xor_check import xor_check
+from checks.lvs_check.lvs import run_lvs
 
 
 class CheckManagerNotFound(Exception):
@@ -49,6 +51,7 @@ class CheckManager:
 class Consistency(CheckManager):
     __ref__ = 'consistency'
     __surname__ = 'Consistency'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -69,6 +72,7 @@ class Consistency(CheckManager):
 class Defaults(CheckManager):
     __ref__ = 'default'
     __surname__ = 'Default'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -94,6 +98,7 @@ class Defaults(CheckManager):
 class Documentation(CheckManager):
     __ref__ = 'documentation'
     __surname__ = 'Documentation'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -107,9 +112,59 @@ class Documentation(CheckManager):
         return self.result
 
 
+class GpioDefines(CheckManager):
+    __ref__ = 'gpio_defines'
+    __surname__ = 'GPIO-Defines'
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+
+    def run(self):
+        self.result = gpio_defines_check.main(input_directory=self.precheck_config['input_directory'],
+                                              output_directory=self.precheck_config['output_directory'],
+                                              project_type=self.project_config['type'],
+                                              user_defines_v=Path("verilog/rtl/user_defines.v"),
+                                              include_extras=[],
+                                              precheck_config=self.precheck_config)
+        if self.result:
+            logging.info("{{GPIO-DEFINES CHECK PASSED}} The user verilog/rtl/user_defines.v is valid.")
+        else:
+            logging.warning("{{GPIO-DEFINES CHECK FAILED}} The user verilog/rtl/user_defines.v is not valid.")
+        return self.result
+
+
+class Lvs(CheckManager):
+    __ref__ = 'lvs'
+    __surname__ = 'LVS'
+    __supported_pdks__ = ['sky130A', 'sky130B']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.design_directory = self.precheck_config['input_directory']
+        self.output_directory = self.precheck_config['output_directory']
+        if self.project_config['type'] == "analog":
+            self.design_name = "user_analog_project_wrapper"
+        else:
+            self.design_name = "user_project_wrapper"
+        self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
+        self.pdk_root = precheck_config['pdk_path'].parent
+        self.pdk = precheck_config['pdk_path'].name
+
+    def run(self):
+        self.result = run_lvs(self.design_directory, self.output_directory, self.design_name, self.config_file, self.pdk_root, self.pdk)
+
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.design_name}, has no LVS violations.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.design_name}, has LVS violations.")
+        return self.result
+
+
 class KlayoutDRC(CheckManager):
     __ref__ = None
     __surname__ = None
+    __supported_pdks__ = None
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -138,45 +193,59 @@ class KlayoutDRC(CheckManager):
 class KlayoutBEOL(KlayoutDRC):
     __ref__ = 'klayout_beol'
     __surname__ = 'Klayout BEOL'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
+        self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'beol=true']
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
 
 
 class KlayoutFEOL(KlayoutDRC):
     __ref__ = 'klayout_feol'
     __surname__ = 'Klayout FEOL'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
+        self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'feol=true']
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
 
 
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/met_min_ca_density.lydrc"
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/gf180mcu_density.lydrc"
+        else:
+            self.drc_script_path = Path(__file__).parent.parent / "checks/drc_checks/klayout/met_min_ca_density.lydrc"
 
 
 class KlayoutOffgrid(KlayoutDRC):
     __ref__ = 'klayout_offgrid'
     __surname__ = 'Klayout Offgrid'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
-        self.drc_script_path = Path(__file__).parent.parent / "checks/tech-files/sky130A_mr.drc"
+        self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'offgrid=true']
+        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
 
 
 class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
     __ref__ = 'klayout_pin_label_purposes_overlapping_drawing'
     __surname__ = 'Klayout Pin Label Purposes Overlapping Drawing'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -187,6 +256,7 @@ class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
 class KlayoutZeroArea(KlayoutDRC):
     __ref__ = 'klayout_zeroarea'
     __surname__ = 'Klayout ZeroArea'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -197,6 +267,7 @@ class KlayoutZeroArea(KlayoutDRC):
 class License(CheckManager):
     __ref__ = 'license'
     __surname__ = 'License'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -248,6 +319,7 @@ class License(CheckManager):
 class MagicDRC(CheckManager):
     __ref__ = 'magic_drc'
     __surname__ = 'Magic DRC'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -273,6 +345,7 @@ class MagicDRC(CheckManager):
 class Makefile(CheckManager):
     __ref__ = 'makefile'
     __surname__ = 'Makefile'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -289,6 +362,7 @@ class Makefile(CheckManager):
 class Manifest(CheckManager):
     __ref__ = 'manifest'
     __surname__ = 'Manifest'
+    __supported_pdks__ = ['sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -306,20 +380,27 @@ class Manifest(CheckManager):
 class XOR(CheckManager):
     __ref__ = 'xor'
     __surname__ = 'XOR'
+    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
 
     def run(self):
         # TODO(nofal): This should be a single file across the entire precheck
-        magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
-        gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
+
+        if 'gf180mcu' in self.precheck_config['pdk_path'].stem:
+            magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
+            gds_golden_wrapper_file_path = Path(__file__).parent.parent / "_default_content/gds/user_project_wrapper_empty_gf180mcu.gds"
+        else:
+            magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
+            gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
 
         self.result = xor_check.gds_xor_check(self.precheck_config['input_directory'],
                                               self.precheck_config['output_directory'],
                                               magicrc_file_path,
                                               gds_golden_wrapper_file_path,
-                                              self.project_config)
+                                              self.project_config,
+                                              self.precheck_config)
         if self.result:
             logging.info("{{XOR CHECK PASSED}} The GDS file has no XOR violations.")
         else:
@@ -334,6 +415,7 @@ open_source_checks = OrderedDict([
     (Defaults.__ref__, Defaults),
     (Documentation.__ref__, Documentation),
     (Consistency.__ref__, Consistency),
+    (GpioDefines.__ref__, GpioDefines),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),
@@ -341,13 +423,15 @@ open_source_checks = OrderedDict([
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea)
+    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (Lvs.__ref__, Lvs),
 ])
 
 # Note: list of checks for a private project
 private_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
     (Consistency.__ref__, Consistency),
+    (GpioDefines.__ref__, GpioDefines),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),
@@ -355,7 +439,8 @@ private_checks = OrderedDict([
     (KlayoutOffgrid.__ref__, KlayoutOffgrid),
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea)
+    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (Lvs.__ref__, Lvs),
 ])
 
 
