@@ -57,7 +57,7 @@ RUN yum install -y iverilog && \
 
 # Clone Magic
 ENV MAGIC_ROOT=/opt/magic
-RUN git clone --depth=1 --branch 8.3.394 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.413 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
@@ -79,7 +79,8 @@ WORKDIR $PRECHECKER_ROOT
 
 # GOLDEN CARAVEL
 ENV GOLDEN_CARAVEL=/opt/caravel
-RUN git clone --branch mpw-9d --depth=1 https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} && make -C ${GOLDEN_CARAVEL} uncompress
+RUN git clone --branch mpw-9d --depth=1 https://github.com/efabless/caravel-lite.git ${GOLDEN_CARAVEL} 
+RUN make -C ${GOLDEN_CARAVEL} uncompress
 
 
 # Clone netgen

@@ -1,13 +1,16 @@
+
+
 import argparse
+from datetime import datetime
 import logging
-import subprocess
 import os
 from pathlib import Path
-from datetime import datetime
 import shutil
+import subprocess
 from checks.utils import utils
 
-def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
+
+def run_oeb(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
     log_path = f"{output_directory}/logs"
     report_path = f"{output_directory}/outputs/reports"
     log_file_path = f"{log_path}/be_check.log"
@@ -30,22 +33,22 @@ def run_lvs(design_directory, output_directory, design_name, config_file, pdk_ro
     lvs_env['PDK'] = f'{pdk}'
     lvs_env['PDK_ROOT'] = f'{pdk_root}'
     if not os.path.exists(f"{config_file}"):
-        logging.error(f"ERROR LVS FAILED, Could not find LVS configuration file {config_file}")
+        logging.error(f"ERROR OEB CHECK FAILED, Could not find LVS configuration file {config_file}")
         return False
     lvs_env['INCLUDE_CONFIGS'] = f"{config_file}"
     if not utils.parse_config_file(config_file, lvs_env):
         return False
-    lvs_cmd = ['bash', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{config_file}', f'{design_name}']
+    lvs_cmd = ['bash', f'{os.getcwd()}/checks/oeb_check/run_oeb_check', f'{config_file}', f'{design_name}']
     utils.print_lvs_config(lvs_env)
     lvs_env.update(os.environ)
     with open(log_file_path, 'w') as lvs_log:
-        logging.info("run: run_be_checks")
-        logging.info(f"LVS output directory: {output_directory}")
+        logging.info("run: run_oeb_checks")
+        logging.info(f"oeb output directory: {output_directory}")
         p = subprocess.run(lvs_cmd, stderr=lvs_log, stdout=lvs_log, env=lvs_env)
         # Check exit-status of all subprocesses
         stat = p.returncode
         if stat != 0:
-            logging.error(f"ERROR LVS FAILED, stat={stat}, see {log_file_path}")
+            logging.error(f"ERROR OEB FAILED, stat={stat}, see {log_file_path}")
             return False
         else:
             if os.path.isdir(f"{tmp_dir}"):
@@ -54,7 +57,7 @@ def run_lvs(design_directory, output_directory, design_name, config_file, pdk_ro
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
+    logging.basicConfig(level=logging.DEBUG, format="%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     parser = argparse.ArgumentParser(description='Runs LVS on a given design.')
     parser.add_argument('--design_directory', '-g', required=True, help='Design Directory')
     parser.add_argument('--output_directory', '-o', required=True, help='Output Directory')
@@ -71,15 +74,15 @@ if __name__ == "__main__":
     pdk_root = pdk_path.parent
 
     tag = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    lvs_output = f"{output_directory}/{design_name}/lvs_results/{tag}"
-    if not os.path.isdir(f"{output_directory}/{design_name}/lvs_results"):
-        os.mkdir(f"{output_directory}/{design_name}/lvs_results")
+    lvs_output = f"{output_directory}/{design_name}/oeb_results/{tag}"
+    if not os.path.isdir(f"{output_directory}/{design_name}/oeb_results"):
+        os.mkdir(f"{output_directory}/{design_name}/oeb_results")
     if not os.path.isdir(lvs_output):
         os.mkdir(lvs_output)
 
-    if not run_lvs(design_directory, lvs_output, design_name, config_file, pdk_root, pdk):
-        logging.error("LVS Failed.")
+    if not run_oeb(design_directory, lvs_output, design_name, config_file, pdk_root, pdk):
+        logging.error("OEB check Failed.")
     else:
         if os.path.isdir(f"{lvs_output}/tmp"):
             shutil.rmtree(f"{lvs_output}/tmp")
-        logging.info("LVS Passed!")
+        logging.info("OEB check Passed!")

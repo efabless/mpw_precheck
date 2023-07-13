@@ -30,6 +30,7 @@ from checks.gpio_defines_check import gpio_defines_check
 from checks.license_check import license_check
 from checks.xor_check import xor_check
 from checks.lvs_check.lvs import run_lvs
+from checks.oeb_check.oeb import run_oeb
 
 
 class CheckManagerNotFound(Exception):
@@ -158,6 +159,32 @@ class Lvs(CheckManager):
             logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.design_name}, has no LVS violations.")
         else:
             logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.design_name}, has LVS violations.")
+        return self.result
+
+class Oeb(CheckManager):
+    __ref__ = 'oeb'
+    __surname__ = 'OEB'
+    __supported_pdks__ = ['sky130A', 'sky130B']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.design_directory = self.precheck_config['input_directory']
+        self.output_directory = self.precheck_config['output_directory']
+        if self.project_config['type'] == "analog":
+            self.design_name = "user_analog_project_wrapper"
+        else:
+            self.design_name = "user_project_wrapper"
+        self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
+        self.pdk_root = precheck_config['pdk_path'].parent
+        self.pdk = precheck_config['pdk_path'].name
+
+    def run(self):
+        self.result = run_oeb(self.design_directory, self.output_directory, self.design_name, self.config_file, self.pdk_root, self.pdk)
+
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.design_name}, has no OEB violations.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.design_name}, has OEB violations.")
         return self.result
 
 
@@ -424,6 +451,7 @@ open_source_checks = OrderedDict([
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
     (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (Oeb.__ref__, Oeb),
     (Lvs.__ref__, Lvs),
 ])
 
@@ -440,6 +468,7 @@ private_checks = OrderedDict([
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
     (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (Oeb.__ref__, Oeb),
     (Lvs.__ref__, Lvs),
 ])
 

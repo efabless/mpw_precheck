@@ -15,7 +15,9 @@
 
 import gzip
 import hashlib
+import json
 import logging
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -84,3 +86,74 @@ def get_project_config(project_path, caravel_root):
                       "If your project is analog, a GDS file should exist under the project's 'gds' directory named 'user_analog_project_wrapper(.gds/.gds.gz)'.")
         sys.exit(254)
     return project_config
+
+def is_valid(string):
+    if string.startswith("/"):
+        return False
+    else:
+        return True
+
+def is_path(string):
+    if "/" in string:
+        return True
+    else:
+        return False
+
+def substitute_env_variables(string, env):
+    if "$" in string:
+        words = re.findall(r'\$\w+', string)
+        for w in words:
+            env_var = w[1:]  # remove leading '$'
+            if env_var in env:
+                string = string.replace(w, env.get(env_var), 1)  # only replace first occurence. Others will be replaced later.
+            else:
+                logging.error(f"ERROR LVS FAILED, couldn't find environment variable {w}")
+                return None
+    return string
+
+def print_lvs_config(lvs_env):
+    for lvs_key in ['EXTRACT_FLATGLOB', 'EXTRACT_ABSTRACT', 'LVS_FLATTEN', 'LVS_NOFLATTEN', 'LVS_IGNORE', 'LVS_SPICE_FILES', 'LVS_VERILOG_FILES', 'LAYOUT_FILE']:
+        if lvs_key in lvs_env:
+            logging.info(lvs_key + " : " + lvs_env[lvs_key])
+        else:
+            logging.warn(f"Missing LVS configuration variable {lvs_key}")
+
+def parse_config_file(json_file, lvs_env):
+    logging.info(f"Loading LVS environment from {json_file}")
+    try:
+        with open(json_file, "r") as f:
+            data = json.load(f)
+        for key, value in data.items():
+            if type(value) == list:
+                exports = lvs_env[key].split() if key in lvs_env else []
+                for val in value:
+                    if is_valid(val):
+                        val = substitute_env_variables(val, lvs_env)
+                        if val is None:  # could not substitute
+                            return False
+                        if val not in exports:  # only add if not already in list
+                            exports.append(val)
+                            if key == 'INCLUDE_CONFIGS':  # load child configs
+                                lvs_env['INCLUDE_CONFIGS'] += " " + val  # prevents loading same config twice
+                                if not parse_config_file(val, lvs_env):
+                                    return False
+                    else:
+                        logging.error(f"{val} is an absolute path, paths must start with $PDK_ROOT or $UPRJ_ROOT")
+                        return False
+                if key != 'INCLUDE_CONFIGS':
+                    lvs_env[key] = ' '.join(exports)
+            else:
+                if is_valid(value):
+                    value = substitute_env_variables(value, lvs_env)
+                    if value is None:  # could not substitute
+                        return False
+                    lvs_env[key] = value
+                else:
+                    logging.error(f"{val} is an absolute path, paths must start with $PDK_ROOT or $UPRJ_ROOT")
+                    return False
+        return True
+    except Exception as err:
+        logging.error(type(err))
+        logging.error(err.args)
+        logging.error(f"Error with file {json_file}")
+        return False
