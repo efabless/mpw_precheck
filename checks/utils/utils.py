@@ -17,7 +17,9 @@ import gzip
 import hashlib
 import json
 import logging
+import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -111,43 +113,43 @@ def substitute_env_variables(string, env):
                 return None
     return string
 
-def print_lvs_config(lvs_env):
+def print_lvs_config(be_env):
     for lvs_key in ['EXTRACT_FLATGLOB', 'EXTRACT_ABSTRACT', 'LVS_FLATTEN', 'LVS_NOFLATTEN', 'LVS_IGNORE', 'LVS_SPICE_FILES', 'LVS_VERILOG_FILES', 'LAYOUT_FILE']:
-        if lvs_key in lvs_env:
-            logging.info(lvs_key + " : " + lvs_env[lvs_key])
+        if lvs_key in be_env:
+            logging.info(lvs_key + " : " + be_env[lvs_key])
         else:
             logging.warn(f"Missing LVS configuration variable {lvs_key}")
 
-def parse_config_file(json_file, lvs_env):
+def parse_config_file(json_file, be_env):
     logging.info(f"Loading LVS environment from {json_file}")
     try:
         with open(json_file, "r") as f:
             data = json.load(f)
         for key, value in data.items():
             if type(value) == list:
-                exports = lvs_env[key].split() if key in lvs_env else []
+                exports = be_env[key].split() if key in be_env else []
                 for val in value:
                     if is_valid(val):
-                        val = substitute_env_variables(val, lvs_env)
+                        val = substitute_env_variables(val, be_env)
                         if val is None:  # could not substitute
                             return False
                         if val not in exports:  # only add if not already in list
                             exports.append(val)
                             if key == 'INCLUDE_CONFIGS':  # load child configs
-                                lvs_env['INCLUDE_CONFIGS'] += " " + val  # prevents loading same config twice
-                                if not parse_config_file(val, lvs_env):
+                                be_env['INCLUDE_CONFIGS'] += " " + val  # prevents loading same config twice
+                                if not parse_config_file(val, be_env):
                                     return False
                     else:
                         logging.error(f"{val} is an absolute path, paths must start with $PDK_ROOT or $UPRJ_ROOT")
                         return False
                 if key != 'INCLUDE_CONFIGS':
-                    lvs_env[key] = ' '.join(exports)
+                    be_env[key] = ' '.join(exports)
             else:
                 if is_valid(value):
-                    value = substitute_env_variables(value, lvs_env)
+                    value = substitute_env_variables(value, be_env)
                     if value is None:  # could not substitute
                         return False
-                    lvs_env[key] = value
+                    be_env[key] = value
                 else:
                     logging.error(f"{val} is an absolute path, paths must start with $PDK_ROOT or $UPRJ_ROOT")
                     return False
@@ -157,3 +159,53 @@ def parse_config_file(json_file, lvs_env):
         logging.error(err.args)
         logging.error(f"Error with file {json_file}")
         return False
+
+def run_be_check(design_directory, output_directory, design_name, config_file, pdk_root, pdk, check):
+    log_path = f"{output_directory}/logs"
+    report_path = f"{output_directory}/outputs/reports"
+    log_file_path = f"{log_path}/{check}_check.log"
+    tmp_dir = f"{output_directory}/tmp"
+    if not os.path.isdir(log_path):
+        os.mkdir(log_path)
+    if not os.path.isdir(tmp_dir):
+        os.mkdir(f"{tmp_dir}")
+    if not os.path.isdir(f"{output_directory}/outputs"):
+        os.mkdir(f"{output_directory}/outputs")
+    if not os.path.isdir(report_path):
+        os.mkdir(f"{report_path}")
+
+    if check == "LVS":
+        be_script = "run_be_checks"
+    elif check == "OEB":
+        be_script = "run_oeb_check"
+
+    be_env = dict()
+    be_env['UPRJ_ROOT'] = f"{design_directory}"
+    be_env['LVS_ROOT'] = f'{os.getcwd()}/checks/be_checks/'
+    be_env['WORK_ROOT'] = f"{tmp_dir}"
+    be_env['LOG_ROOT'] = f"{log_path}"
+    be_env['SIGNOFF_ROOT'] = f"{report_path}"
+    be_env['PDK'] = f'{pdk}'
+    be_env['PDK_ROOT'] = f'{pdk_root}'
+    if not os.path.exists(f"{config_file}"):
+        logging.error(f"ERROR {check} FAILED, Could not find LVS configuration file {config_file}")
+        return False
+    be_env['INCLUDE_CONFIGS'] = f"{config_file}"
+    if not parse_config_file(config_file, be_env):
+        return False
+    be_cmd = ['bash', f'{os.getcwd()}/checks/be_checks/{be_script}', f'{config_file}', f'{design_name}']
+    print_lvs_config(be_env)
+    be_env.update(os.environ)
+    with open(log_file_path, 'w') as be_log:
+        logging.info(f"run: {be_script}")
+        logging.info(f"{check} output directory: {output_directory}")
+        p = subprocess.run(be_cmd, stderr=be_log, stdout=be_log, env=be_env)
+        # Check exit-status of all subprocesses
+        stat = p.returncode
+        if stat != 0:
+            logging.error(f"ERROR {check} FAILED, stat={stat}, see {log_file_path}")
+            return False
+        else:
+            if os.path.isdir(f"{tmp_dir}"):
+                shutil.rmtree(tmp_dir)
+            return True

@@ -1,0 +1,30 @@
+#! /usr/bin/env bash
+#   check_extraction: checks all the ext files in the directory specified for merge shorts.
+
+#   Copyright 2022 D. Mitch Bailey  cvc at shuharisystem dot com
+
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+# merge shorts are shorts between ports that do not appear in the extraction report.
+
+for ext_path in $1/*.ext $1/*.ext.gz; do
+	ext_file=${ext_path##*/}
+	ext_cell=${ext_file%%.ext*}
+	if [[ ${ext_file##*.} == "gz" ]]; then
+		CAT=zcat
+	else
+		CAT=cat
+	fi
+	$CAT $ext_path |
+		awk -v CELL=$ext_cell -f $LVS_ROOT/scripts/merge_short.awk
+done

@@ -1,56 +1,13 @@
 import argparse
+from datetime import datetime
 import logging
-import subprocess
 import os
 from pathlib import Path
-from datetime import datetime
 import shutil
 from checks.utils import utils
 
 def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
-    log_path = f"{output_directory}/logs"
-    report_path = f"{output_directory}/outputs/reports"
-    log_file_path = f"{log_path}/be_check.log"
-    tmp_dir = f"{output_directory}/tmp"
-    if not os.path.isdir(log_path):
-        os.mkdir(log_path)
-    if not os.path.isdir(tmp_dir):
-        os.mkdir(f"{tmp_dir}")
-    if not os.path.isdir(f"{output_directory}/outputs"):
-        os.mkdir(f"{output_directory}/outputs")
-    if not os.path.isdir(report_path):
-        os.mkdir(f"{report_path}")
-
-    lvs_env = dict()
-    lvs_env['UPRJ_ROOT'] = f"{design_directory}"
-    lvs_env['LVS_ROOT'] = f'{os.getcwd()}/checks/lvs_check/'
-    lvs_env['WORK_ROOT'] = f"{tmp_dir}"
-    lvs_env['LOG_ROOT'] = f"{log_path}"
-    lvs_env['SIGNOFF_ROOT'] = f"{report_path}"
-    lvs_env['PDK'] = f'{pdk}'
-    lvs_env['PDK_ROOT'] = f'{pdk_root}'
-    if not os.path.exists(f"{config_file}"):
-        logging.error(f"ERROR LVS FAILED, Could not find LVS configuration file {config_file}")
-        return False
-    lvs_env['INCLUDE_CONFIGS'] = f"{config_file}"
-    if not utils.parse_config_file(config_file, lvs_env):
-        return False
-    lvs_cmd = ['bash', f'{os.getcwd()}/checks/lvs_check/run_be_checks', f'{config_file}', f'{design_name}']
-    utils.print_lvs_config(lvs_env)
-    lvs_env.update(os.environ)
-    with open(log_file_path, 'w') as lvs_log:
-        logging.info("run: run_be_checks")
-        logging.info(f"LVS output directory: {output_directory}")
-        p = subprocess.run(lvs_cmd, stderr=lvs_log, stdout=lvs_log, env=lvs_env)
-        # Check exit-status of all subprocesses
-        stat = p.returncode
-        if stat != 0:
-            logging.error(f"ERROR LVS FAILED, stat={stat}, see {log_file_path}")
-            return False
-        else:
-            if os.path.isdir(f"{tmp_dir}"):
-                shutil.rmtree(tmp_dir)
-            return True
+    return utils.run_be_check(design_directory, output_directory, design_name, config_file, pdk_root, pdk, "LVS")
 
 
 if __name__ == "__main__":
