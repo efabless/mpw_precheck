@@ -11,7 +11,7 @@ git clone -b precheck https://github.com/d-m-bailey/extra_be_checks.git
 export LVS_ROOT=$PWD/extra_be_checks
 
 In your `caravel_user_project` or `caravel_user_project_analog` directory,
-create an LVS configuration file based on `extra_be_checks/$PDK/lvs_config.json`.
+create an LVS configuration file based on `caravel_user_project/lvs/user_project_wrapper/lvs_config.json`.
 `mpw_precheck` expects this file to be in `lvs/<cellname>/lvs_config.json`.
 
 Environment variables.
