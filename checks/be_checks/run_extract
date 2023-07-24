@@ -120,7 +120,7 @@ date "+BEGIN: %c" >$WORK_ROOT/$LOG_FILE
 start_time=$SECONDS
 
 echo " "
-if [[ ${TOP_LAYOUT/*analog*/analog} = analog ]]; then
+if [[ $TOP_LAYOUT == *analog* ]]; then
 	echo "Extracting as analog. Top ports connected by name." >>$WORK_ROOT/$LOG_FILE
 	export EXT_TYPE=analog
 else

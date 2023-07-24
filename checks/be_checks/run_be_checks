@@ -24,15 +24,23 @@
 #  All variable specified in LVS configuration file
 
 # Usage
-# run_be_checks LVS_config_file [top_netlist [top_layout [layout_file]]] 		: extract, then check
-# run_be_checks --noextract LVS_config_file [top_netlist [top_layout [layout_file]]]	: use previous extraction results to compare
+# run_be_checks [--nooeb] LVS_config_file [top_netlist [top_layout [layout_file]]] 		: extract, then check
+# run_be_checks --noextract [--nooeb] LVS_config_file [top_netlist [top_layout [layout_file]]]	: use previous extraction results to compare
 
-if [[ $1 = "--noextract" ]]; then
-	export EXTRACT_LAYOUT=no
-	shift
-else
-	export EXTRACT_LAYOUT=yes
-fi
+export EXTRACT_LAYOUT=yes
+SKIP_OEB=no
+while [[ "$1" == "--"* ]]; do
+	if [[ "$1" == "--noextract" ]]; then
+		export EXTRACT_LAYOUT=no
+		shift
+	elif [[ "$1" == "--nooeb" ]]; then
+		SKIP_OEB=yes
+		shift
+	else
+		echo "ERROR: unrecognized option $1"
+		exit 2
+	fi
+done
 
 if [[ $# -gt 4 ]]; then
 	echo "usage: run_be_checks [--noextract] [lvs_config_file [netlist_top [layout_top [layout_file]]]]"
@@ -48,8 +56,8 @@ fi
 CONFIG_FILE=$1
 DESIGN_NAME=${2:+"-d $2"}
 
-if [[ $# -ne 0 ]]; then # if config file not specified, skip and use current environment
-	source <($LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME)
+if [[ $# -ne 0 ]]; then  # if config file not specified, skip and use current environment
+	source <( $LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME )
 fi
 if [[ ! -v EXTRACT_FLATGLOB ]]; then
 	echo "ERROR: LVS environment problem."
@@ -84,8 +92,11 @@ fi
 export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
 mkdir -p $LOG_ROOT $SIGNOFF_ROOT $WORK_ROOT
-rm -f $LOG_ROOT/{soft,lvs,cvc,cvc.oeb}.log $SIGNOFF_ROOT/{soft,lvs,cvc,cvc.oeb}.report $SIGNOFF_ROOT/hier.csv
-if [[ $EXTRACT_LAYOUT = yes ]]; then
+rm -f $LOG_ROOT/{soft,lvs,cvc}.log $SIGNOFF_ROOT/{soft,lvs,cvc}.report $SIGNOFF_ROOT/hier.csv
+if [[ $SKIP_OEB == no ]]; then
+	rm -f $LOG_ROOT/cvc.oeb.log $SIGNOFF_ROOT/cvc.oeb.report
+fi
+if [[ $EXTRACT_LAYOUT == yes ]]; then
 	rm -f $LOG_ROOT/{ext,nowell.ext}.log
 fi
 
@@ -94,7 +105,7 @@ start_time=$SECONDS
 $LVS_ROOT/run_hier_check $TOP_SOURCE "$(echo $LVS_VERILOG_FILES | sed 's/#[^ ]*//g')" $TOP_LAYOUT $LAYOUT_FILE
 hier_status=$?
 
-if [[ $EXTRACT_LAYOUT = yes ]]; then
+if [[ $EXTRACT_LAYOUT == yes ]]; then
 	$LVS_ROOT/run_scheck
 	scheck_status=$?
 else
@@ -113,10 +124,10 @@ if [[ -f $LVS_ROOT/tech/$PDK/cvc.power.$TOP_SOURCE || -f ${CONFIG_FILE%/*}/cvc.p
 	cvc_status=$?
 fi
 
-# if [[ $TOP_SOURCE == *user_*project_wrapper ]]; then
-# 	$LVS_ROOT/run_oeb_check --noextract
-# 	oeb_status=$?
-# fi
+if [[ $TOP_SOURCE == *user_*project_wrapper && $SKIP_OEB == no ]]; then
+	$LVS_ROOT/run_oeb_check --noextract
+	oeb_status=$?
+fi
 
 echo "
 Soft check result:"
@@ -145,12 +156,12 @@ CVC result:"
 	grep 'CVC: Total:' $LOG_ROOT/cvc.log
 fi
 
-# if [[ $TOP_SOURCE == *user_*project_wrapper ]]; then
-# 	oeb_errors=$(grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report)
-# 	oeb_warnings=$(grep -c Warning $SIGNOFF_ROOT/cvc.oeb.report)
-# 	echo "
-# OEB check result: ERRORS: $oeb_errors  Warnings: $oeb_warnings"
-# fi
+if [[ $TOP_SOURCE == *user_*project_wrapper && $SKIP_OEB == no ]]; then
+	oeb_errors=$( grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report )
+	oeb_warnings=$( grep -c Warning $SIGNOFF_ROOT/cvc.oeb.report )
+	echo "
+OEB check result: ERRORS: $oeb_errors  Warnings: $oeb_warnings"
+fi
 
 runtime=$((SECONDS - start_time))
 hours=$((runtime / 3600))
@@ -161,11 +172,15 @@ printf "\nRuntime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds
 # If any of the checks had an error, set return code.
 # NOTE: ignores hierarchy check errors
 # NOTE: cvc_status and oeb_status ignored if not run
-if [[ $scheck_status -eq 0 && $lvs_status -eq 0 && ${cvc_status:=0} -eq 0 ]]; then
+if [[ $scheck_status -eq 0 && $lvs_status -eq 0 && ${cvc_status:=0} -eq 0 && ${oeb_status:=0} -eq 0 ]]; then
 	echo "
 No errors detected"
 	exit 0
 
+elif [[ $SKIP_OEB == no ]]; then
+	echo "
+WARNING: possible errors SOFT $scheck_status LVS $lvs_status CVC $cvc_status OEB $oeb_status"
+	exit 1
 else
 	echo "
 WARNING: possible errors SOFT $scheck_status LVS $lvs_status CVC $cvc_status"

@@ -33,7 +33,7 @@
 # Use cases
 # run_oeb_check [--noextract] [lvs_config_file [top_layout [layout_file]]]
 
-if [[ $1 = "--noextract" ]]; then
+if [[ $1 == "--noextract" ]]; then
 	export EXTRACT_LAYOUT=no
 	shift
 else
@@ -80,7 +80,7 @@ export RESULTS_DIR=$WORK_ROOT/ext
 rm -f $WORK_ROOT/cvc.oeb* $LOG_ROOT/cvc.oeb* $SIGNOFF_ROOT/cvc.oeb*
 
 export RESULTS_DIR=$WORK_ROOT/ext
-if [[ $EXTRACT_LAYOUT = yes ]]; then
+if [[ $EXTRACT_LAYOUT == yes ]]; then
 	env RUN_DIR=$RESULTS_DIR CIFIN_STYLE= EXTRACT_STYLE= LOG_FILE=ext.log $LVS_ROOT/run_extract
 	ext_status=$?
 fi
@@ -552,23 +552,23 @@ awk '
 					#printf "ERROR: gpio-%d analog and digital connections ", i;
 					#printf "analog:%d in:%d out%d ", analog_connections[i], in_connections[i], out_connections[i];
 					#printf "oeb: min/sim/max=%s/%s/%s\n", min[i], sim[i], max[i];
-				} else if ( ! ( sim[i] ~ /vccd/ ) ) {  # analog signals should disable output
+				} else if ( ! ( sim[i] ~ /vccd/ || sim[i] ~ /vdd/ ) ) {  # analog signals should disable output
 					printf "ERROR: oeb should always be high for analog";
 					#printf "Warning: gpio-%d oeb should always be high for analog ", i;
 					#printf "analog:%d oeb: min/sim/max=%s/%s/%s\n", analog_connections[i], min[i], sim[i], max[i];
 				}
 			} else if ( in_connections[i] > 0 && out_connections[i] == 0 ) {
-				if ( ! ( sim[i] ~ /vccd/ ) ) {  # input only signals should never enable output
+				if ( ! ( sim[i] ~ /vccd/ || sim[i] ~ /vdd/ ) ) {  # input only signals should never enable output
 					printf "ERROR: oeb should always be high for input only";
 					#printf "Warning: gpio-%d oeb should always be high for input only ", i;
 					#printf "in:%d out:%d oeb: min/sim/max=%s/%s/%s\n", in_connections[i], out_connections[i], min[i], sim[i], max[i];
 				}
 			} else if ( out_connections[i] > 0 ) {
-				if ( min[i] !~ /vssd/ ) {  # output signals must be enable-able
+				if ( min[i] !~ /vss/ ) {  # output signals must be enable-able
 					printf "ERROR: oeb must have possible low for output";
 					#printf "ERROR: gpio-%d oeb must have possible low for output ", i;
 					#printf "in:%d out:%d oeb: min/sim/max=%s/%s/%s\n", in_connections[i], out_connections[i], min[i], sim[i], max[i];
-				} else if ( in_connections[i] > 0 && sim[i] ~ /vssd/ ) {  # input is always driven by user output in user mode
+				} else if ( in_connections[i] > 0 && sim[i] ~ /vss/ ) {  # input is always driven by user output in user mode
 					printf "Warning: output always drives input. sky130: OK for pull up/down.";
 				}
 			}

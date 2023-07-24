@@ -134,7 +134,7 @@ else
 fi
 
 if [[ $LAYOUT_FILE ]]; then
-	if [[ ${LAYOUT_FILE##*.} == "gz" ]]; then
+	if [[ $LAYOUT_FILE == *.gz ]]; then
 		CAT=zcat
 		BASE_LAYOUT=${LAYOUT_FILE%.gz}
 	else

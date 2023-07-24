@@ -187,13 +187,14 @@ def run_be_check(design_directory, output_directory, design_name, config_file, p
     be_env['SIGNOFF_ROOT'] = f"{report_path}"
     be_env['PDK'] = f'{pdk}'
     be_env['PDK_ROOT'] = f'{pdk_root}'
+    be_env['DESIGN_NAME'] = f"{design_name}"
     if not os.path.exists(f"{config_file}"):
         logging.error(f"ERROR {check} FAILED, Could not find LVS configuration file {config_file}")
         return False
     be_env['INCLUDE_CONFIGS'] = f"{config_file}"
     if not parse_config_file(config_file, be_env):
         return False
-    be_cmd = ['bash', f'{os.getcwd()}/checks/be_checks/{be_script}', f'{config_file}', f'{design_name}']
+    be_cmd = ['bash', f'{os.getcwd()}/checks/be_checks/{be_script}']
     print_lvs_config(be_env)
     be_env.update(os.environ)
     with open(log_file_path, 'w') as be_log:
