@@ -1,17 +1,15 @@
-vccd* power 1.8
-vdda* power 3.3
-vssa* power 0.0
-vssd* power 0.0
-user_clock2 input min@0.0 max@1.8
-wb_clk_i input min@0.0 max@1.8
-wb_rst_i input min@0.0 max@1.8
-wbs_cyc_i input min@0.0 max@1.8
-wbs_stb_i input min@0.0 max@1.8
-wbs_we_i input min@0.0 max@1.8
-io_in[*] input min@0.0 max@1.8
-la_data_in[*] input min@0.0 max@1.8
-la_oenb[*] input min@0.0 max@1.8
-wbs_adr_i[*] input min@0.0 max@1.8
-wbs_dat_i[*] input min@0.0 max@1.8
-wbs_sel_i[*] input min@0.0 max@1.8
+vdd power 5.0
+vss power 0.0
+user_clock2 input min@0.0 max@5.0
+wb_clk_i input min@0.0 max@5.0
+wb_rst_i input min@0.0 max@5.0
+wbs_cyc_i input min@0.0 max@5.0
+wbs_stb_i input min@0.0 max@5.0
+wbs_we_i input min@0.0 max@5.0
+io_in[*] input min@0.0 max@5.0
+la_data_in[*] input min@0.0 max@5.0
+la_oenb[*] input min@0.0 max@5.0
+wbs_adr_i[*] input min@0.0 max@5.0
+wbs_dat_i[*] input min@0.0 max@5.0
+wbs_sel_i[*] input min@0.0 max@5.0
 

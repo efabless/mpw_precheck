@@ -176,8 +176,10 @@ def run_be_check(design_directory, output_directory, design_name, config_file, p
 
     if check == "LVS":
         be_script = "run_be_checks"
+        extra_args = "--nooeb"
     elif check == "OEB":
         be_script = "run_oeb_check"
+        extra_args = ""
 
     be_env = dict()
     be_env['UPRJ_ROOT'] = f"{design_directory}"
@@ -194,7 +196,7 @@ def run_be_check(design_directory, output_directory, design_name, config_file, p
     be_env['INCLUDE_CONFIGS'] = f"{config_file}"
     if not parse_config_file(config_file, be_env):
         return False
-    be_cmd = ['bash', f'{os.getcwd()}/checks/be_checks/{be_script}']
+    be_cmd = ['bash', f'{os.getcwd()}/checks/be_checks/{be_script}', extra_args]
     print_lvs_config(be_env)
     be_env.update(os.environ)
     with open(log_file_path, 'w') as be_log:

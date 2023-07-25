@@ -80,7 +80,7 @@ if [[ -z "$PDK_ROOT" || -z "$PDK" ]]; then
 fi
 
 if [[ ! -f $WORK_ROOT/layout.cells || ! -f $WORK_ROOT/verilog.cells ]]; then
-	$LVS_ROOT/run_hier_check $TOP_SOURCE "$(echo $LVS_VERILOG_FILES | sed 's/#[^ ]*//g')" $TOP_LAYOUT $LAYOUT_FILE
+	$LVS_ROOT/run_hier_check $TOP_SOURCE "$(echo $LVS_VERILOG_FILES | sed 's/#[^ ]*//g')" $TOP_LAYOUT $LAYOUT_FILE "${PDK%?}_([^/_]*_)*_"
 fi
 
 # Extraction is now a separate program.
@@ -243,14 +243,11 @@ awk '
 /Circuit 1 .* will not flatten/ {print $4, "is a black box in the layout"}
 /Circuit 2 .* will not flatten/ {print $4, "is a black box in the source"}
 ' $WORK_ROOT/lvs.report >$WORK_ROOT/lvs.unflattened
-awk '
-/__fill/ {next} # ignore abstract devices
-/__tapvpwrvgnd/ {next}
-/__fakediode/ {next}
-/sky130_fd_pr__/ {next} # ignore primitive devices
+awk -f $LVS_ROOT/tech/$PDK/known_abstract_filter.awk $WORK_ROOT/lvs.log  |
+	awk '
 /Matching pins/ {print $4, "is a black box in the layout and source"}
 /contains no devices/ {print $2, "contains no devices"}
-' $WORK_ROOT/lvs.log >>$WORK_ROOT/lvs.unflattened
+' - >>$WORK_ROOT/lvs.unflattened
 if [[ -s $WORK_ROOT/lvs.unflattened ]]; then
 	echo "Warning: device level LVS may be incomplete due to $(cat $WORK_ROOT/lvs.unflattened | wc -l) unflattened cell(s): see $SIGNOFF_ROOT/lvs.unflattened" |
 		tee -a $WORK_ROOT/lvs.report |

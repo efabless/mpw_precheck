@@ -76,7 +76,7 @@ else
 fi
 
 if [[ ! -f $WORK_ROOT/layout.cells ]]; then
-	$LVS_ROOT/run_hier_check "" "" $TOP_LAYOUT $LAYOUT_FILE
+	$LVS_ROOT/run_hier_check "" "" $TOP_LAYOUT $LAYOUT_FILE "${PDK%?}_([^/_]*_)*_"
 fi
 
 echo $EXTRACT_FLATGLOB |

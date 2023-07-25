@@ -55,8 +55,8 @@ fi
 CONFIG_FILE=$1
 DESIGN_NAME=${2:+"-d $2"}
 
-if [[ $# -ne 0 ]]; then # if config file not specified, skip and use current environment
-	source <($LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME)
+if [[ $# -ne 0 ]]; then  # if config file not specified, skip and use current environment
+	source <( $LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME )
 fi
 if [[ ! -v EXTRACT_FLATGLOB ]]; then
 	echo "ERROR: LVS environment problem."
@@ -95,7 +95,7 @@ if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz || $RESULTS_DIR/$DESIGN_NAME.gds.spi
 		exit 2
 	else
 		echo "Creating $RESULTS_DIR/$DESIGN_NAME.cdl"
-		$LVS_ROOT/spi2cdl $RESULTS_DIR/$DESIGN_NAME.gds.spice |
+		$LVS_ROOT/tech/$PDK/spi2cdl $RESULTS_DIR/$DESIGN_NAME.gds.spice |
 			gzip -c >$RESULTS_DIR/$DESIGN_NAME.cdl.gz
 	fi
 fi
@@ -576,7 +576,7 @@ awk '
 			#print "gpio-" i, "analog:", analog_connections[i], "in:", in_connections[i], "out:", out_connections[i], "oeb: " min[i] "/" sim[i] "/" max[i];
 		}
 	}' $LOG_ROOT/cvc.oeb.log |
-	tee $WORK_ROOT/cvc.oeb.report
+tee $WORK_ROOT/cvc.oeb.report
 
 if [[ $WORK_ROOT != $SIGNOFF_ROOT ]]; then
 	cp $WORK_ROOT/cvc.oeb.report $SIGNOFF_ROOT/cvc.oeb.report

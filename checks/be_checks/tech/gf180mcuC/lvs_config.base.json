@@ -1,6 +1,7 @@
 {
 	"EXTRACT_FLATGLOB": [
-		"*sky130_fd_pr__*[A-Z]*"
+		"*nmos_*_*",
+		"*pmos_*_*"
 	],
 	"EXTRACT_ABSTRACT": [
 		"*__fill_*",

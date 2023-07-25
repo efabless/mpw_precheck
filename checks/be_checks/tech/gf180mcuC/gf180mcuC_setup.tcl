@@ -316,37 +316,37 @@ foreach dev $devices {
 #---------------------------------------------------------------
 
 foreach cell $cells1 {
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__fillcap_[[:digit:]]+} $cell match]} {
+    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]+__fillcap_[[:digit:]]+} $cell match]} {
         property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__endcap} $cell match]} {
+    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]+__endcap} $cell match]} {
         property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
+    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
         property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__filltie} $cell match]} {
+    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]+__filltie} $cell match]} {
         property "-circuit1 $cell" parallel enable
     }
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__antenna} $cell match]} {
+    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]+__antenna} $cell match]} {
         property "-circuit1 $cell" parallel enable
     }
 }
 
 foreach cell $cells2 {
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__fillcap_[[:digit:]]+} $cell match]} {
+    if {[regexp {gf180mcu_[^_]*_sc_[^_]+__fillcap_[[:digit:]]+} $cell match]} {
         property "-circuit2 $cell" parallel enable
     }
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__endcap} $cell match]} {
+    if {[regexp {gf180mcu_[^_]*_sc_[^_]+__endcap} $cell match]} {
         property "-circuit2 $cell" parallel enable
     }
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
+    if {[regexp {gf180mcu_[^_]*_sc_[^_]+__fill_[[:digit:]]+} $cell match]} {
         property "-circuit2 $cell" parallel enable
     }
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__filltie} $cell match]} {
+    if {[regexp {gf180mcu_[^_]*_sc_[^_]+__filltie} $cell match]} {
         property "-circuit2 $cell" parallel enable
     }
-    if {[regexp {gf180mcu_[^]*_sc_[^_]+__antenna} $cell match]} {
+    if {[regexp {gf180mcu_[^_]*_sc_[^_]+__antenna} $cell match]} {
         property "-circuit2 $cell" parallel enable
     }
 }
@@ -365,32 +365,35 @@ if {[model blackbox]} {
 
 #---------------------------------------------------------------
 
-# parallel reduce abstract cells
+# Equate prefixed layout cells with corresponding source
 foreach cell $cells1 {
-    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]*__fillcap_[[:digit:]]+} $cell match]} {
-	property "-circuit1 $cell" parallel enable
-    }
-    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]*__endcap} $cell match]} {
-	property "-circuit1 $cell" parallel enable
-    }
-    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]*__fill_[[:digit:]]+} $cell match]} {
-	property "-circuit1 $cell" parallel enable
-    }
-    if {[regexp {.*gf180mcu_[^_]*_sc_[^_]*__filltie} $cell match]} {
-	property "-circuit1 $cell" parallel enable
-    }
-}
-foreach cell $cells2 {
-    if {[regexp {gf180mcu_[^_]*_sc_[^_]*__fillcap_[[:digit:]]+} $cell match]} {
-	property "-circuit2 $cell" parallel enable
-    }
-    if {[regexp {gf180mcu_[^_]*_sc_[^_]*__endcap} $cell match]} {
-	property "-circuit2 $cell" parallel enable
-    }
-    if {[regexp {gf180mcu_[^_]*_sc_[^_]*__fill_[[:digit:]]+} $cell match]} {
-	property "-circuit2 $cell" parallel enable
-    }
-    if {[regexp {gf180mcu_[^_]*_sc_[^_]*__filltie} $cell match]} {
-	property "-circuit2 $cell" parallel enable
+    set layout $cell
+    while {[regexp {([A-Z][A-Z0-9]_)(.*)} $layout match prefix cellname]} {
+	if {([lsearch $cells2 $cell] < 0) && \
+		([lsearch $cells2 $cellname] >= 0)} {
+	    # netlist with the N names should always be the second netlist
+	    equate classes "-circuit2 $cellname" "-circuit1 $cell"
+	    puts stdout "Equating $cell in circuit 1 and $cellname in circuit 2"
+	    #if  { [lsearch $cells1 $cellname] > 0 } {
+		#equate classes "-circuit2 $cellname" "-circuit1 $cellname"
+		#puts stdout "Equating $cellname in circuit 1 and $cellname in circuit 2"
+	    #}
+	    #equate pins "-circuit1 $cell" "-circuit2 $cellname"
+	}
+	set layout $cellname
     }
 }
+
+# Equate suffixed layout cells with corresponding source
+foreach cell $cells1 {
+    if {[regexp {(.*)(\$[0-9])} $cell match cellname suffix]} {
+	if {([lsearch $cells2 $cell] < 0) && \
+		([lsearch $cells2 $cellname] >= 0)} {
+	    # netlist with the N names should always be the second netlist
+	    equate classes "-circuit2 $cellname" "-circuit1 $cell"
+	    puts stdout "Equating $cell in circuit 1 and $cellname in circuit 2"
+	}
+    }
+}
+
+#Added programatically.

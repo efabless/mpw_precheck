@@ -1,5 +1,5 @@
 {
-	"STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+	"STD_CELL_LIBRARY": "gf180mcu_fd_sc_mcu7t5v0",
 	"INCLUDE_CONFIGS": [
 		"$LVS_ROOT/tech/$PDK/lvs_config.base.json"
 	],

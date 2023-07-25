@@ -128,7 +128,7 @@ if [[ $EXTRACT_LAYOUT == yes ]]; then
 		#  1. Extract gds_file with well connectivity
 		env CIFIN_STYLE="" EXTRACT_STYLE="" LOG_FILE=ext.log $LVS_ROOT/run_extract >$WORK_ROOT/ext.out 2>&1
 		#  2. Remove well connections and disconnected nets.
-		sed -f $LVS_ROOT/scripts/remove_well.sed $EXT_DIR/$TOP.gds.spice |
+		sed -f $LVS_ROOT/tech/$PDK/remove_well.sed $EXT_DIR/$TOP.gds.spice |
 			awk -f $LVS_ROOT/scripts/remove_disconnect.awk - >$EXT_DIR/$TOP.gds.nowell.spice
 	) &
 

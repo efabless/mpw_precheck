@@ -34,11 +34,11 @@ export TOP_LAYOUT=$3
 export LAYOUT_FILE=$4
 PRIMITIVE_PREFIX_FILTER='-e s/\<sky130_([^/_]*_)*_//'
 if [[ $# -ge 5 ]]; then  # only if prefix is specified
-	PRIMITIVE_PREFIX_FILTER="-e s/\\<$4//g"
+	PRIMITIVE_PREFIX_FILTER="-e s/\\<$5//g"
 fi
 GDS_PREFIX_FILTER='-e s/^([A-Z0-9][A-Z0-9]_)*// -e s/\/([A-Z0-9][A-Z0-9]_)*/\//'
 if [[ $# -eq 6 ]]; then  # only if prefix is specified
-	GDS_PREFIX_FILTER="-e s/^($5)*// -e s/\/($5)*/\//"
+	GDS_PREFIX_FILTER="-e s/^($6)*// -e s/\/($6)*/\//"
 fi
 
 echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$TOP_SOURCE}"
@@ -264,5 +264,5 @@ if [[ $WORK_ROOT != $LOG_ROOT ]]; then
 	cp $WORK_ROOT/hier.log $LOG_ROOT/.
 fi
 if [[ $WORK_ROOT != $SIGNOFF_ROOT ]]; then
-	cp $WORK_ROOT/hier.csv $LOG_ROOT/.
+	cp $WORK_ROOT/hier.csv $SIGNOFF_ROOT/.
 fi
