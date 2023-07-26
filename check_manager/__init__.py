@@ -430,6 +430,7 @@ open_source_checks = OrderedDict([
 # Note: list of checks for a private project
 private_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
+    (Defaults.__ref__, Defaults),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
     (XOR.__ref__, XOR),
