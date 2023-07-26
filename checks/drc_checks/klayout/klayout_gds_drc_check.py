@@ -56,18 +56,30 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Runs magic and klayout drc checks on a given GDS.')
     parser.add_argument('--gds_input_file_path', '-g', required=True, help='GDS File to apply DRC checks on')
     parser.add_argument('--output_directory', '-o', required=True, help='Output Directory')
-    parser.add_argument('--design_name', '-d', required=True, help='Design Name')
+    parser.add_argument('--feol', '-f', action='store_true', required=False, default=False, help='run FEOL rules')
+    parser.add_argument('--beol', '-b', action='store_true', required=False, default=False, help='run BEOL rules')
+    parser.add_argument('--off_grid', '-og', action='store_true', required=False, default=False, help='run OFFGRID rules')
     args = parser.parse_args()
 
     gds_input_file_path = Path(args.gds_input_file_path)
     output_directory = Path(args.output_directory)
-    design_name = args.design_name
 
     klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent.parent / "tech-files/sky130A_mr.drc"
 
+    extra_args = []
+    if args.feol:
+        extra_args.append("-rd")
+        extra_args.append("feol=true")
+    if args.beol:
+        extra_args.append("-rd")
+        extra_args.append("beol=true")
+    if args.off_grid:
+        extra_args.append("-rd")
+        extra_args.append("offgrid=true")
+
     if gds_input_file_path.exists() and gds_input_file_path.suffix == ".gds":
         if output_directory.exists() and output_directory.is_dir():
-            if klayout_gds_drc_check("klayout_feol_drc", gds_input_file_path, klayout_sky130A_mr_drc_script_path, output_directory, ["-rd", "feol=true"]):
+            if klayout_gds_drc_check("klayout_drc", klayout_sky130A_mr_drc_script_path, gds_input_file_path, output_directory, extra_args):
                 logging.info("Klayout GDS DRC Clean")
             else:
                 logging.info("Klayout GDS DRC Dirty")
