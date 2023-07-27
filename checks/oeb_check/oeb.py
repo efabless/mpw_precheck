@@ -6,8 +6,8 @@ from pathlib import Path
 import shutil
 from checks.utils import utils
 
-def run_lvs(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
-    return utils.run_be_check(design_directory, output_directory, design_name, config_file, pdk_root, pdk, "LVS")
+def run_oeb(design_directory, output_directory, design_name, config_file, pdk_root, pdk):
+    return utils.run_be_check(design_directory, output_directory, design_name, config_file, pdk_root, pdk, "OEB")
 
 
 if __name__ == "__main__":
@@ -28,15 +28,15 @@ if __name__ == "__main__":
     pdk_root = pdk_path.parent
 
     tag = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    lvs_output = f"{output_directory}/{design_name}/lvs_results/{tag}"
-    if not os.path.isdir(f"{output_directory}/{design_name}/lvs_results"):
-        os.mkdir(f"{output_directory}/{design_name}/lvs_results")
+    lvs_output = f"{output_directory}/{design_name}/oeb_results/{tag}"
+    if not os.path.isdir(f"{output_directory}/{design_name}/oeb_results"):
+        os.mkdir(f"{output_directory}/{design_name}/oeb_results")
     if not os.path.isdir(lvs_output):
         os.mkdir(lvs_output)
 
-    if not run_lvs(design_directory, lvs_output, design_name, config_file, pdk_root, pdk):
-        logging.error("LVS Failed.")
+    if not run_oeb(design_directory, lvs_output, design_name, config_file, pdk_root, pdk):
+        logging.error("OEB check Failed.")
     else:
         if os.path.isdir(f"{lvs_output}/tmp"):
             shutil.rmtree(f"{lvs_output}/tmp")
-        logging.info("LVS Passed!")
+        logging.info("OEB check Passed!")

@@ -6,3 +6,6 @@
 /build/
 /venv/
 dependencies/logs/docker/mpw_precheck.build.txt
+checks/be_checks/default.cvcrc
+checks/be_checks/LICENSE
+checks/be_checks/set_lvs_env.py
