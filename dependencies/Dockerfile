@@ -57,7 +57,7 @@ RUN yum install -y iverilog && \
 
 # Clone Magic
 ENV MAGIC_ROOT=/opt/magic
-RUN git clone --depth=1 --branch 8.3.413 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.420 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
