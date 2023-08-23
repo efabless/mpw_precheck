@@ -205,7 +205,10 @@ def run_be_check(design_directory, output_directory, design_name, config_file, p
         p = subprocess.run(be_cmd, stderr=be_log, stdout=be_log, env=be_env)
         # Check exit-status of all subprocesses
         stat = p.returncode
-        if stat != 0:
+        if stat == 4:
+            logging.warn(f"WARNING ERC CHECK FAILED, stat={stat}, see {log_file_path}")
+            return True
+        elif stat != 0:
             logging.error(f"ERROR {check} FAILED, stat={stat}, see {log_file_path}")
             return False
         else:

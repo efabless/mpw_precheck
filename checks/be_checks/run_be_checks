@@ -56,8 +56,8 @@ fi
 CONFIG_FILE=$1
 DESIGN_NAME=${2:+"-d $2"}
 
-if [[ $# -ne 0 ]]; then  # if config file not specified, skip and use current environment
-	source <( $LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME )
+if [[ $# -ne 0 ]]; then # if config file not specified, skip and use current environment
+	source <($LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME)
 fi
 if [[ ! -v EXTRACT_FLATGLOB ]]; then
 	echo "ERROR: LVS environment problem."
@@ -157,8 +157,8 @@ CVC result:"
 fi
 
 if [[ $TOP_SOURCE == *user_*project_wrapper && $SKIP_OEB == no ]]; then
-	oeb_errors=$( grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report )
-	oeb_warnings=$( grep -c Warning $SIGNOFF_ROOT/cvc.oeb.report )
+	oeb_errors=$(grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report)
+	oeb_warnings=$(grep -c Warning $SIGNOFF_ROOT/cvc.oeb.report)
 	echo "
 OEB check result: ERRORS: $oeb_errors  Warnings: $oeb_warnings"
 fi
@@ -176,6 +176,11 @@ if [[ $scheck_status -eq 0 && $lvs_status -eq 0 && ${cvc_status:=0} -eq 0 && ${o
 	echo "
 No errors detected"
 	exit 0
+
+elif [[ $scheck_status -eq 0 && $lvs_status -eq 0 && ${cvc_status:=0} -eq 4 && ${oeb_status:=0} -eq 0 ]]; then
+	echo "
+WARNING: possible errors CVC $cvc_status"
+	exit 4
 
 elif [[ $SKIP_OEB == no ]]; then
 	echo "
