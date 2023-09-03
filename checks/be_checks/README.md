@@ -2,6 +2,7 @@
 
 In your `caravel_user_project` or `caravel_user_project_analog` directory,
 create an LVS configuration file based on [digital user project wrapper lvs configuration](https://github.com/efabless/caravel_user_project/blob/main/lvs/user_project_wrapper/lvs_config.json) or [analog user project configuration](https://github.com/efabless/caravel_user_project_analog/blob/main/lvs/user_analog_project_wrapper/lvs_config.json).
+
 `mpw_precheck` expects this file to be in `lvs/<cellname>/lvs_config.json`.
 
 LVS check will run these checks by default:
