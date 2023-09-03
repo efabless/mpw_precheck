@@ -95,9 +95,9 @@ The steps are as follows:
     the [li1.pd.ld, m1.pd.ld, m2.pd.ld, m3.pd.ld, m4.pd.ld, m5.pd.ld rules](https://skywater-pdk.readthedocs.io/en/main/rules/periphery.html)
 - **LVS**:
   **LVS is disabled on the platform by default, it is only enabled when running locally**
-  - Runs hierarchy check, soft check, lvs check, ERC check on the user project. For more information (click here)[./checks/be_checks/README.md]
+  - Runs hierarchy check, soft check, lvs check, ERC check on the user project. For more information [click here](./checks/be_checks/README.md)
 - **OEB**:
-  - Runs oeb check, to make sure that user connected all needed oeb signals. For more information (click here)[./checks/be_checks/README.md]
+  - Runs oeb check, to make sure that user connected all needed oeb signals. For more information [click here](./checks/be_checks/README.md)
 
 ## Current Assumptions
 
@@ -106,7 +106,7 @@ The steps are as follows:
 
 ## LVS Configuration
 
-- In order for LVS and OEB checks to run successfully, the user must provide an lvs configuration file, that describes the hierarchy of the design, and give necessary information for running the checks. For extra information on how to write the configuration file (click here)[./checks/be_checks/README.md]
+- In order for LVS and OEB checks to run successfully, the user must provide an lvs configuration file, that describes the hierarchy of the design, and give necessary information for running the checks. For extra information on how to write the configuration file [click here](./checks/be_checks/README.md)
 
 **NOTE : If running precheck from user project Makefile, LVS can be disabled by using `DISABLE_LVS` environment variable**
 
