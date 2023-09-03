@@ -94,6 +94,7 @@ The steps are as follows:
   - The user_project_wrapper.gds has metal density (for each of the 5 metal layers) that is the lower than the maximum metal density specified by
     the [li1.pd.ld, m1.pd.ld, m2.pd.ld, m3.pd.ld, m4.pd.ld, m5.pd.ld rules](https://skywater-pdk.readthedocs.io/en/main/rules/periphery.html)
 - **LVS**:
+
   **LVS is disabled on the platform by default, it is only enabled when running locally**
   - Runs hierarchy check, soft check, lvs check, ERC check on the user project. For more information [click here](./checks/be_checks/README.md)
 - **OEB**:
