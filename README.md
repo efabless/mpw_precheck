@@ -85,19 +85,31 @@ The steps are as follows:
 - **MagicDRC**:
   - The user_project_wrapper.gds does not have any DRC violations(using magic vlsi tool)
 - **KlayoutBEOLDRC**:
-  - The user*project_wrapper.gds does not have any DRC violations(using klayout) in the [\_Back End Of Line* layers](https://skywater-pdk.readthedocs.io/en/main/rules/summary.html)
+  - The user_project_wrapper.gds does not have any DRC violations(using klayout) in the [\_Back End Of Line* layers](https://skywater-pdk.readthedocs.io/en/main/rules/summary.html)
 - **KlayoutFEOLDRC**:
-  - The user*project_wrapper.gds does not have any DRC violations(using klayout) in the [\_Front End Of Line* layers](https://skywater-pdk.readthedocs.io/en/main/rules/summary.html)
+  - The user_project_wrapper.gds does not have any DRC violations(using klayout) in the [\_Front End Of Line* layers](https://skywater-pdk.readthedocs.io/en/main/rules/summary.html)
 - **KlayoutOffgrid**:
   - The user_project_wrapper.gds does not contain any shapes that have offgrid violations(rules [x.1b, x.3a, x.2, x.2c](https://skywater-pdk.readthedocs.io/en/main/rules/periphery.html))
 - **KlayoutMetalMinimumClearAreaDensity**:
   - The user_project_wrapper.gds has metal density (for each of the 5 metal layers) that is the lower than the maximum metal density specified by
     the [li1.pd.ld, m1.pd.ld, m2.pd.ld, m3.pd.ld, m4.pd.ld, m5.pd.ld rules](https://skywater-pdk.readthedocs.io/en/main/rules/periphery.html)
+- **LVS**:
+
+  **LVS is disabled on the platform by default, it is only enabled when running locally**
+  - Runs hierarchy check, soft check, lvs check, ERC check on the user project. For more information [click here](./checks/be_checks/README.md)
+- **OEB**:
+  - Runs oeb check, to make sure that user connected all needed oeb signals. For more information [click here](./checks/be_checks/README.md)
 
 ## Current Assumptions
 
 - The user module name is `user_project_wrapper` (or `user_analog_project_wrapper' for caravel_user_project_analog)
 - The mpw precheck is executed from inside it's docker container where a golden copy of caravel exists and is specified by an environment variable called `GOLDEN_CARAVEL`.
+
+## LVS Configuration
+
+- In order for LVS and OEB checks to run successfully, the user must provide an lvs configuration file, that describes the hierarchy of the design, and give necessary information for running the checks. For extra information on how to write the configuration file [click here](./checks/be_checks/README.md)
+
+**NOTE : If running precheck from user project Makefile, LVS can be disabled by using `DISABLE_LVS` environment variable**
 
 ## How To Run
 
