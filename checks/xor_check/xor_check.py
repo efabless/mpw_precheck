@@ -49,6 +49,8 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
         gds_ut_box_erased_path = outputs_directory / f"{project_config['user_module']}_erased.gds"
         if 'gf180mcu' in precheck_config['pdk_path'].stem:
             tcl_erase_box_file_path = parent_directory / 'erase_box_gf180mcu.tcl'
+        elif project_config['type'] == "openframe":
+            tcl_erase_box_file_path = parent_directory / 'erase_box_openframe.tcl'
         else:
             tcl_erase_box_file_path = parent_directory / 'erase_box.tcl'
         magic_gds_erase_box_ut_cmd = ['magic', '-dnull', '-noconsole', '-rcfile', magicrc_file_path, tcl_erase_box_file_path,
@@ -98,9 +100,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     output_directory = Path(args.output_directory)
-    project_config = utils.get_project_config(Path(args.input_directory))
+    project_config = utils.get_project_config(Path(args.input_directory), Path(args.caravel_root))
 
-    gds_golden_wrapper_file_path = args.caravel_root / f"gds/{project_config['golden_wrapper']}.gds"
+    gds_golden_wrapper_file_path = f"{args.caravel_root}/gds/{project_config['golden_wrapper']}.gds"
     if gds_xor_check(Path(args.input_directory), output_directory, Path(args.magicrc_file_path), gds_golden_wrapper_file_path, project_config):
         logging.info("XOR Check Clean")
     else:
