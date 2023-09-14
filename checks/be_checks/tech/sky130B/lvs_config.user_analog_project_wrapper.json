@@ -3,7 +3,7 @@
 	"INCLUDE_CONFIGS": [
 		"$LVS_ROOT/tech/$PDK/lvs_config.base.json"
 	],
-	"TOP_SOURCE": "user_project_wrapper",
+	"TOP_SOURCE": "user_analog_project_wrapper",
 	"TOP_LAYOUT": "$TOP_SOURCE",
 	"EXTRACT_FLATGLOB": [
 		""
@@ -29,5 +29,5 @@
 	"LVS_VERILOG_FILES": [
 		""
 	],
-	"LAYOUT_FILE": "$UPRJ_ROOT/gds/user_project_wrapper.gds"
+	"LAYOUT_FILE": "$UPRJ_ROOT/gds/user_analog_project_wrapper.gds"
 }

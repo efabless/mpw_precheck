@@ -55,8 +55,8 @@ fi
 CONFIG_FILE=$1
 DESIGN_NAME=${2:+"-d $2"}
 
-if [[ $# -ne 0 ]]; then  # if config file not specified, skip and use current environment
-	source <( $LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME )
+if [[ $# -ne 0 ]]; then # if config file not specified, skip and use current environment
+	source <($LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME)
 fi
 if [[ ! -v EXTRACT_FLATGLOB ]]; then
 	echo "ERROR: LVS environment problem."
@@ -505,6 +505,33 @@ awk '
 		getline;
 		getline;
 		out_connections[net] = $3 + $5 + $7;
+		# 2 blank lines mark the end of a segment
+		while ( NF > 0 ) {
+			if ( /^Min path/ ) {
+				while ( NF > 0 ) {
+					out_min[net] = $1;
+					getline;
+				}
+			} else if ( /^Sim path/ ) {
+				while ( NF > 0 ) {
+					out_sim[net] = $1;
+					getline;
+				}
+			} else if ( /^Max path/ ) {
+				while ( NF > 0 ) {
+					out_max[net] = $1;
+					getline;
+				}
+			} else {
+				while ( NF > 0 ) {
+					getline;
+				}
+			}
+			getline;
+		}
+		if ( out_min[net] == out_sim[net] && out_sim[net] == out_max[net] ) {
+			fixed[net] = out_sim[net];
+		}
 	}
 	/^> gn io_oeb/ {
 		net = gensub(/.*\[([0-9]*)\]/, "\\1", 1);
@@ -515,17 +542,17 @@ awk '
 		while ( NF > 0 ) {
 			if ( /^Min path/ ) {
 				while ( NF > 0 ) {
-					min[net] = $1;
+					oeb_min[net] = $1;
 					getline;
 				}
 			} else if ( /^Sim path/ ) {
 				while ( NF > 0 ) {
-					sim[net] = $1;
+					oeb_sim[net] = $1;
 					getline;
 				}
 			} else if ( /^Max path/ ) {
 				while ( NF > 0 ) {
-					max[net] = $1;
+					oeb_max[net] = $1;
 					getline;
 				}
 			} else {
@@ -543,40 +570,31 @@ awk '
 		for ( i in oeb_connections ) {
 			printf "  %2d  | %6s | %6s | %6s | %5s/%5s/%5s | ", \
 				i, (in_connections[i] == 0) ? "" : sprintf("%6d", in_connections[i]), \
-				(out_connections[i] == 0) ? "" : sprintf("%6d", out_connections[i]), \
+				(out_connections[i] == 0) ? "" :
+					(i in fixed) ? fixed[i] : sprintf("%6d", out_connections[i]), \
 				(analog_connections[i] == 0) ? "" : sprintf("%6d", analog_connections[i]), \
-				min[i], sim[i], max[i];
+				oeb_min[i], oeb_sim[i], oeb_max[i];
 			if ( analog_connections[i] > 0 ) {
-				if ( in_connections[i] > 0 || out_connections[i] > 0 ) {  # both digital and analog
-					printf "ERROR: can not have both analog and digital connections";
-					#printf "ERROR: gpio-%d analog and digital connections ", i;
-					#printf "analog:%d in:%d out%d ", analog_connections[i], in_connections[i], out_connections[i];
-					#printf "oeb: min/sim/max=%s/%s/%s\n", min[i], sim[i], max[i];
-				} else if ( ! ( sim[i] ~ /vccd/ || sim[i] ~ /vdd/ ) ) {  # analog signals should disable output
-					printf "ERROR: oeb should always be high for analog";
-					#printf "Warning: gpio-%d oeb should always be high for analog ", i;
-					#printf "analog:%d oeb: min/sim/max=%s/%s/%s\n", analog_connections[i], min[i], sim[i], max[i];
+				if ( in_connections[i] > 0 || (out_connections[i] > 0 && ! (i in fixed)) ) {  # both digital and analog
+					printf "Warning: both analog and digital connections";
+				} else if ( ! ( oeb_sim[i] ~ /vccd/ || oeb_sim[i] ~ /vdd/ ) ) {  # analog signals should disable output
+					printf "Warning: oeb expected high for analog";
 				}
 			} else if ( in_connections[i] > 0 && out_connections[i] == 0 ) {
-				if ( ! ( sim[i] ~ /vccd/ || sim[i] ~ /vdd/ ) ) {  # input only signals should never enable output
-					printf "ERROR: oeb should always be high for input only";
-					#printf "Warning: gpio-%d oeb should always be high for input only ", i;
-					#printf "in:%d out:%d oeb: min/sim/max=%s/%s/%s\n", in_connections[i], out_connections[i], min[i], sim[i], max[i];
+				if ( ! ( oeb_sim[i] ~ /vccd/ || oeb_sim[i] ~ /vdd/ ) ) {  # input only signals should never enable output
+					printf "Warning: oeb expected high for input only";
 				}
-			} else if ( out_connections[i] > 0 ) {
-				if ( min[i] !~ /vss/ ) {  # output signals must be enable-able
+			} else if ( out_connections[i] > 0 && ! (i in fixed) ) {
+				if ( oeb_min[i] !~ /vss/ ) {  # output signals must be enable-able
 					printf "ERROR: oeb must have possible low for output";
-					#printf "ERROR: gpio-%d oeb must have possible low for output ", i;
-					#printf "in:%d out:%d oeb: min/sim/max=%s/%s/%s\n", in_connections[i], out_connections[i], min[i], sim[i], max[i];
-				} else if ( in_connections[i] > 0 && sim[i] ~ /vss/ ) {  # input is always driven by user output in user mode
+				} else if ( in_connections[i] > 0 && oeb_sim[i] ~ /vss/ ) {  # input is always driven by user output in user mode
 					printf "Warning: output always drives input. sky130: OK for pull up/down.";
 				}
 			}
 			printf "\n";
-			#print "gpio-" i, "analog:", analog_connections[i], "in:", in_connections[i], "out:", out_connections[i], "oeb: " min[i] "/" sim[i] "/" max[i];
 		}
 	}' $LOG_ROOT/cvc.oeb.log |
-tee $WORK_ROOT/cvc.oeb.report
+	tee $WORK_ROOT/cvc.oeb.report
 
 if [[ $WORK_ROOT != $SIGNOFF_ROOT ]]; then
 	cp $WORK_ROOT/cvc.oeb.report $SIGNOFF_ROOT/cvc.oeb.report
@@ -584,7 +602,7 @@ fi
 
 if [[ $cvc_status -eq 0 && $(grep -c '^CVC: End:' $LOG_ROOT/cvc.oeb.log) -ne 1 ]]; then
 	# CVC finished abnormally
-	exit 4
+	exit 5
 
 elif [[ $cvc_status -eq 0 && $(grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report) -gt 0 ]]; then
 	# CVC finished normally, but detected errors

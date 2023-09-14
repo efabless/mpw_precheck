@@ -30,7 +30,7 @@ CONFIG_FILE=$1
 DESIGN_NAME=${2:+"-d $2"}
 
 if [[ $# -ne 0 ]]; then  # if config file not specified, skip and use current environment
-	source <( $LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME )
+	source <($LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME)
 fi
 if [[ ! -v EXTRACT_FLATGLOB ]]; then
 	echo "Error: LVS environment problem."
@@ -120,7 +120,10 @@ date "+BEGIN: %c" >$WORK_ROOT/$LOG_FILE
 start_time=$SECONDS
 
 echo " "
-if [[ $TOP_LAYOUT == *analog* ]]; then
+if [[ -z "$EXTRACT_TYPE" && $TOP_LAYOUT == *analog* ]]; then
+	EXTRACT_TYPE=analog
+fi
+if [[ $EXTRACT_TYPE == analog ]]; then
 	echo "Extracting as analog. Top ports connected by name." >>$WORK_ROOT/$LOG_FILE
 	export EXT_TYPE=analog
 else
@@ -131,8 +134,8 @@ fi
 # script uses TOP, RUN_DIR, CIFIN_STYLE, and EXTRACT_STYLE
 echo "CIFIN_STYLE: ${CIFIN_STYLE:=}"
 echo "EXTRACT_STYLE: ${EXTRACT_STYLE:=}"
-env TOP=$TOP_LAYOUT RUN_DIR=$EXT_DIR magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl </dev/null |
-	tee -a $WORK_ROOT/$LOG_FILE 2>&1
+env TOP=$TOP_LAYOUT RUN_DIR=$EXT_DIR magic -dnull -noc -rcfile $LVS_ROOT/tech/magicrc $LVS_ROOT/scripts/gds.$EXT_TYPE.spice.tcl </dev/null 2>&1 |
+	tee -a $WORK_ROOT/$LOG_FILE
 ext_status=${PIPESTATUS[0]}
 
 date "+END: %c" >>$WORK_ROOT/$LOG_FILE

@@ -1,13 +1,24 @@
-#! /bin/bash
+#! /usr/bin/env bash
 
 # Returns the x,y coordinates in microns of the given instance in the given ext file
 
-if [[ $# != 2 ]]; then
-	echo usage: ${0##*/} instance ext_file
+if [[ $# -ne 2 ]]; then
+	echo "usage: ${0##*/} instance ext_file"
+	echo "usage: ${0##*/} instance(cell) ext_dir"
 	exit 1
 fi
 
-instance=$1
-extfile=$2
+if [[ $1 == *\(* ]]; then
+	extdir=$2
+	while read parent instance; do
+		if [[ $parent && $instance ]]; then
+			zgrep "^use .* $instance " $extdir/$parent.ext* | awk '{printf "%s %.2f %.2f\n", $3, $6 / 200., $9 / 200}'
+			#echo $parent $instance
+		fi
+	done < <(echo $1 | sed -e 's,)/., ,g' -e 's,(,\n,g' -e 's,/,,')
+else
+	instance=$1
+	extfile=$2
 
-zgrep "^use .* $instance " $extfile | awk '{printf "%s %.2f %.2f\n", $3, $6 / 200., $9 / 200}'
+	zgrep "^use .* $instance " $extfile | awk '{printf "%s %.2f %.2f\n", $3, $6 / 200., $9 / 200}'
+fi

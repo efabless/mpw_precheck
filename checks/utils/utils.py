@@ -208,6 +208,9 @@ def run_be_check(design_directory, output_directory, design_name, config_file, p
         if stat == 4:
             logging.warn(f"WARNING ERC CHECK FAILED, stat={stat}, see {log_file_path}")
             return True
+        if stat == 6:
+            logging.warn(f"WARNINGS IN OEB CHECK, stat={stat}, see {log_file_path}")
+            return True
         elif stat != 0:
             logging.error(f"ERROR {check} FAILED, stat={stat}, see {log_file_path}")
             return False

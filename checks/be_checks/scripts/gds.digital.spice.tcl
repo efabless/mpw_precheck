@@ -4,6 +4,7 @@
 
 puts "Extracting with top ports unique (digital)"
 drc off
+gds drccheck off
 if {[string first sky130 $::env(PDK)] >= 0} {
     cif istyle sky130($::env(CIFIN_STYLE))
 
