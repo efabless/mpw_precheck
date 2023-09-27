@@ -122,6 +122,9 @@ class GpioDefines(CheckManager):
         super().__init__(precheck_config, project_config)
 
     def run(self):
+        if self.project_config['type'] == 'openframe':
+            logging.info("{{{{GPIO-DEFINES: CHECK SKIPPED}}}}")
+            return True
         self.result = gpio_defines_check.main(input_directory=self.precheck_config['input_directory'],
                                               output_directory=self.precheck_config['output_directory'],
                                               project_type=self.project_config['type'],

@@ -63,10 +63,6 @@ def main(*args, **kwargs):
     precheck_config =  kwargs["precheck_config"]
     errs = 0
 
-    if project_type == "openframe":
-        logging.info("{{{{GPIO-DEFINES: CHECK SKIPPED}}}}")
-        return True
-
     if 'gf180mcu' in precheck_config['pdk_path'].stem:
         LEGALREX = re.compile("^10'[hH][0-9a-fA-F]+$")  # matches a 'good' 10-bit hex-literal (no X's)
     else:
