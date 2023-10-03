@@ -149,6 +149,8 @@ class Lvs(CheckManager):
         self.output_directory = self.precheck_config['output_directory']
         if self.project_config['type'] == "analog":
             self.design_name = "user_analog_project_wrapper"
+        elif self.project_config['type'] == "openframe":
+            self.design_name = "openframe_project_wrapper"
         else:
             self.design_name = "user_project_wrapper"
         self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
@@ -175,6 +177,8 @@ class Oeb(CheckManager):
         self.output_directory = self.precheck_config['output_directory']
         if self.project_config['type'] == "analog":
             self.design_name = "user_analog_project_wrapper"
+        elif self.project_config['type'] == "openframe":
+            self.design_name = "openframe_project_wrapper"
         else:
             self.design_name = "user_project_wrapper"
         self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
