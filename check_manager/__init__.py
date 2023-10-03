@@ -73,7 +73,7 @@ class Consistency(CheckManager):
 class Defaults(CheckManager):
     __ref__ = 'default'
     __surname__ = 'Default'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -99,7 +99,7 @@ class Defaults(CheckManager):
 class Documentation(CheckManager):
     __ref__ = 'documentation'
     __surname__ = 'Documentation'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -164,7 +164,7 @@ class Lvs(CheckManager):
 class Oeb(CheckManager):
     __ref__ = 'oeb'
     __surname__ = 'OEB'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -372,7 +372,7 @@ class MagicDRC(CheckManager):
 class Makefile(CheckManager):
     __ref__ = 'makefile'
     __surname__ = 'Makefile'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -389,7 +389,7 @@ class Makefile(CheckManager):
 class Manifest(CheckManager):
     __ref__ = 'manifest'
     __surname__ = 'Manifest'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
