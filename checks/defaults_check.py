@@ -41,8 +41,8 @@ def get_updated_view(input_directory, name):
     return get_view(name, input_directory)
 
 
-def has_default_readme(input_directory, default_content_path):
-    default_content_path = default_content_path / 'README.md'
+def has_default_readme(input_directory, default_content_path, project_type):
+    default_content_path = default_content_path / f'README_{project_type}.md'
     input_directory = input_directory / 'README.md'
     try:
         df_readme_content = default_content_path.open(encoding='utf-8').read()
@@ -58,7 +58,7 @@ def has_default_readme(input_directory, default_content_path):
     return True
 
 
-def has_default_content(input_directory, default_content_path):
+def has_default_content(input_directory, default_content_path, project_type):
     result = True
     for view in VIEWS:
         try:
@@ -90,14 +90,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Runs a makefile check on a given file (looks for 'Makefile' if a directory is provided).")
     parser.add_argument('--input_directory', '-i', required=False, default=default_input_directory, help='Input Directory')
     parser.add_argument('--defaults_path', '-d', required=False, default=default_input_directory, help='Defaults Path')
+    parser.add_argument('--project_type', '-t', required=False, default=default_input_directory, help='Project type (digital, analog, openframe)')
     args = parser.parse_args()
 
-    if has_default_readme(Path(args.input_directory), Path(args.defaults_path)):
+    if has_default_readme(Path(args.input_directory), Path(args.defaults_path), args.project_type):
         logging.info("README Clean")
     else:
         logging.info("README Dirty")
 
-    if has_default_content(Path(args.input_directory), Path(args.defaults_path)):
+    if has_default_content(Path(args.input_directory), Path(args.defaults_path), args.project_type):
         logging.info("Content Clean")
     else:
         logging.info("Content Dirty")

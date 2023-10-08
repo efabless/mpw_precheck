@@ -79,14 +79,14 @@ class Defaults(CheckManager):
         super().__init__(precheck_config, project_config)
 
     def run(self):
-        default_readme_result = defaults_check.has_default_readme(self.precheck_config['input_directory'], self.precheck_config['default_content'])
+        default_readme_result = defaults_check.has_default_readme(self.precheck_config['input_directory'], self.precheck_config['default_content'], self.project_config['type'])
         if default_readme_result:
             logging.info("{{README DEFAULT CHECK PASSED}} Project 'README.md' was modified and is not identical to the default 'README.md'")
         else:
             self.result = False
             logging.warning("{{README DEFAULT CHECK FAILED}} Project 'README.md' was not modified and is identical to the default 'README.md'")
 
-        default_content_result = defaults_check.has_default_content(self.precheck_config['input_directory'], self.precheck_config['default_content'])
+        default_content_result = defaults_check.has_default_content(self.precheck_config['input_directory'], self.precheck_config['default_content'], self.project_config['type'])
         if default_content_result:
             logging.info("{{CONTENT DEFAULT CHECK PASSED}} Project 'gds' was modified and is not identical to the default 'gds'")
         else:

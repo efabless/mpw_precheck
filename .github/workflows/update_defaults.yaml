@@ -33,4 +33,30 @@ jobs:
             curl -o $GITHUB_WORKSPACE/tmp_default_content/README.md -L https://raw.githubusercontent.com/efabless/$repo_name/main/README.md
             curl -o $GITHUB_WORKSPACE/tmp_default_content/gds/$gds_name.gds -L https://raw.githubusercontent.com/efabless/$repo_name/main/gds/$gds_name.gds
 
-            python3 $GITHUB_WORKSPACE/checks/defaults_check.py -i $GITHUB_WORKSPACE/tmp_default_content -d $GITHUB_WORKSPACE/_default_content
+            python3 $GITHUB_WORKSPACE/checks/defaults_check.py -i $GITHUB_WORKSPACE/tmp_default_content -d $GITHUB_WORKSPACE/_default_content -t ${{ matrix.design_types }} > $GITHUB_WORKSPACE/defaults.log
+
+            vio=$(grep -c "clean" $GITHUB_WORKSPACE/defaults.log)
+            if [[ $vio -gt 0 ]];
+            then 
+                cp $GITHUB_WORKSPACE/tmp_default_content/README.md $GITHUB_WORKSPACE/_default_content/README_${{ matrix.design_types }}.md
+                cp $GITHUB_WORKSPACE/tmp_default_content/gds/$gds_name.gds $GITHUB_WORKSPACE/_default_content/gds/$gds_name.gds
+                echo "UPDATE_DEFAULTS=1" >> $GITHUB_ENV
+            else
+                echo "UPDATE_DEFAULTS=0" >> $GITHUB_ENV
+                echo No Updates
+            fi
+
+      - name: Create Pull Request
+        if: ${{ env.UPDATE_DEFAULTS == '1' }}
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "[BOT] Update Default files"
+          body: |
+            This is an automated PR.
+
+            See the individual commits for details.
+          commit-message: |
+            [BOT] Update Default files
+          branch: update-branch
+          delete-branch: true
