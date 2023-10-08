@@ -11,6 +11,7 @@ jobs:
   defaults:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         design_types: ["openframe", "analog", "digital"]
     steps:
@@ -35,12 +36,9 @@ jobs:
 
             python3 $GITHUB_WORKSPACE/checks/defaults_check.py -i $GITHUB_WORKSPACE/tmp_default_content -d $GITHUB_WORKSPACE/_default_content -t ${{ matrix.design_types }} > $GITHUB_WORKSPACE/defaults.log 2>&1
 
-            echo "here"
-            echo $?
-
             cat $GITHUB_WORKSPACE/defaults.log
 
-            vio=$(grep -c "clean" $GITHUB_WORKSPACE/defaults.log)
+            vio=$(grep -c "Clean" $GITHUB_WORKSPACE/defaults.log || true)
             if [[ $vio -gt 0 ]];
             then 
                 cp $GITHUB_WORKSPACE/tmp_default_content/README.md $GITHUB_WORKSPACE/_default_content/README_${{ matrix.design_types }}.md
