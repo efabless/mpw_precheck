@@ -35,6 +35,8 @@ jobs:
 
             python3 $GITHUB_WORKSPACE/checks/defaults_check.py -i $GITHUB_WORKSPACE/tmp_default_content -d $GITHUB_WORKSPACE/_default_content -t ${{ matrix.design_types }} > $GITHUB_WORKSPACE/defaults.log
 
+            cat $GITHUB_WORKSPACE/defaults.log
+
             vio=$(grep -c "clean" $GITHUB_WORKSPACE/defaults.log)
             if [[ $vio -gt 0 ]];
             then 
