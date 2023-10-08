@@ -18,6 +18,7 @@ jobs:
 
       - name: download README and gds files
         run: |
+            pip install strsimpy
             mkdir -p $GITHUB_WORKSPACE/tmp_default_content/gds
             if [ "${{ matrix.design_types }}" = "openframe" ]; then
                 repo_name="caravel_openframe_project"
