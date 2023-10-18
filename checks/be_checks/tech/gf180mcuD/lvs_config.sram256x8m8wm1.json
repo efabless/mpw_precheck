@@ -1,0 +1,63 @@
+{
+	"EXTRACT_FLATGLOB": [
+		"*pmoscap*",
+		"*018SRAM_*",
+		"*$$*",
+		"*M?_M?*_*",
+		"*M?_?ACTIVE*_*",
+		"*M?_PSUB*_*",
+		"*M?_POLY*_*",
+		"*via1_*",
+		"*ypass_gate*",
+		"*power_route*",
+		"*alatch*",
+		"*Cell_array*",
+		"*dcap_*",
+		"*new_dummyrow*",
+		"*?dummy_*",
+		"*mux821_*",
+		"*strapx2b_bndry*",
+		"*?predec?_*",
+		"*rarray*",
+		"*prexdec_top*",
+		"*xdec_*",
+		"*xdec8_*",
+		"*xdec32_*",
+		"*din_*",
+		"*sacntl_*",
+		"*sa_*",
+		"*m2_saout*",
+		"*outbuf_oe*",
+		"*wen_wm1_*",
+		"*saout_*",
+		"*rcol4_*",
+		"*col_*",
+		"*m2m3_*",
+		"*wen_*",
+		"*gen_*",
+		"*G_ring_*",
+		"*256x8M8W_PWR_*",
+		"*power_*",
+		"*control_*",
+		"*GF018_256x8M8WM1_*",
+		"*lcol4_*"
+	],
+	"EXTRACT_ABSTRACT": [
+		""
+	],
+	"LVS_FLATTEN": [
+		""
+	],
+	"LVS_NOFLATTEN": [
+		""
+	],
+	"LVS_IGNORE": [
+		""
+	],
+	"LVS_SPICE_FILES": [
+		"$LVS_ROOT/spice/gf180mcu_fd_ip_sram__sram256x8m8wm1.cdl"
+	],
+	"LVS_VERILOG_FILES": [
+		""
+	]
+}
