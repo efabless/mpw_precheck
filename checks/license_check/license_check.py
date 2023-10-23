@@ -25,7 +25,7 @@ APPROVED_LICENSES_PATH = Path(__file__).parent / "_licenses/_approved_licenses"
 PROHIBITED_LICENSES_PATH = Path(__file__).parent / "_licenses/_prohibited_licenses"
 
 # Directories, files and file_extensions ignored for license check
-IGNORED_DIRS = [".git", ".github", "caravel", "dependencies", "gl", "mgmt_core_wrapper", "precheck_results", "lvs_results", "runs", "signoff", "third_party", "venv"]
+IGNORED_DIRS = [".git", ".github", "caravel", "dependencies", "gl", "mgmt_core_wrapper", "precheck_results", "lvs_results", "runs", "signoff", "third_party", "venv", "venv-cocotb"]
 IGNORED_EXTS = [".cells", ".cfg", ".csv", ".def", ".drc", ".gds", ".gz", ".hex", ".jpg", ".json", ".lef", ".lib", ".log", ".mag", ".md", ".out", ".pdf", ".png", ".pyc", ".rdb", ".sdc", ".sdf", ".spef", ".spice", ".svg", ".txt", ".vcd", ".xml", ".loc"]
 IGNORED_FILES = [".git", ".gitignore", ".gitmodules", "info.yaml", "LICENSE", "manifest", "OPENLANE_VERSION", "PDK_SOURCES"]
 
