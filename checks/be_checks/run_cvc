@@ -47,8 +47,8 @@ fi
 CONFIG_FILE=$1
 DESIGN_NAME=${2:+"-d $2"}
 
-if [[ $# -ne 0 ]]; then  # if config file not specified, skip and use current environment
-	source <( $LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME )
+if [[ $# -ne 0 ]]; then # if config file not specified, skip and use current environment
+	source <($LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME)
 fi
 if [[ ! -v EXTRACT_FLATGLOB ]]; then
 	echo "ERROR: LVS environment problem."

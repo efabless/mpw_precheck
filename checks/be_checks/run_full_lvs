@@ -37,7 +37,7 @@ CONFIG_FILE=$1
 DESIGN_NAME=${2:+"-d $2"}
 
 if [[ $# -ne 0 ]]; then  # if config file not specified, skip and use current environment
-	source <( $LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME )
+	source <($LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME)
 fi
 if [[ ! -v EXTRACT_FLATGLOB ]]; then
 	echo "ERROR: LVS environment problem."
@@ -47,9 +47,9 @@ export TOP_SOURCE=${2:-$TOP_SOURCE}
 export TOP_LAYOUT=${3:-$TOP_LAYOUT}
 export LAYOUT_FILE=${4:-$LAYOUT_FILE}
 
-if [[ $EXTRACT_LAYOUT == no ]]; then
-	export LAYOUT_FILE=
-fi
+#if [[ $EXTRACT_LAYOUT == no ]]; then
+#	export LAYOUT_FILE=
+#fi
 
 echo " "
 echo "Running LVS..."
@@ -158,7 +158,7 @@ fi
 rm -rf $WORK_ROOT/spice_fix
 mkdir -p $WORK_ROOT/spice_fix
 cat /dev/null > $WORK_ROOT/spice_files
-SPICE_FIX_LIST=$( echo $LVS_SPICE_FILES_TO_FIX | sed 's/  */\n/g' | awk 'NF > 0 && ! /^#/' )
+SPICE_FIX_LIST=$(echo $LVS_SPICE_FILES_TO_FIX | sed 's/  */\n/g' | awk 'NF > 0 && ! /^#/')
 if [[ $SPICE_FIX_LIST ]]; then
 	cp $SPICE_FIX_LIST $WORK_ROOT/spice_fix/.
 	$LVS_ROOT/tech/$PDK/fix_spice $WORK_ROOT/spice_fix/*.spice
@@ -166,13 +166,13 @@ if [[ $SPICE_FIX_LIST ]]; then
 		grep -v '.org$' >$WORK_ROOT/spice_files
 fi
 
-SPICE_LIST=$( echo $LVS_SPICE_FILES | sed 's/  */\n/g' | awk 'NF > 0 && ! /^#/' )
+SPICE_LIST=$(echo $LVS_SPICE_FILES | sed 's/  */\n/g' | awk 'NF > 0 && ! /^#/')
 if [[ $SPICE_LIST ]]; then
 	ls --sort=none $SPICE_LIST >>$WORK_ROOT/spice_files
 fi
 
 cat /dev/null > $WORK_ROOT/verilog_files
-VERILOG_LIST=$( echo $LVS_VERILOG_FILES | sed 's/  */\n/g' | awk 'NF > 0 && ! /^#/' )
+VERILOG_LIST=$(echo $LVS_VERILOG_FILES | sed 's/  */\n/g' | awk 'NF > 0 && ! /^#/')
 if [[ $VERILOG_LIST ]]; then
 	ls --sort=none $VERILOG_LIST >>$WORK_ROOT/verilog_files
 fi

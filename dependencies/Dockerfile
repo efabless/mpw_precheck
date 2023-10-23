@@ -70,7 +70,7 @@ RUN scl enable devtoolset-8 -- ./configure --prefix=/build CFLAGS='-g -O0 -m64 -
 
 # Clone netgen
 ENV NETGEN_ROOT=./netgen
-RUN git clone --depth=1 --branch 1.5.253 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
+RUN git clone --depth=1 --branch 1.5.254 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
 WORKDIR $NETGEN_ROOT
 RUN scl enable devtoolset-8 -- ./configure --prefix=/build && \
     scl enable devtoolset-8 -- make -j4 && \

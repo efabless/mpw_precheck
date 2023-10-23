@@ -1,4 +1,5 @@
-/__filltie/ {next} # ignore abstract devices
-/__endcap/ {next}
-/nfet_06v0/ {next}
-/pfet_06v0/ {next}
+/__fill_/ {next} # ignore abstract devices
+/__tapvpwrvgnd_/ {next}
+/__fakediode_/ {next}
+/sky130_fd_pr__/ {next} # ignore primitive devices
+{ print }

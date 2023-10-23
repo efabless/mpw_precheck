@@ -15,9 +15,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-# merge shorts are shorts between ports that do not appear in the extraction report.
-
-for ext_path in $1/*.ext $1/*.ext.gz; do
+echo "Merge shorts: shorts between ports that do not appear in the extraction report."
+for ext_path in $1/*.ext*; do
 	ext_file=${ext_path##*/}
 	ext_cell=${ext_file%%.ext*}
 	if [[ ${ext_file##*.} == "gz" ]]; then
@@ -28,3 +27,32 @@ for ext_path in $1/*.ext $1/*.ext.gz; do
 	$CAT $ext_path |
 		awk -v CELL=$ext_cell -f $LVS_ROOT/scripts/merge_short.awk
 done
+
+zgrep -c ^port $1/*.ext* |
+	grep ':0$' |
+	sed -e 's,.*/,,' -e 's/.ext:.*//' |
+	sort > $1/../noport.subckt
+
+awk '/^.subckt/ {print $2}' $1/*.gds.spice |
+	sort > $1/../layout.subckt
+
+zegrep -c '^device' $1/*.ext* |
+	grep -v ':0$' |
+	sed -e 's,.*/,,' -e 's/.ext:.*//' |
+	sort > $1/../device.subckt
+
+zegrep -c '^use' $1/*.ext* |
+	grep ':0$' |
+	sed -e 's,.*/,,' -e 's/.ext:.*//' |
+	sort |
+	comm -12 - $1/../device.subckt > $1/../leaf.subckt
+
+echo "
+Leaf cells without explict ports"
+comm -12 $1/../noport.subckt $1/../layout.subckt |
+	comm -12 - $1/../leaf.subckt 
+
+echo "
+Non-leaf cells without explict ports"
+comm -12 $1/../noport.subckt $1/../layout.subckt |
+	comm -23 - $1/../leaf.subckt
