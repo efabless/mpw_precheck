@@ -45,12 +45,11 @@ RUN pip3.6 install --no-cache-dir --upgrade pip && \
 # General Dependencies
 RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ gdb.x86_64 file.x86_64 time.x86_64 && \
     yum install -y csh libglu libX11-devel ncurses-devel tcl-devel tk-devel wget && \
-    yum install -y patch ruby && \
+    yum install -y patch && \
     yum install -y m4 && \
     yum install -y gettext-devel bison byacc readline-devel && \
     yum install -y flex autotools-dev build-essential autoconf pkg-config nasm libtool automake autopoint && \
     yum install -y iverilog && \
-    yum install -y https://www.klayout.org/downloads/CentOS_7/klayout-0.28.5-0.x86_64.rpm && \
     yum clean all && \
     rm -rf /var/cache/yum
 
@@ -86,10 +85,25 @@ RUN scl enable devtoolset-8 -- autoreconf -vif && \
     scl enable devtoolset-8 -- make -j4 && \
     scl enable devtoolset-8 -- make install
 
+# Install Ruby 3.0.2
+ENV RUBY_ROOT=./ruby
+WORKDIR $RUBY_ROOT
+RUN wget https://cache.ruby-lang.org/pub/ruby/3.0/ruby-3.0.2.tar.gz
+RUN tar -xzf ruby-3.0.2.tar.gz
+RUN cd ruby-3.0.2 && scl enable devtoolset-8 -- ./configure --disable-install-doc -C --enable-shared && scl enable devtoolset-8 -- make install
+ENV PATH=/usr/local/bin:$PATH
+
+# Download & Install Klayout
+ENV KLAYOUT_ROOT=./klayout
+RUN mkdir $KLAYOUT_ROOT
+WORKDIR $KLAYOUT_ROOT
+RUN wget https://github.com/efabless/klayout_package/releases/download/klayout-0.28.12-0/klayout-0.28.12-0.tar.gz
+RUN tar -xzf klayout-0.28.12-0.tar.gz
+RUN yum install -y ./klayout-0.28.12-0.x86_64.rpm
 
 # ENV VARIABLES
 ENV BUILD_PATH=/build/
-ENV LD_LIBRARY_PATH=$BUILD_PATH/lib:$BUILD_PATH/lib/Linux-x86_64:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/usr/local/lib:$BUILD_PATH/lib:$BUILD_PATH/lib:$BUILD_PATH/lib/Linux-x86_64:$LD_LIBRARY_PATH
 ENV MANPATH=$BUILD_PATH/share/man:$MANPATH
 ENV PRECHECKER_ROOT=/opt/
 ENV PATH=$PRECHECKER_ROOT:$PRECHECKER_ROOT/scripts:$BUILD_PATH/bin:$BUILD_PATH/bin/Linux-x86_64:$BUILD_PATH/pdn/scripts:$PATH

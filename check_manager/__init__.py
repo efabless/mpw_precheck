@@ -226,8 +226,10 @@ class KlayoutBEOL(KlayoutDRC):
         super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'beol=true']
-        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+        if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
+        if 'gf180mcuD' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep']
 
 
 class KlayoutFEOL(KlayoutDRC):
@@ -239,8 +241,10 @@ class KlayoutFEOL(KlayoutDRC):
         super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'feol=true']
-        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+        if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
+        if 'gf180mcuD' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep']
 
 
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
@@ -265,8 +269,10 @@ class KlayoutOffgrid(KlayoutDRC):
         super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'offgrid=true']
-        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+        if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
+        if 'gf180mcuD' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep']
 
 
 class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
