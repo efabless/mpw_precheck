@@ -21,10 +21,8 @@
 	"LVS_IGNORE": [
 		""
 	],
-	"LVS_SPICE_FILES_TO_FIX": [
-		"$CARAVEL_ROOT/xschem/simple_por.spice"
-	],
 	"LVS_SPICE_FILES": [
+		"$CARAVEL_ROOT/xschem/simple_por.spice",
 		"$PDK_ROOT/$PDK/libs.ref/sky130_fd_sc_hvl/spice/*.spice"
 	],
 	"LVS_VERILOG_FILES": [
@@ -40,9 +38,9 @@
 		"$CARAVEL_ROOT/verilog/gl/mprj_logic_high.v",
 		"$CARAVEL_ROOT/verilog/gl/spare_logic_block.v",
 		"$CARAVEL_ROOT/verilog/gl/xres_buf.v",
-		"$UPRJ_ROOT/verilog/gl/gpio_defaults_block_*.v",
-		"$UPRJ_ROOT/verilog/gl/user_id_programming.v",
-		"$UPRJ_ROOT/verilog/gl/caravel_core.v"
+		"$TAPEOUT_ROOT/verilog/gl/gpio_defaults_block_*.v",
+		"$TAPEOUT_ROOT/verilog/gl/user_id_programming.v",
+		"$TAPEOUT_ROOT/verilog/gl/caravel_core.v"
 	],
 	"LAYOUT_FILE": "$UPRJ_ROOT/gds/caravel.gds"
 }

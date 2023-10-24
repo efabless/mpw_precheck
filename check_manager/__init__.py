@@ -53,6 +53,7 @@ class Consistency(CheckManager):
     __ref__ = 'consistency'
     __surname__ = 'Consistency'
     __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -74,6 +75,7 @@ class Defaults(CheckManager):
     __ref__ = 'default'
     __surname__ = 'Default'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -100,6 +102,7 @@ class Documentation(CheckManager):
     __ref__ = 'documentation'
     __surname__ = 'Documentation'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -117,6 +120,7 @@ class GpioDefines(CheckManager):
     __ref__ = 'gpio_defines'
     __surname__ = 'GPIO-Defines'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -139,6 +143,7 @@ class Lvs(CheckManager):
     __ref__ = 'lvs'
     __surname__ = 'LVS'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -146,6 +151,8 @@ class Lvs(CheckManager):
         self.output_directory = self.precheck_config['output_directory']
         if self.project_config['type'] == "analog":
             self.design_name = "user_analog_project_wrapper"
+        elif self.project_config['type'] == "openframe":
+            self.design_name = "openframe_project_wrapper"
         else:
             self.design_name = "user_project_wrapper"
         self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
@@ -165,6 +172,7 @@ class Oeb(CheckManager):
     __ref__ = 'oeb'
     __surname__ = 'OEB'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -172,6 +180,8 @@ class Oeb(CheckManager):
         self.output_directory = self.precheck_config['output_directory']
         if self.project_config['type'] == "analog":
             self.design_name = "user_analog_project_wrapper"
+        elif self.project_config['type'] == "openframe":
+            self.design_name = "openframe_project_wrapper"
         else:
             self.design_name = "user_project_wrapper"
         self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
@@ -192,6 +202,7 @@ class KlayoutDRC(CheckManager):
     __ref__ = None
     __surname__ = None
     __supported_pdks__ = None
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -221,6 +232,7 @@ class KlayoutBEOL(KlayoutDRC):
     __ref__ = 'klayout_beol'
     __surname__ = 'Klayout BEOL'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -236,6 +248,7 @@ class KlayoutFEOL(KlayoutDRC):
     __ref__ = 'klayout_feol'
     __surname__ = 'Klayout FEOL'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -251,6 +264,7 @@ class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -264,6 +278,7 @@ class KlayoutOffgrid(KlayoutDRC):
     __ref__ = 'klayout_offgrid'
     __surname__ = 'Klayout Offgrid'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -279,6 +294,7 @@ class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
     __ref__ = 'klayout_pin_label_purposes_overlapping_drawing'
     __surname__ = 'Klayout Pin Label Purposes Overlapping Drawing'
     __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -290,6 +306,7 @@ class KlayoutZeroArea(KlayoutDRC):
     __ref__ = 'klayout_zeroarea'
     __surname__ = 'Klayout ZeroArea'
     __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -301,6 +318,7 @@ class License(CheckManager):
     __ref__ = 'license'
     __surname__ = 'License'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -353,6 +371,7 @@ class MagicDRC(CheckManager):
     __ref__ = 'magic_drc'
     __surname__ = 'Magic DRC'
     __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -379,6 +398,7 @@ class Makefile(CheckManager):
     __ref__ = 'makefile'
     __surname__ = 'Makefile'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -396,6 +416,7 @@ class Manifest(CheckManager):
     __ref__ = 'manifest'
     __surname__ = 'Manifest'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -414,6 +435,7 @@ class XOR(CheckManager):
     __ref__ = 'xor'
     __surname__ = 'XOR'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)

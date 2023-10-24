@@ -98,7 +98,7 @@ def main(*args, **kwargs):
 
     log_info(precheck_config, project_config)
     # note: update to filter sequence based on supported pdks
-    precheck_config['sequence'] = [check for check in precheck_config['sequence'] if precheck_config['pdk_path'].stem in get_check_manager(check, precheck_config, project_config).__supported_pdks__]
+    precheck_config['sequence'] = [check for check in precheck_config['sequence'] if precheck_config['pdk_path'].stem in get_check_manager(check, precheck_config, project_config).__supported_pdks__ and project_config['type'] in get_check_manager(check, precheck_config, project_config).__supported_type__]
     run_precheck_sequence(precheck_config=precheck_config, project_config=project_config)
 
 
