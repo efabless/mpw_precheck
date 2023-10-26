@@ -31,6 +31,7 @@ from checks.license_check import license_check
 from checks.xor_check import xor_check
 from checks.lvs_check.lvs import run_lvs
 from checks.oeb_check.oeb import run_oeb
+from checks.pdn_check.pdn import run_pdn
 
 
 class CheckManagerNotFound(Exception):
@@ -463,6 +464,26 @@ class XOR(CheckManager):
         return self.result
 
 
+class PDNMulti(CheckManager):
+    __ref__ = 'pdnmulti'
+    __surname__ = 'PDNMulti'
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD']
+    __supported_type__ = ['digital']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.config_file = self.precheck_config['input_directory'] / f"openlane/{self.project_config['user_module']}/config.json"
+
+    def run(self):
+        self.result = run_pdn(self.config_file)
+
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.project_config['user_module']}, has no PDN PITCH violations.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.project_config['user_module']}, has PDN PITCH violations.")
+        return self.result
+
+
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
     (License.__ref__, License),
@@ -471,6 +492,7 @@ open_source_checks = OrderedDict([
     (Documentation.__ref__, Documentation),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
+    (PDNMulti.__ref__, PDNMulti),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),
