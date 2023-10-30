@@ -34,7 +34,7 @@ if { $HAS_ESD_FET } {
 if { $HAS_SRAM } {
     gds noduplicates yes
     puts "Detected an SRAM module"
-    foreach x $SRAM_MODULES {
+    foreach x [split $SRAM_MODULES " "] {
         puts "Pre-loading a maglef of the SRAM block: ${x}"
         load $PDK_PATH/libs.ref/sky130_sram_macros/maglef/${x}.mag
     }
