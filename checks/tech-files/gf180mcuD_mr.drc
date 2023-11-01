@@ -67,10 +67,26 @@ def bool_check?(obj)
   obj.to_s.downcase == 'true'
 end
 
+TABLE_NAME = $table_name || 'main'
+
+logger.info("table_name selected  #{TABLE_NAME}")
+
 # connectivity rules
-CONNECTIVITY_RULES = bool_check?($conn_drc)
+CONNECTIVITY_EN = bool_check?($conn_drc)
+
+conn_tables = %w[dnwell dnwell_split nwell nwell_split lvpwell
+                 lvpwell_split nat nat_split ldnmos ldnmos_split ldpmos ldpmos_split main]
+
+CONNECTIVITY_RULES = if conn_tables.include?(TABLE_NAME) && CONNECTIVITY_EN
+                       true
+                     else
+                       false
+                     end
 
 logger.info("CONNECTIVITY_RULES enabled: #{CONNECTIVITY_RULES}")
+
+# split deep rules
+SPLIT_DEEP = bool_check?($split_deep)
 
 # WEDGE
 WEDGE = bool_check?($wedge)
@@ -100,11 +116,12 @@ logger.info("Offgrid enabled:  #{OFFGRID}")
 # threads
 if $thr
   threads($thr)
-  logger.info("Number of threads to use %s" % [$thr])
 else
-  threads(%x("nproc"))
-  logger.info("Number of threads to use #{%x("nproc")}")
+  thr ||= Etc.nprocessors
+  threads(thr)
 end
+
+logger.info("Number of threads to use #{$thr}")
 
 #=== PRINT DETAILS ===
 
@@ -114,6 +131,7 @@ logger.info("Verbose mode: #{$verbose}")
 
 # === TILING MODE ===
 case $run_mode
+## Tiling mode is for testing purpose only [Not used in run_drc.py]
 when 'tiling'
   tiles(500.um)
   tile_borders(10.um)
@@ -122,15 +140,15 @@ when 'tiling'
 when 'deep'
   #=== HIER MODE ===
   deep
-  logger.info('deep  mode is enabled.')
+  logger.info("deep  mode is enabled for #{TABLE_NAME} table")
 else
   #=== FLAT MODE ===
   flat
-  logger.info('flat  mode is enabled.')
+  logger.info("flat  mode is enabled for #{TABLE_NAME} table")
 end
 
 # METAL_TOP
-METAL_TOP = $metal_top || '11K'
+METAL_TOP = $metal_top || '9K'
 
 logger.info("METAL_TOP Selected is #{METAL_TOP}")
 
@@ -154,9 +172,28 @@ SLOW_VIA = bool_check?($slow_via)
 
 logger.info("SLOW_VIA enabled: #{SLOW_VIA}")
 
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
 #================================================
 #------------- LAYERS DEFINITIONS ---------------
 #================================================
+
 polygons_count = 0
 logger.info('Read in polygons from layers.')
 
@@ -283,16 +320,6 @@ polygons_count += count
 opc_drc = get_polygons(124, 5)
 count = opc_drc.count
 logger.info("opc_drc has #{count} polygons")
-polygons_count += count
-
-ndmy = get_polygons(111, 5)
-count = ndmy.count
-logger.info("ndmy has #{count} polygons")
-polygons_count += count
-
-pmndmy = get_polygons(152, 5)
-count = pmndmy.count
-logger.info("pmndmy has #{count} polygons")
 polygons_count += count
 
 v5_xtor = get_polygons(112, 1)
@@ -455,10 +482,26 @@ count = mdiode.count
 logger.info("mdiode has #{count} polygons")
 polygons_count += count
 
-contact = get_polygons(33, 0)
-count = contact.count
-logger.info("contact has #{count} polygons")
+ndmy = get_polygons(111, 5)
+count = ndmy.count
+logger.info("ndmy has #{count} polygons")
 polygons_count += count
+
+pmndmy = get_polygons(152, 5)
+count = pmndmy.count
+logger.info("pmndmy has #{count} polygons")
+polygons_count += count
+
+# == CONTACT LAYER ==
+contact_tables = %w[contact contact_split efuse geom dnwell nwell lvpwell nat
+                    hres ldnmos ldpmos lres otp_mk pres sab sram_3p3 sram_5p0 main]
+
+if contact_tables.include?(TABLE_NAME)
+  contact = get_polygons(33, 0)
+  count = contact.count
+  logger.info("contact has #{count} polygons")
+  polygons_count += count
+end
 
 metal1_drawn = get_polygons(34, 0)
 count = metal1_drawn.count
@@ -487,10 +530,16 @@ count = metal1_blk.count
 logger.info("metal1_blk has #{count} polygons")
 polygons_count += count
 
-via1 = get_polygons(35, 0)
-count = via1.count
-logger.info("via1 has #{count} polygons")
-polygons_count += count
+# == VIA1 LAYER ==
+via1_tables = %w[geom mim_a mim_b metaltop_30k via1 via1_split
+                 dnwell nwell lvpwell nat main]
+
+if via1_tables.include?(TABLE_NAME)
+  via1 = get_polygons(35, 0)
+  count = via1.count
+  logger.info("via1 has #{count} polygons")
+  polygons_count += count
+end
 
 metal2_drawn = get_polygons(36, 0)
 count = metal2_drawn.count
@@ -519,12 +568,19 @@ count = metal2_blk.count
 logger.info("metal2_blk has #{count} polygons")
 polygons_count += count
 
+# == VIA2 LAYER ==
+via2_tables = %w[geom mim_a mim_b metaltop_30k dnwell
+                 nwell lvpwell nat via2 via2_split main]
+
 case METAL_LEVEL
 when '3LM', '4LM', '5LM', '6LM'
-  via2 = get_polygons(38, 0)
-  count = via2.count
-  logger.info("via2 has #{count} polygons")
-  polygons_count += count
+
+  if via2_tables.include?(TABLE_NAME)
+    via2 = get_polygons(38, 0)
+    count = via2.count
+    logger.info("via2 has #{count} polygons")
+    polygons_count += count
+  end
 
   metal3_drawn = get_polygons(42, 0)
   count = metal3_drawn.count
@@ -606,7 +662,7 @@ when '5LM', '6LM'
   logger.info("metal5_dummy has #{count} polygons")
   polygons_count += count
 
-  metal5 = metal5_drawn + metal5_dummy - pmndmy
+  metal5 = metal5_drawn + metal5_dummy
 
   metal5_label = get_polygons(81, 10)
   count = metal5_label.count
@@ -661,18 +717,18 @@ end
 
 case METAL_LEVEL
 when '2LM'
-  top_via       = via1
-  topmin1_via   = contact
+  top_via       = via1 if via1_tables.include?(TABLE_NAME)
+  topmin1_via   = contact if contact_tables.include?(TABLE_NAME)
   top_metal     = metal2
   topmin1_metal = metal1
 when '3LM'
-  top_via       = via2
-  topmin1_via   = via1
+  top_via       = via2 if via2_tables.include?(TABLE_NAME)
+  topmin1_via   = via1 if via1_tables.include?(TABLE_NAME)
   top_metal     = metal3
   topmin1_metal = metal2
 when '4LM'
-  top_via       = via3
-  topmin1_via   = via2
+  top_via = via3
+  topmin1_via   = via2 if via2_tables.include?(TABLE_NAME)
   top_metal     = metal4
   topmin1_metal = metal3
 when '5LM'
@@ -753,6 +809,7 @@ logger.info("Total no. of polygons in the design is #{polygons_count}")
 
 logger.info('Starting deriving base layers.')
 
+
 #=====================================================
 #------------- BASE LAYERS DERIVATIONS ---------------
 #=====================================================
@@ -820,27 +877,33 @@ nwell_n_dn = nwell.not_interacting(dnwell)
 #================================================
 
 if CONNECTIVITY_RULES
-
   logger.info('Construct connectivity for the design.')
 
   connect(dnwell, ncomp)
-  connect(ncomp,  contact)
-  connect(pcomp,  contact)
-
   connect(lvpwell_out, pcomp)
   connect(lvpwell_dn, pcomp)
-
   connect(nwell, ncomp)
-  connect(natcomp, contact)
   connect(mvsd, ncomp)
   connect(mvpsd, pcomp)
-  connect(contact, metal1)
-  connect(metal1,  via1)
-  connect(via1,    metal2)
+
+  if contact_tables.include?(TABLE_NAME)
+    connect(ncomp,  contact)
+    connect(pcomp,  contact)
+    connect(natcomp, contact)
+    connect(contact, metal1)
+  end
+
+  if via1_tables.include?(TABLE_NAME)
+    connect(metal1,  via1)
+    connect(via1,    metal2)
+  end
+
   case METAL_LEVEL
   when '3LM', '4LM', '5LM', '6LM'
-    connect(metal2,  via2)
-    connect(via2,    metal3)
+    if via2_tables.include?(TABLE_NAME)
+      connect(metal2,  via2)
+      connect(via2,    metal3)
+    end
   end
   case METAL_LEVEL
   when '4LM', '5LM', '6LM'
@@ -979,6 +1042,54 @@ logger.info('Running all BEOL rules') if BEOL
 # frozen_string_literal: true
 
 ################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#-------------------10V LDPMOS-------------------
+#================================================
+if FEOL && SPLIT_DEEP
+  if CONNECTIVITY_RULES
+    logger.info('CONNECTIVITY_RULES section')
+
+    connected_mdp_10b, unconnected_mdp_10a = conn_space(mvpsd, 1, 2, euclidian)
+
+    # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
+    logger.info('Executing rule MDP.10a')
+    mdp10a_l1 = unconnected_mdp_10a
+    mdp10a_l1.output('MDP.10a', 'MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm')
+    mdp10a_l1.forget
+
+    # Rule MDP.10b: Min MVPSD space [same potential]. Merge if space less than 1um. is 1µm
+    logger.info('Executing rule MDP.10b')
+    mdp10b_l1 = connected_mdp_10b
+    mdp10b_l1.output('MDP.10b', 'MDP.10b : Min MVPSD space [same potential]. Merge if space less than 1um. : 1µm')
+    mdp10b_l1.forget
+  else
+    logger.info('CONNECTIVITY_RULES disabled section')
+
+    # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
+    logger.info('Executing rule MDP.10a')
+    mdp10a_l1 = mvpsd.space(2.um, euclidian)
+    mdp10a_l1.output('MDP.10a', 'MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm')
+    mdp10a_l1.forget
+  end
+end
+# frozen_string_literal: true
+
+################################################################################################
 # Copyright 2022 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -1105,10 +1216,10 @@ if BEOL && (METAL_LEVEL == '6LM')
   #----------------------via5----------------------
   #================================================
 
-  # Rule V5.1: Min/max Via1 size . is 0.26µm
+  # Rule V5.1: Min/max Via5 size . is 0.26µm
   logger.info('Executing rule V5.1')
   v51_l1 = via5.edges.without_length(0.26.um)
-  v51_l1.output('V5.1', 'V5.1 : Min/max Via1 size . : 0.26µm')
+  v51_l1.output('V5.1', 'V5.1 : Min/max Via5 size . : 0.26µm')
   v51_l1.forget
 
   # Rule V5.2a: min. via5 spacing is 0.26µm
@@ -1435,10 +1546,10 @@ if BEOL && (METAL_LEVEL == '4LM' || METAL_LEVEL == '5LM' || METAL_LEVEL == '6LM'
   #----------------------via3----------------------
   #================================================
 
-  # Rule V3.1: Min/max Via1 size . is 0.26µm
+  # Rule V3.1: Min/max Via3 size . is 0.26µm
   logger.info('Executing rule V3.1')
   v31_l1 = via3.edges.without_length(0.26.um)
-  v31_l1.output('V3.1', 'V3.1 : Min/max Via1 size . : 0.26µm')
+  v31_l1.output('V3.1', 'V3.1 : Min/max Via3 size . : 0.26µm')
   v31_l1.forget
 
   # Rule V3.2a: min. via3 spacing is 0.26µm
@@ -1468,100 +1579,102 @@ if BEOL && (METAL_LEVEL == '4LM' || METAL_LEVEL == '5LM' || METAL_LEVEL == '6LM'
   # Rule V3.3a is not a DRC check
   ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
 
-  # Rule V3.3b: metal3 overlap of via3.
-  logger.info('Executing rule V3.3b')
-  v33b_l1 = via3.not(metal3)
-  v33b_l2 = via3.enclosed(metal3, 0.01.um, euclidian).polygons(0.001.um)
-  v33b_l = v33b_l1.or(v33b_l2)
-  v33b_l.output('V3.3b', 'V3.3b : metal3 overlap of via3 >= 0.01')
-  v33b_l1.forget
-  v33b_l2.forget
-  v33b_l.forget
+  unless SPLIT_DEEP
+    # Rule V3.3b: metal3 overlap of via3.
+    logger.info('Executing rule V3.3b')
+    v33b_l1 = via3.not(metal3)
+    v33b_l2 = via3.enclosed(metal3, 0.01.um, euclidian).polygons(0.001.um)
+    v33b_l = v33b_l1.or(v33b_l2)
+    v33b_l.output('V3.3b', 'V3.3b : metal3 overlap of via3 >= 0.01')
+    v33b_l1.forget
+    v33b_l2.forget
+    v33b_l.forget
 
-  # Rule V3.3c: metal3 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
-  logger.info('Executing rule V3.3c')
-  v3p3c_cond = metal3.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
-  v3p3c_eol_allowed = metal3.edges.with_length(nil, 0.34.um)
-  v3p3c_cond_edge1 = v3p3c_cond.first_edges
-  v3p3c_cond_edge2 = v3p3c_cond.second_edges
-  v3p3c_eol = v3p3c_eol_allowed.interacting(v3p3c_cond_edge1).interacting(v3p3c_cond_edge2)
-                               .not(v3p3c_cond_edge1).not(v3p3c_cond_edge2)
-  v3p3c_l1 = via3.edges.enclosed(v3p3c_eol, 0.06.um, projection)
-  v3p3c_l1.output('V3.3c', 'V3.3c : metal3 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-                   excluding Metal branches shorter than 0.28µm.) : 0.06µm')
-  v3p3c_l1.forget
-  v3p3c_cond.forget
-  v3p3c_eol.forget
-  v3p3c_eol_allowed.forget
-  v3p3c_cond_edge1.forget
-  v3p3c_cond_edge2.forget
+    # Rule V3.3c: metal3 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+    ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+    logger.info('Executing rule V3.3c')
+    v3p3c_cond = metal3.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+    v3p3c_eol_allowed = metal3.edges.with_length(nil, 0.34.um)
+    v3p3c_cond_edge1 = v3p3c_cond.first_edges
+    v3p3c_cond_edge2 = v3p3c_cond.second_edges
+    v3p3c_eol = v3p3c_eol_allowed.interacting(v3p3c_cond_edge1).interacting(v3p3c_cond_edge2)
+                                 .not(v3p3c_cond_edge1).not(v3p3c_cond_edge2)
+    v3p3c_l1 = via3.edges.enclosed(v3p3c_eol, 0.06.um, projection)
+    v3p3c_l1.output('V3.3c', 'V3.3c : metal3 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+    v3p3c_l1.forget
+    v3p3c_cond.forget
+    v3p3c_eol.forget
+    v3p3c_eol_allowed.forget
+    v3p3c_cond_edge1.forget
+    v3p3c_cond_edge2.forget
 
-  # Rule V3.3d:  If metal3 overlap via3 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm
-  logger.info('Executing rule V3.3d')
-  via3_3d_cond_edges = via3.edges.not_outside(via3.enclosed(metal3, 0.04.um, projection).edges)
-  via3_3d_check_corner = via3_3d_cond_edges.extended_in(0.002.um)
-  via3_3d_check = via3.edges.interacting(via3_3d_check_corner).not(via3_3d_cond_edges)
-  via3_cond_corner = via3_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
-  via3_3d_l1 = via3_3d_check.enclosed(metal3.edges, 0.06.um, projection).polygons
-  via3_3d_l2 = via3.interacting(via3_cond_corner)
-  via3_3d_l = via3_3d_l1.or(via3_3d_l2)
-  via3_3d_l.output('V3.3d',
-                   'V3.3d : If metal3 overlap via3 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm')
-  via3_3d_l.forget
-  via3_3d_l2.forget
-  via3_3d_l1.forget
-  via3_3d_cond_edges.forget
-  via3_3d_check_corner.forget
-  via3_cond_corner.forget
-  via3_3d_check.forget
+    # Rule V3.3d:  If metal3 overlap via3 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm
+    logger.info('Executing rule V3.3d')
+    via3_3d_cond_edges = via3.edges.not_outside(via3.enclosed(metal3, 0.04.um, projection).edges)
+    via3_3d_check_corner = via3_3d_cond_edges.extended_in(0.002.um)
+    via3_3d_check = via3.edges.interacting(via3_3d_check_corner).not(via3_3d_cond_edges)
+    via3_cond_corner = via3_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
+    via3_3d_l1 = via3_3d_check.enclosed(metal3.edges, 0.06.um, projection).polygons
+    via3_3d_l2 = via3.interacting(via3_cond_corner)
+    via3_3d_l = via3_3d_l1.or(via3_3d_l2)
+    via3_3d_l.output('V3.3d',
+                     'V3.3d : If metal3 overlap via3 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm')
+    via3_3d_l.forget
+    via3_3d_l2.forget
+    via3_3d_l1.forget
+    via3_3d_cond_edges.forget
+    via3_3d_check_corner.forget
+    via3_cond_corner.forget
+    via3_3d_check.forget
 
-  # Rule V3.3e is not a DRC check
-  ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
+    # Rule V3.3e is not a DRC check
+    ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
 
-  # Rule V3.4a: metal4 overlap of via3.
-  logger.info('Executing rule V3.4a')
-  via3_4a_l1 = via3.enclosed(metal4, 0.01.um, euclidian).polygons(0.001.um)
-  via3_4a_l2 = via3.not(metal4)
-  via3_4a_l = via3_4a_l1.or(via3_4a_l2)
-  via3_4a_l.output('V3.4a', 'V3.4a : metal4 overlap of via3 >= 0.01 um')
-  via3_4a_l1.forget
-  via3_4a_l2.forget
-  via3_4a_l.forget
+    # Rule V3.4a: metal4 overlap of via3.
+    logger.info('Executing rule V3.4a')
+    via3_4a_l1 = via3.enclosed(metal4, 0.01.um, euclidian).polygons(0.001.um)
+    via3_4a_l2 = via3.not(metal4)
+    via3_4a_l = via3_4a_l1.or(via3_4a_l2)
+    via3_4a_l.output('V3.4a', 'V3.4a : metal4 overlap of via3 >= 0.01 um')
+    via3_4a_l1.forget
+    via3_4a_l2.forget
+    via3_4a_l.forget
 
-  # Rule V3.4b: metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
-  logger.info('Executing rule V3.4b')
-  v3p4b_cond = metal4.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
-  v3p4b_eol_allowed = metal4.edges.with_length(nil, 0.34.um)
-  v3p4b_eol = v3p4b_eol_allowed.interacting(v3p4b_cond.first_edges).interacting(v3p4b_cond.second_edges)
-                               .not(v3p4b_cond.first_edges).not(v3p4b_cond.second_edges)
-  v3p4b_l1 = via3.edges.enclosed(v3p4b_eol, 0.06.um, projection)
-  v3p4b_l1.output('V3.4b', 'V3.4p : metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-                   excluding Metal branches shorter than 0.28µm.) : 0.06µm')
-  v3p4b_l1.forget
-  v3p4b_cond.forget
-  v3p4b_eol.forget
-  v3p4b_eol_allowed.forget
+    # Rule V3.4b: metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+    ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+    logger.info('Executing rule V3.4b')
+    v3p4b_cond = metal4.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+    v3p4b_eol_allowed = metal4.edges.with_length(nil, 0.34.um)
+    v3p4b_eol = v3p4b_eol_allowed.interacting(v3p4b_cond.first_edges).interacting(v3p4b_cond.second_edges)
+                                 .not(v3p4b_cond.first_edges).not(v3p4b_cond.second_edges)
+    v3p4b_l1 = via3.edges.enclosed(v3p4b_eol, 0.06.um, projection)
+    v3p4b_l1.output('V3.4b', 'V3.4p : metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+    v3p4b_l1.forget
+    v3p4b_cond.forget
+    v3p4b_eol.forget
+    v3p4b_eol_allowed.forget
 
-  # Rule V3.4c: If metal4 overlap via3 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm
-  logger.info('Executing rule V3.4c')
-  via3_4c_cond_edges = via3.edges.not_outside(via3.enclosed(metal4, 0.04.um, projection).edges)
-  via3_4c_check_corner = via3_4c_cond_edges.extended_in(0.002.um)
-  via3_4c_check = via3.edges.interacting(via3_4c_check_corner).not(via3_4c_cond_edges)
-  via3_4c_cond_corner = via3_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
-  via3_4c_l1 = via3_4c_check.enclosed(metal4.edges, 0.06.um, projection).polygons
-  via3_4c_l2 = via3.interacting(via3_4c_cond_corner)
-  via3_4c_l = via3_4c_l1.or(via3_4c_l2)
-  via3_4c_l.output('V3.4c',
-                   'V3.4c : If metal4 overlap via3 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm')
-  via3_4c_l.forget
-  via3_4c_l2.forget
-  via3_4c_l1.forget
-  via3_4c_cond_edges.forget
-  via3_4c_check_corner.forget
-  via3_4c_cond_corner.forget
-  via3_4c_check.forget
+    # Rule V3.4c: If metal4 overlap via3 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm
+    logger.info('Executing rule V3.4c')
+    via3_4c_cond_edges = via3.edges.not_outside(via3.enclosed(metal4, 0.04.um, projection).edges)
+    via3_4c_check_corner = via3_4c_cond_edges.extended_in(0.002.um)
+    via3_4c_check = via3.edges.interacting(via3_4c_check_corner).not(via3_4c_cond_edges)
+    via3_4c_cond_corner = via3_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
+    via3_4c_l1 = via3_4c_check.enclosed(metal4.edges, 0.06.um, projection).polygons
+    via3_4c_l2 = via3.interacting(via3_4c_cond_corner)
+    via3_4c_l = via3_4c_l1.or(via3_4c_l2)
+    via3_4c_l.output('V3.4c',
+                     'V3.4c : If metal4 overlap via3 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm')
+    via3_4c_l.forget
+    via3_4c_l2.forget
+    via3_4c_l1.forget
+    via3_4c_cond_edges.forget
+    via3_4c_check_corner.forget
+    via3_4c_cond_corner.forget
+    via3_4c_check.forget
+  end
 end
 # frozen_string_literal: true
 
@@ -1672,6 +1785,122 @@ if FEOL
   pres9b.forget
   pres_poly.forget
 
+end
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+# Metalstack
+#================================================
+#----------------------via2----------------------
+#================================================
+if BEOL && (METAL_LEVEL == '3LM' || METAL_LEVEL == '4LM' || METAL_LEVEL == '5LM' || METAL_LEVEL == '6LM') && SPLIT_DEEP
+  # Rule V2.3b: metal2 overlap of via2.
+  logger.info('Executing rule V2.3b')
+  v23b_l1 = via2.not(metal2)
+  v23b_l2 = via2.enclosed(metal2, 0.01.um, euclidian).polygons(0.001.um)
+  v23b_l = v23b_l1.or(v23b_l2)
+  v23b_l.output('V2.3b', 'V2.3b : metal2 overlap of via2 >= 0.01')
+  v23b_l1.forget
+  v23b_l2.forget
+  v23b_l.forget
+
+  # Rule V2.3c: metal2 (< 0.34um) end-of-line overlap.(Applies to all < 0.34µm wide Metal lines,
+  ##  excluding Metal branches shorter than 0.28µm.) is 0.06µm
+  logger.info('Executing rule V2.3c')
+  v2p3c_cond = metal2.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+  v2p3c_eol_allowed = metal2.edges.with_length(nil, 0.34.um)
+  v2p3c_cond_edge1 = v2p3c_cond.first_edges
+  v2p3c_cond_edge2 = v2p3c_cond.second_edges
+  v2p3c_eol = v2p3c_eol_allowed.interacting(v2p3c_cond_edge1).interacting(v2p3c_cond_edge2)
+                               .not(v2p3c_cond_edge1).not(v2p3c_cond_edge2)
+  v2p3c_l1 = via2.edges.enclosed(v2p3c_eol, 0.06.um, projection)
+  v2p3c_l1.output('V2.3c', 'V2.3c : metal2 (< 0.34um) end-of-line overlap.(Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+  v2p3c_l1.forget
+  v2p3c_cond.forget
+  v2p3c_eol.forget
+  v2p3c_eol_allowed.forget
+  v2p3c_cond_edge1.forget
+  v2p3c_cond_edge2.forget
+
+  # Rule V2.3d: If metal2 overlap via2 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm
+  logger.info('Executing rule V2.3d')
+  via2_3d_cond_edges = via2.edges.not_outside(via2.enclosed(metal2, 0.04.um, projection).edges)
+  via2_3d_check_corner = via2_3d_cond_edges.extended_in(0.002.um)
+  via2_3d_check = via2.edges.interacting(via2_3d_check_corner).not(via2_3d_cond_edges)
+  via2_cond_corner = via2_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
+  via2_3d_l1 = via2_3d_check.enclosed(metal2.edges, 0.06.um, projection).polygons
+  via2_3d_l2 = via2.interacting(via2_cond_corner)
+  via2_3d_l = via2_3d_l1.or(via2_3d_l2)
+  via2_3d_l.output('V2.3d',
+                   'V2.3d : If metal2 overlap via2 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm')
+  via2_3d_l.forget
+  via2_3d_l2.forget
+  via2_3d_l1.forget
+  via2_3d_cond_edges.forget
+  via2_3d_check_corner.forget
+  via2_cond_corner.forget
+  via2_3d_check.forget
+
+  # Rule V2.3e is not a DRC check
+  ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
+
+  # Rule V2.4a: metal3 overlap of via2.
+  logger.info('Executing rule V2.4a')
+  via2_4a_l1 = via2.enclosed(metal3, 0.01.um, euclidian).polygons(0.001.um)
+  via2_4a_l2 = via2.not(metal3)
+  via2_4a_l = via2_4a_l1.or(via2_4a_l2)
+  via2_4a_l.output('V2.4a', 'V2.4a : metal3 overlap of via2 >= 0.01 um')
+  via2_4a_l1.forget
+  via2_4a_l2.forget
+  via2_4a_l.forget
+
+  # Rule V2.4b: metal3 (< 0.34um) end-of-line overlap. is 0.06µm
+  logger.info('Executing rule V2.4b')
+  v2p4b_cond = metal3.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+  v2p4b_eol_allowed = metal3.edges.with_length(nil, 0.34.um)
+  v2p4b_eol = v2p4b_eol_allowed.interacting(v2p4b_cond.first_edges).interacting(v2p4b_cond.second_edges)
+                               .not(v2p4b_cond.first_edges).not(v2p4b_cond.second_edges)
+  v2p4b_l1 = via2.edges.enclosed(v2p4b_eol, 0.06.um, projection)
+  v2p4b_l1.output('V2.4b', 'V2.4p : metal3 (< 0.34um) end-of-line overlap. : 0.06µm')
+  v2p4b_l1.forget
+  v2p4b_cond.forget
+  v2p4b_eol.forget
+  v2p4b_eol_allowed.forget
+
+  # Rule V2.4c: If metal3 overlap via2 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm
+  logger.info('Executing rule V2.4c')
+  via2_4c_cond_edges = via2.edges.not_outside(via2.enclosed(metal3, 0.04.um, projection).edges)
+  via2_4c_check_corner = via2_4c_cond_edges.extended_in(0.002.um)
+  via2_4c_check = via2.edges.interacting(via2_4c_check_corner).not(via2_4c_cond_edges)
+  via2_4c_cond_corner = via2_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
+  via2_4c_l1 = via2_4c_check.enclosed(metal3.edges, 0.06.um, projection).polygons
+  via2_4c_l2 = via2.interacting(via2_4c_cond_corner)
+  via2_4c_l = via2_4c_l1.or(via2_4c_l2)
+  via2_4c_l.output('V2.4c',
+                   'V2.4c : If metal3 overlap via2 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm')
+  via2_4c_l.forget
+  via2_4c_l2.forget
+  via2_4c_l1.forget
+  via2_4c_cond_edges.forget
+  via2_4c_check_corner.forget
+  via2_4c_cond_corner.forget
+  via2_4c_check.forget
 end
 # frozen_string_literal: true
 
@@ -2107,6 +2336,124 @@ end
 # frozen_string_literal: true
 
 ################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+# metal stack
+#================================================
+#----------------------via4----------------------
+#================================================
+if BEOL && (METAL_LEVEL == '5LM' || METAL_LEVEL == '6LM') && SPLIT_DEEP
+  # Rule V4.3b: metal4  overlap of via4.
+  logger.info('Executing rule V4.3b')
+  v43b_l1 = via4.not(metal4)
+  v43b_l2 = via4.enclosed(metal4, 0.01.um, euclidian).polygons(0.001.um)
+  v43b_l = v43b_l1.or(v43b_l2)
+  v43b_l.output('V4.3b', 'V4.3b : metal4 overlap of via4 >= 0.01')
+  v43b_l1.forget
+  v43b_l2.forget
+  v43b_l.forget
+
+  # Rule V4.3c: metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+  logger.info('Executing rule V4.3c')
+  v4p3c_cond = metal4.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+  v4p3c_eol_allowed = metal4.edges.with_length(nil, 0.34.um)
+  v4p3c_cond_edge1 = v4p3c_cond.first_edges
+  v4p3c_cond_edge2 = v4p3c_cond.second_edges
+  v4p3c_eol = v4p3c_eol_allowed.interacting(v4p3c_cond_edge1).interacting(v4p3c_cond_edge2)
+                               .not(v4p3c_cond_edge1).not(v4p3c_cond_edge2)
+  v4p3c_l1 = via4.edges.enclosed(v4p3c_eol, 0.06.um, projection)
+  v4p3c_l1.output('V4.3c', 'V4.3c : metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+  v4p3c_l1.forget
+  v4p3c_cond.forget
+  v4p3c_eol.forget
+  v4p3c_eol_allowed.forget
+  v4p3c_cond_edge1.forget
+  v4p3c_cond_edge2.forget
+
+  # Rule V4.3d: If metal4 overlap via4 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm
+  logger.info('Executing rule V4.3d')
+  via4_3d_cond_edges = via4.edges.not_outside(via4.enclosed(metal4, 0.04.um, projection).edges)
+  via4_3d_check_corner = via4_3d_cond_edges.extended_in(0.002.um)
+  via4_3d_check = via4.edges.interacting(via4_3d_check_corner).not(via4_3d_cond_edges)
+  via4_cond_corner = via4_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
+  via4_3d_l1 = via4_3d_check.enclosed(metal4.edges, 0.06.um, projection).polygons
+  via4_3d_l2 = via4.interacting(via4_cond_corner)
+  via4_3d_l = via4_3d_l1.or(via4_3d_l2)
+  via4_3d_l.output('V4.3d',
+                   'V4.3d : If metal4 overlap via4 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm')
+  via4_3d_l.forget
+  via4_3d_l2.forget
+  via4_3d_l1.forget
+  via4_3d_cond_edges.forget
+  via4_3d_check_corner.forget
+  via4_cond_corner.forget
+  via4_3d_check.forget
+
+  # Rule V4.3e is not a DRC check
+  ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
+
+  # Rule V4.4a: metal5 overlap of via4.
+  logger.info('Executing rule V4.4a')
+  via4_4a_l1 = via4.enclosed(metal5, 0.01.um, euclidian).polygons(0.001.um)
+  via4_4a_l2 = via4.not(metal5)
+  via4_4a_l = via4_4a_l1.or(via4_4a_l2)
+  via4_4a_l.output('V4.4a', 'V4.4a : metal5 overlap of via4 >= 0.01 um')
+  via4_4a_l1.forget
+  via4_4a_l2.forget
+  via4_4a_l.forget
+
+  # Rule V4.4b: metal5 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+  logger.info('Executing rule V4.4b')
+  v4p4b_cond = metal5.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+  v4p4b_eol_allowed = metal5.edges.with_length(nil, 0.34.um)
+  v4p4b_eol = v4p4b_eol_allowed.interacting(v4p4b_cond.first_edges).interacting(v4p4b_cond.second_edges)
+                               .not(v4p4b_cond.first_edges).not(v4p4b_cond.second_edges)
+  v4p4b_l1 = via4.edges.enclosed(v4p4b_eol, 0.06.um, projection)
+  v4p4b_l1.output('V4.4b', 'V4.4p : metal5 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+  v4p4b_l1.forget
+  v4p4b_cond.forget
+  v4p4b_eol.forget
+  v4p4b_eol_allowed.forget
+
+  # Rule V4.4c: If metal5 overlap via4 by < 0.04um on one side, adjacent metal5 edges overlap. : 0.06µm
+  logger.info('Executing rule V4.4c')
+  via4_4c_cond_edges = via4.edges.not_outside(via4.enclosed(metal5, 0.04.um, projection).edges)
+  via4_4c_check_corner = via4_4c_cond_edges.extended_in(0.002.um)
+  via4_4c_check = via4.edges.interacting(via4_4c_check_corner).not(via4_4c_cond_edges)
+  via4_4c_cond_corner = via4_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
+  via4_4c_l1 = via4_4c_check.enclosed(metal5.edges, 0.06.um, projection).polygons
+  via4_4c_l2 = via4.interacting(via4_4c_cond_corner)
+  via4_4c_l = via4_4c_l1.or(via4_4c_l2)
+  via4_4c_l.output('V4.4c',
+                   'V4.4c : If metal5 overlap via4 by < 0.04um on one side, adjacent metal5 edges overlap. : 0.06µm')
+  via4_4c_l.forget
+  via4_4c_l2.forget
+  via4_4c_l1.forget
+  via4_4c_cond_edges.forget
+  via4_4c_check_corner.forget
+  via4_4c_cond_corner.forget
+  via4_4c_check.forget
+end
+# frozen_string_literal: true
+
+################################################################################################
 # Copyright 2022 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -2303,7 +2650,7 @@ if BEOL
   via1_4x4_loc.forget
   selected_via1.forget
 
-  # Rule V1.3a: metal1 overlap of via1.
+  # Rule V1.3a: metal1 overlap of via1 is 0 um.
   logger.info('Executing rule V1.3a')
   v13a_l1 = via1.not(metal1)
   v13a_l1.output('V1.3a', 'V1.3a : metal1 overlap of via1 >= 0.0')
@@ -2312,90 +2659,91 @@ if BEOL
   # Rule V1.3b is not a DRC check
   ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
 
-  # Rule V1.3c: metal1 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
-  logger.info('Executing rule V1.3c')
-  v1p3c_cond = metal1.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
-  v1p3c_eol_allowed = metal1.edges.with_length(nil, 0.34.um)
-  v1p3c_cond_edge1 = v1p3c_cond.first_edges
-  v1p3c_cond_edge2 = v1p3c_cond.second_edges
-  v1p3c_eol = v1p3c_eol_allowed.interacting(v1p3c_cond_edge1).interacting(v1p3c_cond_edge2)
-                               .not(v1p3c_cond_edge1).not(v1p3c_cond_edge2)
-  v1p3c_l1 = via1.edges.enclosed(v1p3c_eol, 0.06.um, projection)
-  v1p3c_l1.output('V1.3c', 'V1.3c : metal1 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-                   excluding Metal branches shorter than 0.28µm.) : 0.06µm')
-  v1p3c_l1.forget
-  v1p3c_cond.forget
-  v1p3c_eol.forget
-  v1p3c_cond_edge1.forget
-  v1p3c_cond_edge2.forget
+  unless SPLIT_DEEP
+    # Rule V1.3c: metal1 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+    ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+    logger.info('Executing rule V1.3c')
+    v1p3c_cond = metal1.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+    v1p3c_eol_allowed = metal1.edges.with_length(nil, 0.34.um)
+    v1p3c_cond_edge1 = v1p3c_cond.first_edges
+    v1p3c_cond_edge2 = v1p3c_cond.second_edges
+    v1p3c_eol = v1p3c_eol_allowed.interacting(v1p3c_cond_edge1).interacting(v1p3c_cond_edge2)
+                                 .not(v1p3c_cond_edge1).not(v1p3c_cond_edge2)
+    v1p3c_l1 = via1.edges.enclosed(v1p3c_eol, 0.06.um, projection)
+    v1p3c_l1.output('V1.3c', 'V1.3c : metal1 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+    v1p3c_l1.forget
+    v1p3c_cond.forget
+    v1p3c_eol.forget
+    v1p3c_cond_edge1.forget
+    v1p3c_cond_edge2.forget
 
-  # Rule V1.3d: If metal1 overlap via1 by < 0.04um on one side, adjacent metal1 edges overlap. : 0.06µm
-  logger.info('Executing rule V1.3d')
-  via1_3d_cond_edges = via1.edges.not_outside(via1.enclosed(metal1, 0.04.um, projection).edges)
-  via1_3d_check_corner = via1_3d_cond_edges.extended_in(0.002.um)
-  via1_3d_check = via1.edges.interacting(via1_3d_check_corner).not(via1_3d_cond_edges)
-  via1_cond_corner = via1_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
-  via1_3d_l1 = via1_3d_check.enclosed(metal1.edges, 0.06.um, projection).polygons
-  via1_3d_l2 = via1.interacting(via1_cond_corner)
-  via1_3d_l = via1_3d_l1.or(via1_3d_l2)
-  via1_3d_l.output('V1.3d',
-                   'V1.3d : If metal1 overlap via1 by < 0.04um on one side, adjacent metal1 edges overlap. : 0.06µm')
-  via1_3d_l.forget
-  via1_3d_l2.forget
-  via1_3d_l1.forget
-  via1_3d_cond_edges.forget
-  via1_3d_check_corner.forget
-  via1_cond_corner.forget
-  via1_3d_check.forget
+    # Rule V1.3d: If metal1 overlap via1 by < 0.04um on one side, adjacent metal1 edges overlap. : 0.06µm
+    logger.info('Executing rule V1.3d')
+    via1_3d_cond_edges = via1.edges.not_outside(via1.enclosed(metal1, 0.04.um, projection).edges)
+    via1_3d_check_corner = via1_3d_cond_edges.extended_in(0.002.um)
+    via1_3d_check = via1.edges.interacting(via1_3d_check_corner).not(via1_3d_cond_edges)
+    via1_cond_corner = via1_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
+    via1_3d_l1 = via1_3d_check.enclosed(metal1.edges, 0.06.um, projection).polygons
+    via1_3d_l2 = via1.interacting(via1_cond_corner)
+    via1_3d_l = via1_3d_l1.or(via1_3d_l2)
+    via1_3d_l.output('V1.3d',
+                     'V1.3d : If metal1 overlap via1 by < 0.04um on one side, adjacent metal1 edges overlap. : 0.06µm')
+    via1_3d_l.forget
+    via1_3d_l2.forget
+    via1_3d_l1.forget
+    via1_3d_cond_edges.forget
+    via1_3d_check_corner.forget
+    via1_cond_corner.forget
+    via1_3d_check.forget
 
-  # Rule V1.3e is not a DRC check
-  ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
+    # Rule V1.3e is not a DRC check
+    ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
 
-  # Rule V1.4a: metal2 overlap of via1.
-  logger.info('Executing rule V1.4a')
-  via1_4a_l1 = via1.enclosed(metal2, 0.01.um, euclidian).polygons(0.001.um)
-  via1_4a_l2 = via1.not(metal2)
-  via1_4a_l = via1_4a_l1.or(via1_4a_l2)
-  via1_4a_l.output('V1.4a', 'V1.4a : metal2 overlap of via1 >= 0.01 um')
-  via1_4a_l1.forget
-  via1_4a_l2.forget
-  via1_4a_l.forget
+    # Rule V1.4a: metal2 overlap of via1.
+    logger.info('Executing rule V1.4a')
+    via1_4a_l1 = via1.enclosed(metal2, 0.01.um, euclidian).polygons(0.001.um)
+    via1_4a_l2 = via1.not(metal2)
+    via1_4a_l = via1_4a_l1.or(via1_4a_l2)
+    via1_4a_l.output('V1.4a', 'V1.4a : metal2 overlap of via1 >= 0.01 um')
+    via1_4a_l1.forget
+    via1_4a_l2.forget
+    via1_4a_l.forget
 
-  # Rule V1.4b: metal2 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
-  logger.info('Executing rule V1.4b')
-  v1p4b_cond = metal2.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
-  v1p4b_eol_allowed = metal2.edges.with_length(nil, 0.34.um)
-  v1p4b_eol = v1p4b_eol_allowed.interacting(v1p4b_cond.first_edges).interacting(v1p4b_cond.second_edges)
-                               .not(v1p4b_cond.first_edges).not(v1p4b_cond.second_edges)
-  v1p4b_l1 = via1.edges.enclosed(v1p4b_eol, 0.06.um, projection)
-  v1p4b_l1.output('V1.4b', 'V1.4p : metal2 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-                   excluding Metal branches shorter than 0.28µm.) : 0.06µm')
-  v1p4b_l1.forget
-  v1p4b_cond.forget
-  v1p4b_eol.forget
-  v1p4b_eol_allowed.forget
+    # Rule V1.4b: metal2 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+    ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+    logger.info('Executing rule V1.4b')
+    v1p4b_cond = metal2.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+    v1p4b_eol_allowed = metal2.edges.with_length(nil, 0.34.um)
+    v1p4b_eol = v1p4b_eol_allowed.interacting(v1p4b_cond.first_edges).interacting(v1p4b_cond.second_edges)
+                                 .not(v1p4b_cond.first_edges).not(v1p4b_cond.second_edges)
+    v1p4b_l1 = via1.edges.enclosed(v1p4b_eol, 0.06.um, projection)
+    v1p4b_l1.output('V1.4b', 'V1.4p : metal2 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+    v1p4b_l1.forget
+    v1p4b_cond.forget
+    v1p4b_eol.forget
+    v1p4b_eol_allowed.forget
 
-  # Rule V1.4c: If metal2 overlap via1 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm
-  logger.info('Executing rule V1.4c')
-  via1_4c_cond_edges = via1.edges.not_outside(via1.enclosed(metal2, 0.04.um, projection).edges)
-  via1_4c_check_corner = via1_4c_cond_edges.extended_in(0.002.um)
-  via1_4c_check = via1.edges.interacting(via1_4c_check_corner).not(via1_4c_cond_edges)
-  via1_4c_cond_corner = via1_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
-  via1_4c_l1 = via1_4c_check.enclosed(metal2.edges, 0.06.um, projection).polygons
-  via1_4c_l2 = via1.interacting(via1_4c_cond_corner)
-  via1_4c_l = via1_4c_l1.or(via1_4c_l2)
-  via1_4c_l.output('V1.4c',
-                   'V1.4c : If metal2 overlap via1 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm')
-  via1_4c_l.forget
-  via1_4c_l2.forget
-  via1_4c_l1.forget
-  via1_4c_cond_edges.forget
-  via1_4c_check_corner.forget
-  via1_4c_cond_corner.forget
-  via1_4c_check.forget
-
+    # Rule V1.4c: If metal2 overlap via1 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm
+    logger.info('Executing rule V1.4c')
+    via1_4c_cond_edges = via1.edges.not_outside(via1.enclosed(metal2, 0.04.um, projection).edges)
+    via1_4c_check_corner = via1_4c_cond_edges.extended_in(0.002.um)
+    via1_4c_check = via1.edges.interacting(via1_4c_check_corner).not(via1_4c_cond_edges)
+    via1_4c_cond_corner = via1_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
+    via1_4c_l1 = via1_4c_check.enclosed(metal2.edges, 0.06.um, projection).polygons
+    via1_4c_l2 = via1.interacting(via1_4c_cond_corner)
+    via1_4c_l = via1_4c_l1.or(via1_4c_l2)
+    via1_4c_l.output('V1.4c',
+                     'V1.4c : If metal2 overlap via1 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm')
+    via1_4c_l.forget
+    via1_4c_l2.forget
+    via1_4c_l1.forget
+    via1_4c_cond_edges.forget
+    via1_4c_check_corner.forget
+    via1_4c_cond_corner.forget
+    via1_4c_check.forget
+  end
 end
 # frozen_string_literal: true
 
@@ -2587,6 +2935,83 @@ end
 # frozen_string_literal: true
 
 ################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#--------------------LVPWELL---------------------
+#================================================
+if FEOL && SPLIT_DEEP
+
+  logger.info('Starting LVPWELL derivations')
+  lvpwell_dn_mv = lvpwell_dn.interacting(dualgate)
+
+  if CONNECTIVITY_RULES
+
+    logger.info('CONNECTIVITY_RULES section')
+
+    connected_lvpwell_3p3v, unconnected_lvpwell_3p3v = conn_space(lvpwell_dn, 0.86, 1.4, euclidian)
+    connected_lvpwell_5p0v, unconnected_lvpwell_5p0v = conn_space(lvpwell_dn, 0.86, 1.7, euclidian)
+
+    # Rule LPW.2a_LV: Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. is 1.4µm
+    logger.info('Executing rule LPW.2a_LV')
+    lpw2a_l1 = unconnected_lvpwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
+    lpw2a_l1.output('LPW.2a_LV',
+                    'LPW.2a_LV : Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. : 1.4µm')
+    lpw2a_l1.forget
+
+    # Rule LPW.2a_MV: Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. is 1.7µm
+    logger.info('Executing rule LPW.2a_MV')
+    lpw2a_l1 = unconnected_lvpwell_5p0v.overlapping(dualgate)
+    lpw2a_l1.output('LPW.2a_MV',
+                    'LPW.2a_MV : Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. : 1.7µm')
+    lpw2a_l1.forget
+
+    # Rule LPW.2b_LV: Min. LVPWELL to LVPWELL Space [Equi potential]. is 0.86µm
+    logger.info('Executing rule LPW.2b_LV')
+    lpw2b_l1 = connected_lvpwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
+    lpw2b_l1.output('LPW.2b_LV', 'LPW.2b_LV : Min. LVPWELL to LVPWELL Space [Equi potential]. : 0.86µm')
+    lpw2b_l1.forget
+
+    # Rule LPW.2b_MV: Min. LVPWELL to LVPWELL Space [Equi potential]. is 0.86µm
+    logger.info('Executing rule LPW.2b_MV')
+    lpw2b_l1 = connected_lvpwell_5p0v.overlapping(dualgate)
+    lpw2b_l1.output('LPW.2b_MV', 'LPW.2b_MV : Min. LVPWELL to LVPWELL Space [Equi potential]. : 0.86µm')
+    lpw2b_l1.forget
+
+  else
+    logger.info('CONNECTIVITY_RULES disabled section')
+
+    # Rule LPW.2a_LV: Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. is 1.4µm
+    logger.info('Executing rule LPW.2a_LV')
+    lpw2a_l1 = lvpwell_dn.isolated(1.4.um, euclidian)
+    lpw2a_l1.output('LPW.2a_LV',
+                    'LPW.2a_LV : Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. : 1.4µm')
+    lpw2a_l1.forget
+
+    # Rule LPW.2a_MV: Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. is 1.7µm
+    logger.info('Executing rule LPW.2a_MV')
+    lpw2a_l1 = lvpwell_dn_mv.isolated(1.7.um, euclidian)
+    lpw2a_l1.output('LPW.2a_MV',
+                    'LPW.2a_MV : Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. : 1.7µm')
+    lpw2a_l1.forget
+  end
+end
+# frozen_string_literal: true
+
+################################################################################################
 # Copyright 2022 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -2760,10 +3185,10 @@ if BEOL && (METAL_LEVEL == '5LM' || METAL_LEVEL == '6LM')
   #----------------------via4----------------------
   #================================================
 
-  # Rule V4.1: Min/max Via1 size . is 0.26µm
+  # Rule V4.1: Min/max Via4 size . is 0.26µm
   logger.info('Executing rule V4.1')
   v41_l1 = via4.edges.without_length(0.26.um)
-  v41_l1.output('V4.1', 'V4.1 : Min/max Via1 size . : 0.26µm')
+  v41_l1.output('V4.1', 'V4.1 : Min/max Via4 size . : 0.26µm')
   v41_l1.forget
 
   # Rule V4.2a: min. via4 spacing is 0.26µm
@@ -2793,100 +3218,102 @@ if BEOL && (METAL_LEVEL == '5LM' || METAL_LEVEL == '6LM')
   # Rule V4.3a is not a DRC check
   ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
 
-  # Rule V4.3b: metal4  overlap of via4.
-  logger.info('Executing rule V4.3b')
-  v43b_l1 = via4.not(metal4)
-  v43b_l2 = via4.enclosed(metal4, 0.01.um, euclidian).polygons(0.001.um)
-  v43b_l = v43b_l1.or(v43b_l2)
-  v43b_l.output('V4.3b', 'V4.3b : metal4 overlap of via4 >= 0.01')
-  v43b_l1.forget
-  v43b_l2.forget
-  v43b_l.forget
+  unless SPLIT_DEEP
+    # Rule V4.3b: metal4  overlap of via4.
+    logger.info('Executing rule V4.3b')
+    v43b_l1 = via4.not(metal4)
+    v43b_l2 = via4.enclosed(metal4, 0.01.um, euclidian).polygons(0.001.um)
+    v43b_l = v43b_l1.or(v43b_l2)
+    v43b_l.output('V4.3b', 'V4.3b : metal4 overlap of via4 >= 0.01')
+    v43b_l1.forget
+    v43b_l2.forget
+    v43b_l.forget
 
-  # Rule V4.3c: metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
-  logger.info('Executing rule V4.3c')
-  v4p3c_cond = metal4.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
-  v4p3c_eol_allowed = metal4.edges.with_length(nil, 0.34.um)
-  v4p3c_cond_edge1 = v4p3c_cond.first_edges
-  v4p3c_cond_edge2 = v4p3c_cond.second_edges
-  v4p3c_eol = v4p3c_eol_allowed.interacting(v4p3c_cond_edge1).interacting(v4p3c_cond_edge2)
-                               .not(v4p3c_cond_edge1).not(v4p3c_cond_edge2)
-  v4p3c_l1 = via4.edges.enclosed(v4p3c_eol, 0.06.um, projection)
-  v4p3c_l1.output('V4.3c', 'V4.3c : metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-                   excluding Metal branches shorter than 0.28µm.) : 0.06µm')
-  v4p3c_l1.forget
-  v4p3c_cond.forget
-  v4p3c_eol.forget
-  v4p3c_eol_allowed.forget
-  v4p3c_cond_edge1.forget
-  v4p3c_cond_edge2.forget
+    # Rule V4.3c: metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+    ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+    logger.info('Executing rule V4.3c')
+    v4p3c_cond = metal4.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+    v4p3c_eol_allowed = metal4.edges.with_length(nil, 0.34.um)
+    v4p3c_cond_edge1 = v4p3c_cond.first_edges
+    v4p3c_cond_edge2 = v4p3c_cond.second_edges
+    v4p3c_eol = v4p3c_eol_allowed.interacting(v4p3c_cond_edge1).interacting(v4p3c_cond_edge2)
+                                 .not(v4p3c_cond_edge1).not(v4p3c_cond_edge2)
+    v4p3c_l1 = via4.edges.enclosed(v4p3c_eol, 0.06.um, projection)
+    v4p3c_l1.output('V4.3c', 'V4.3c : metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+    v4p3c_l1.forget
+    v4p3c_cond.forget
+    v4p3c_eol.forget
+    v4p3c_eol_allowed.forget
+    v4p3c_cond_edge1.forget
+    v4p3c_cond_edge2.forget
 
-  # Rule V4.3d: If metal4 overlap via4 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm
-  logger.info('Executing rule V4.3d')
-  via4_3d_cond_edges = via4.edges.not_outside(via4.enclosed(metal4, 0.04.um, projection).edges)
-  via4_3d_check_corner = via4_3d_cond_edges.extended_in(0.002.um)
-  via4_3d_check = via4.edges.interacting(via4_3d_check_corner).not(via4_3d_cond_edges)
-  via4_cond_corner = via4_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
-  via4_3d_l1 = via4_3d_check.enclosed(metal4.edges, 0.06.um, projection).polygons
-  via4_3d_l2 = via4.interacting(via4_cond_corner)
-  via4_3d_l = via4_3d_l1.or(via4_3d_l2)
-  via4_3d_l.output('V4.3d',
-                   'V4.3d : If metal4 overlap via4 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm')
-  via4_3d_l.forget
-  via4_3d_l2.forget
-  via4_3d_l1.forget
-  via4_3d_cond_edges.forget
-  via4_3d_check_corner.forget
-  via4_cond_corner.forget
-  via4_3d_check.forget
+    # Rule V4.3d: If metal4 overlap via4 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm
+    logger.info('Executing rule V4.3d')
+    via4_3d_cond_edges = via4.edges.not_outside(via4.enclosed(metal4, 0.04.um, projection).edges)
+    via4_3d_check_corner = via4_3d_cond_edges.extended_in(0.002.um)
+    via4_3d_check = via4.edges.interacting(via4_3d_check_corner).not(via4_3d_cond_edges)
+    via4_cond_corner = via4_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
+    via4_3d_l1 = via4_3d_check.enclosed(metal4.edges, 0.06.um, projection).polygons
+    via4_3d_l2 = via4.interacting(via4_cond_corner)
+    via4_3d_l = via4_3d_l1.or(via4_3d_l2)
+    via4_3d_l.output('V4.3d',
+                     'V4.3d : If metal4 overlap via4 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm')
+    via4_3d_l.forget
+    via4_3d_l2.forget
+    via4_3d_l1.forget
+    via4_3d_cond_edges.forget
+    via4_3d_check_corner.forget
+    via4_cond_corner.forget
+    via4_3d_check.forget
 
-  # Rule V4.3e is not a DRC check
-  ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
+    # Rule V4.3e is not a DRC check
+    ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
 
-  # Rule V4.4a: metal5 overlap of via4.
-  logger.info('Executing rule V4.4a')
-  via4_4a_l1 = via4.enclosed(metal5, 0.01.um, euclidian).polygons(0.001.um)
-  via4_4a_l2 = via4.not(metal5)
-  via4_4a_l = via4_4a_l1.or(via4_4a_l2)
-  via4_4a_l.output('V4.4a', 'V4.4a : metal5 overlap of via4 >= 0.01 um')
-  via4_4a_l1.forget
-  via4_4a_l2.forget
-  via4_4a_l.forget
+    # Rule V4.4a: metal5 overlap of via4.
+    logger.info('Executing rule V4.4a')
+    via4_4a_l1 = via4.enclosed(metal5, 0.01.um, euclidian).polygons(0.001.um)
+    via4_4a_l2 = via4.not(metal5)
+    via4_4a_l = via4_4a_l1.or(via4_4a_l2)
+    via4_4a_l.output('V4.4a', 'V4.4a : metal5 overlap of via4 >= 0.01 um')
+    via4_4a_l1.forget
+    via4_4a_l2.forget
+    via4_4a_l.forget
 
-  # Rule V4.4b: metal5 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
-  logger.info('Executing rule V4.4b')
-  v4p4b_cond = metal5.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
-  v4p4b_eol_allowed = metal5.edges.with_length(nil, 0.34.um)
-  v4p4b_eol = v4p4b_eol_allowed.interacting(v4p4b_cond.first_edges).interacting(v4p4b_cond.second_edges)
-                               .not(v4p4b_cond.first_edges).not(v4p4b_cond.second_edges)
-  v4p4b_l1 = via4.edges.enclosed(v4p4b_eol, 0.06.um, projection)
-  v4p4b_l1.output('V4.4b', 'V4.4p : metal5 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
-                   excluding Metal branches shorter than 0.28µm.) : 0.06µm')
-  v4p4b_l1.forget
-  v4p4b_cond.forget
-  v4p4b_eol.forget
-  v4p4b_eol_allowed.forget
+    # Rule V4.4b: metal5 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+    ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+    logger.info('Executing rule V4.4b')
+    v4p4b_cond = metal5.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+    v4p4b_eol_allowed = metal5.edges.with_length(nil, 0.34.um)
+    v4p4b_eol = v4p4b_eol_allowed.interacting(v4p4b_cond.first_edges).interacting(v4p4b_cond.second_edges)
+                                 .not(v4p4b_cond.first_edges).not(v4p4b_cond.second_edges)
+    v4p4b_l1 = via4.edges.enclosed(v4p4b_eol, 0.06.um, projection)
+    v4p4b_l1.output('V4.4b', 'V4.4p : metal5 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+    v4p4b_l1.forget
+    v4p4b_cond.forget
+    v4p4b_eol.forget
+    v4p4b_eol_allowed.forget
 
-  # Rule V4.4c: If metal5 overlap via4 by < 0.04um on one side, adjacent metal5 edges overlap. : 0.06µm
-  logger.info('Executing rule V4.4c')
-  via4_4c_cond_edges = via4.edges.not_outside(via4.enclosed(metal5, 0.04.um, projection).edges)
-  via4_4c_check_corner = via4_4c_cond_edges.extended_in(0.002.um)
-  via4_4c_check = via4.edges.interacting(via4_4c_check_corner).not(via4_4c_cond_edges)
-  via4_4c_cond_corner = via4_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
-  via4_4c_l1 = via4_4c_check.enclosed(metal5.edges, 0.06.um, projection).polygons
-  via4_4c_l2 = via4.interacting(via4_4c_cond_corner)
-  via4_4c_l = via4_4c_l1.or(via4_4c_l2)
-  via4_4c_l.output('V4.4c',
-                   'V4.4c : If metal5 overlap via4 by < 0.04um on one side, adjacent metal5 edges overlap. : 0.06µm')
-  via4_4c_l.forget
-  via4_4c_l2.forget
-  via4_4c_l1.forget
-  via4_4c_cond_edges.forget
-  via4_4c_check_corner.forget
-  via4_4c_cond_corner.forget
-  via4_4c_check.forget
+    # Rule V4.4c: If metal5 overlap via4 by < 0.04um on one side, adjacent metal5 edges overlap. : 0.06µm
+    logger.info('Executing rule V4.4c')
+    via4_4c_cond_edges = via4.edges.not_outside(via4.enclosed(metal5, 0.04.um, projection).edges)
+    via4_4c_check_corner = via4_4c_cond_edges.extended_in(0.002.um)
+    via4_4c_check = via4.edges.interacting(via4_4c_check_corner).not(via4_4c_cond_edges)
+    via4_4c_cond_corner = via4_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
+    via4_4c_l1 = via4_4c_check.enclosed(metal5.edges, 0.06.um, projection).polygons
+    via4_4c_l2 = via4.interacting(via4_4c_cond_corner)
+    via4_4c_l = via4_4c_l1.or(via4_4c_l2)
+    via4_4c_l.output('V4.4c',
+                     'V4.4c : If metal5 overlap via4 by < 0.04um on one side, adjacent metal5 edges overlap. : 0.06µm')
+    via4_4c_l.forget
+    via4_4c_l2.forget
+    via4_4c_l1.forget
+    via4_4c_cond_edges.forget
+    via4_4c_check_corner.forget
+    via4_4c_cond_corner.forget
+    via4_4c_check.forget
+  end
 end
 # frozen_string_literal: true
 
@@ -3027,7 +3454,7 @@ end
 # frozen_string_literal: true
 
 ################################################################################################
-# Copyright 2022 GlobalFoundries PDK Authors
+# Copyright 2023 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -3083,56 +3510,58 @@ if FEOL
   nw1b_l1.forget
   nw_1b_mv.forget
 
-  if CONNECTIVITY_RULES
-    logger.info('CONNECTIVITY_RULES section')
+  unless SPLIT_DEEP
+    if CONNECTIVITY_RULES
+      logger.info('CONNECTIVITY_RULES section')
 
-    connected_nwell_3p3v, unconnected_nwell_3p3v = conn_space(nwell, 0.6, 1.4, euclidian)
-    connected_nwell_5p0v, unconnected_nwell_5p0v = conn_space(nwell, 0.74, 1.7, euclidian)
+      connected_nwell_3p3v, unconnected_nwell_3p3v = conn_space(nwell, 0.6, 1.4, euclidian)
+      connected_nwell_5p0v, unconnected_nwell_5p0v = conn_space(nwell, 0.74, 1.7, euclidian)
 
-    # Rule NW.2a_LV: Min. Nwell Space (Outside DNWELL) [Equi-potential],
-    ## Merge if the space is less than is 0.6µm.
-    logger.info('Executing rule NW.2a_LV')
-    nw2a_l1 = connected_nwell_3p3v.not_inside(ymtp_mk).not_interacting(v5_xtor).not_interacting(dualgate)
-    nw2a_l1.output('NW.2a_LV',
-                   'NW.2a_LV : Min. Nwell Space (Outside DNWELL) [Equi-potential],
-                    Merge if the space is less than. : 0.6µm')
-    nw2a_l1.forget
+      # Rule NW.2a_LV: Min. Nwell Space (Outside DNWELL) [Equi-potential],
+      ## Merge if the space is less than is 0.6µm.
+      logger.info('Executing rule NW.2a_LV')
+      nw2a_l1 = connected_nwell_3p3v.not_inside(ymtp_mk).not_interacting(v5_xtor).not_interacting(dualgate)
+      nw2a_l1.output('NW.2a_LV',
+                     'NW.2a_LV : Min. Nwell Space (Outside DNWELL) [Equi-potential],
+                      Merge if the space is less than. : 0.6µm')
+      nw2a_l1.forget
 
-    # Rule NW.2a_MV: Min. Nwell Space (Outside DNWELL) [Equi-potential],
-    ## Merge if the space is less than is 0.74µm.
-    logger.info('Executing rule NW.2a_MV')
-    nw2a_l1 = connected_nwell_5p0v.not_inside(ymtp_mk).overlapping(dualgate)
-    nw2a_l1.output('NW.2a_MV',
-                   'NW.2a_MV : Min. Nwell Space (Outside DNWELL) [Equi-potential],
-                    Merge if the space is less than. : 0.74µm')
-    nw2a_l1.forget
+      # Rule NW.2a_MV: Min. Nwell Space (Outside DNWELL) [Equi-potential],
+      ## Merge if the space is less than is 0.74µm.
+      logger.info('Executing rule NW.2a_MV')
+      nw2a_l1 = connected_nwell_5p0v.not_inside(ymtp_mk).overlapping(dualgate)
+      nw2a_l1.output('NW.2a_MV',
+                     'NW.2a_MV : Min. Nwell Space (Outside DNWELL) [Equi-potential],
+                      Merge if the space is less than. : 0.74µm')
+      nw2a_l1.forget
 
-    # Rule NW.2b_LV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.4µm.
-    logger.info('Executing rule NW.2b_LV')
-    nw2b_l1 = unconnected_nwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
-    nw2b_l1.output('NW.2b_LV', 'NW.2b_LV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.4µm.')
-    nw2b_l1.forget
+      # Rule NW.2b_LV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.4µm.
+      logger.info('Executing rule NW.2b_LV')
+      nw2b_l1 = unconnected_nwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
+      nw2b_l1.output('NW.2b_LV', 'NW.2b_LV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.4µm.')
+      nw2b_l1.forget
 
-    # Rule NW.2b_MV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.7µm.
-    logger.info('Executing rule NW.2b_MV')
-    nw2b_l1 = unconnected_nwell_5p0v.overlapping(dualgate)
+      # Rule NW.2b_MV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.7µm.
+      logger.info('Executing rule NW.2b_MV')
+      nw2b_l1 = unconnected_nwell_5p0v.overlapping(dualgate)
 
-  else
-    logger.info('CONNECTIVITY_RULES disabled section')
+    else
+      logger.info('CONNECTIVITY_RULES disabled section')
 
-    # Rule NW.2b_LV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.4µm.
-    logger.info('Executing rule NW.2b_LV')
-    nw2b_l1 = nw_lv.isolated(1.4.um, euclidian)
-    nw2b_l1.output('NW.2b_LV', 'NW.2b_LV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.4µm')
-    nw2b_l1.forget
+      # Rule NW.2b_LV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.4µm.
+      logger.info('Executing rule NW.2b_LV')
+      nw2b_l1 = nw_lv.isolated(1.4.um, euclidian)
+      nw2b_l1.output('NW.2b_LV', 'NW.2b_LV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.4µm')
+      nw2b_l1.forget
 
-    # Rule NW.2b_MV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.7µm.
-    logger.info('Executing rule NW.2b_MV')
-    nw2b_l1 = nw_mv.isolated(1.7.um, euclidian)
+      # Rule NW.2b_MV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.7µm.
+      logger.info('Executing rule NW.2b_MV')
+      nw2b_l1 = nw_mv.isolated(1.7.um, euclidian)
 
+    end
+    nw2b_l1.output('NW.2b_MV', 'NW.2b_MV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.7µm')
+    nw2b_l1.forget # CONNECTIVITY_RULES
   end
-  nw2b_l1.output('NW.2b_MV', 'NW.2b_MV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.7µm')
-  nw2b_l1.forget # CONNECTIVITY_RULES
 
   # Rule NW.3: Min. Nwell to DNWELL space is 3.1µm.
   logger.info('Executing rule NW.3')
@@ -3186,7 +3615,54 @@ end
 # frozen_string_literal: true
 
 ################################################################################################
-# Copyright 2022 GlobalFoundries PDK Authors
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#---------------------DNWELL---------------------
+#================================================
+if FEOL && SPLIT_DEEP
+  if CONNECTIVITY_RULES
+    logger.info('CONNECTIVITY_RULES section')
+
+    connected_dnwell, unconnected_dnwell = conn_space(dnwell, 2.5, 5.42, euclidian)
+    # Rule DN.2a: Min. DNWELL Space (Equi-potential), Merge if the space is less than is 2.5µm
+    logger.info('Executing rule DN.2a')
+    dn2a_l1 = connected_dnwell
+    dn2a_l1.output('DN.2a', 'DN.2a : Min. DNWELL Space (Equi-potential), Merge if the space is less than : 2.5µm')
+    dn2a_l1.forget
+
+    # Rule DN.2b: Min. DNWELL Space (Different potential) is 5.42µm
+    logger.info('Executing rule DN.2b')
+    dn2b_l1 = unconnected_dnwell
+
+  else
+    logger.info('CONNECTIVITY_RULES disabled section')
+
+    # Rule DN.2b_: Min. DNWELL Space (Different potential) is 5.42µm
+    logger.info('Executing rule DN.2b')
+    dn2b_l1 = dnwell.isolated(5.42.um, euclidian)
+
+  end
+  dn2b_l1.output('DN.2b', 'DN.2b : Min. DNWELL Space (Different potential) : 5.42µm')
+  dn2b_l1.forget # CONNECTIVITY_RULES
+end
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -3206,11 +3682,13 @@ if BEOL
   #---------------------METAL1---------------------
   #================================================
 
-  # Rule M1.1: min. metal1 width is 0.23µm
-  logger.info('Executing rule M1.1')
-  m11_l1 = metal1.not(sramcore).width(0.23.um, euclidian)
-  m11_l1.output('M1.1', 'M1.1 : min. metal1 width : 0.23µm')
-  m11_l1.forget
+  unless SPLIT_DEEP
+    # Rule M1.1: min. metal1 width is 0.23µm
+    logger.info('Executing rule M1.1')
+    m11_l1 = metal1.not(sramcore).width(0.23.um, euclidian)
+    m11_l1.output('M1.1', 'M1.1 : min. metal1 width : 0.23µm')
+    m11_l1.forget
+  end
 
   # Rule M1.2a: min. metal1 spacing is 0.23µm
   logger.info('Executing rule M1.2a')
@@ -3304,10 +3782,10 @@ if BEOL && (METAL_LEVEL == '3LM' || METAL_LEVEL == '4LM' || METAL_LEVEL == '5LM'
   #----------------------via2----------------------
   #================================================
 
-  # Rule V2.1: Min/max Via1 size . is 0.26µm
+  # Rule V2.1: Min/max Via2 size . is 0.26µm
   logger.info('Executing rule V2.1')
   v21_l1 = via2.edges.without_length(0.26.um)
-  v21_l1.output('V2.1', 'V2.1 : Min/max Via1 size . : 0.26µm')
+  v21_l1.output('V2.1', 'V2.1 : Min/max Via2 size . : 0.26µm')
   v21_l1.forget
 
   # Rule V2.2a: min. via2 spacing is 0.26µm
@@ -3337,103 +3815,105 @@ if BEOL && (METAL_LEVEL == '3LM' || METAL_LEVEL == '4LM' || METAL_LEVEL == '5LM'
   # Rule V2.3a is not a DRC check
   ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
 
-  # Rule V2.3b: metal2 overlap of via2.
-  logger.info('Executing rule V2.3b')
-  v23b_l1 = via2.not(metal2)
-  v23b_l2 = via2.enclosed(metal2, 0.01.um, euclidian).polygons(0.001.um)
-  v23b_l = v23b_l1.or(v23b_l2)
-  v23b_l.output('V2.3b', 'V2.3b : metal2 overlap of via2 >= 0.01')
-  v23b_l1.forget
-  v23b_l2.forget
-  v23b_l.forget
+  unless SPLIT_DEEP
+    # Rule V2.3b: metal2 overlap of via2.
+    logger.info('Executing rule V2.3b')
+    v23b_l1 = via2.not(metal2)
+    v23b_l2 = via2.enclosed(metal2, 0.01.um, euclidian).polygons(0.001.um)
+    v23b_l = v23b_l1.or(v23b_l2)
+    v23b_l.output('V2.3b', 'V2.3b : metal2 overlap of via2 >= 0.01')
+    v23b_l1.forget
+    v23b_l2.forget
+    v23b_l.forget
 
-  # Rule V2.3c: metal2 (< 0.34um) end-of-line overlap.(Applies to all < 0.34µm wide Metal lines,
-  ##  excluding Metal branches shorter than 0.28µm.) is 0.06µm
-  logger.info('Executing rule V2.3c')
-  v2p3c_cond = metal2.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
-  v2p3c_eol_allowed = metal2.edges.with_length(nil, 0.34.um)
-  v2p3c_cond_edge1 = v2p3c_cond.first_edges
-  v2p3c_cond_edge2 = v2p3c_cond.second_edges
-  v2p3c_eol = v2p3c_eol_allowed.interacting(v2p3c_cond_edge1).interacting(v2p3c_cond_edge2)
-                               .not(v2p3c_cond_edge1).not(v2p3c_cond_edge2)
-  v2p3c_l1 = via2.edges.enclosed(v2p3c_eol, 0.06.um, projection)
-  v2p3c_l1.output('V2.3c', 'V2.3c : metal2 (< 0.34um) end-of-line overlap.(Applies to all < 0.34µm wide Metal lines,
-                   excluding Metal branches shorter than 0.28µm.) : 0.06µm')
-  v2p3c_l1.forget
-  v2p3c_cond.forget
-  v2p3c_eol.forget
-  v2p3c_eol_allowed.forget
-  v2p3c_cond_edge1.forget
-  v2p3c_cond_edge2.forget
+    # Rule V2.3c: metal2 (< 0.34um) end-of-line overlap.(Applies to all < 0.34µm wide Metal lines,
+    ##  excluding Metal branches shorter than 0.28µm.) is 0.06µm
+    logger.info('Executing rule V2.3c')
+    v2p3c_cond = metal2.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+    v2p3c_eol_allowed = metal2.edges.with_length(nil, 0.34.um)
+    v2p3c_cond_edge1 = v2p3c_cond.first_edges
+    v2p3c_cond_edge2 = v2p3c_cond.second_edges
+    v2p3c_eol = v2p3c_eol_allowed.interacting(v2p3c_cond_edge1).interacting(v2p3c_cond_edge2)
+                                 .not(v2p3c_cond_edge1).not(v2p3c_cond_edge2)
+    v2p3c_l1 = via2.edges.enclosed(v2p3c_eol, 0.06.um, projection)
+    v2p3c_l1.output('V2.3c', 'V2.3c : metal2 (< 0.34um) end-of-line overlap.(Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+    v2p3c_l1.forget
+    v2p3c_cond.forget
+    v2p3c_eol.forget
+    v2p3c_eol_allowed.forget
+    v2p3c_cond_edge1.forget
+    v2p3c_cond_edge2.forget
 
-  # Rule V2.3d: If metal2 overlap via2 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm
-  logger.info('Executing rule V2.3d')
-  via2_3d_cond_edges = via2.edges.not_outside(via2.enclosed(metal2, 0.04.um, projection).edges)
-  via2_3d_check_corner = via2_3d_cond_edges.extended_in(0.002.um)
-  via2_3d_check = via2.edges.interacting(via2_3d_check_corner).not(via2_3d_cond_edges)
-  via2_cond_corner = via2_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
-  via2_3d_l1 = via2_3d_check.enclosed(metal2.edges, 0.06.um, projection).polygons
-  via2_3d_l2 = via2.interacting(via2_cond_corner)
-  via2_3d_l = via2_3d_l1.or(via2_3d_l2)
-  via2_3d_l.output('V2.3d',
-                   'V2.3d : If metal2 overlap via2 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm')
-  via2_3d_l.forget
-  via2_3d_l2.forget
-  via2_3d_l1.forget
-  via2_3d_cond_edges.forget
-  via2_3d_check_corner.forget
-  via2_cond_corner.forget
-  via2_3d_check.forget
+    # Rule V2.3d: If metal2 overlap via2 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm
+    logger.info('Executing rule V2.3d')
+    via2_3d_cond_edges = via2.edges.not_outside(via2.enclosed(metal2, 0.04.um, projection).edges)
+    via2_3d_check_corner = via2_3d_cond_edges.extended_in(0.002.um)
+    via2_3d_check = via2.edges.interacting(via2_3d_check_corner).not(via2_3d_cond_edges)
+    via2_cond_corner = via2_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
+    via2_3d_l1 = via2_3d_check.enclosed(metal2.edges, 0.06.um, projection).polygons
+    via2_3d_l2 = via2.interacting(via2_cond_corner)
+    via2_3d_l = via2_3d_l1.or(via2_3d_l2)
+    via2_3d_l.output('V2.3d',
+                     'V2.3d : If metal2 overlap via2 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm')
+    via2_3d_l.forget
+    via2_3d_l2.forget
+    via2_3d_l1.forget
+    via2_3d_cond_edges.forget
+    via2_3d_check_corner.forget
+    via2_cond_corner.forget
+    via2_3d_check.forget
 
-  # Rule V2.3e is not a DRC check
-  ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
+    # Rule V2.3e is not a DRC check
+    ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
 
-  # Rule V2.4a: metal3 overlap of via2.
-  logger.info('Executing rule V2.4a')
-  via2_4a_l1 = via2.enclosed(metal3, 0.01.um, euclidian).polygons(0.001.um)
-  via2_4a_l2 = via2.not(metal3)
-  via2_4a_l = via2_4a_l1.or(via2_4a_l2)
-  via2_4a_l.output('V2.4a', 'V2.4a : metal3 overlap of via2 >= 0.01 um')
-  via2_4a_l1.forget
-  via2_4a_l2.forget
-  via2_4a_l.forget
+    # Rule V2.4a: metal3 overlap of via2.
+    logger.info('Executing rule V2.4a')
+    via2_4a_l1 = via2.enclosed(metal3, 0.01.um, euclidian).polygons(0.001.um)
+    via2_4a_l2 = via2.not(metal3)
+    via2_4a_l = via2_4a_l1.or(via2_4a_l2)
+    via2_4a_l.output('V2.4a', 'V2.4a : metal3 overlap of via2 >= 0.01 um')
+    via2_4a_l1.forget
+    via2_4a_l2.forget
+    via2_4a_l.forget
 
-  # Rule V2.4b: metal3 (< 0.34um) end-of-line overlap. is 0.06µm
-  logger.info('Executing rule V2.4b')
-  v2p4b_cond = metal3.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
-  v2p4b_eol_allowed = metal3.edges.with_length(nil, 0.34.um)
-  v2p4b_eol = v2p4b_eol_allowed.interacting(v2p4b_cond.first_edges).interacting(v2p4b_cond.second_edges)
-                               .not(v2p4b_cond.first_edges).not(v2p4b_cond.second_edges)
-  v2p4b_l1 = via2.edges.enclosed(v2p4b_eol, 0.06.um, projection)
-  v2p4b_l1.output('V2.4b', 'V2.4p : metal3 (< 0.34um) end-of-line overlap. : 0.06µm')
-  v2p4b_l1.forget
-  v2p4b_cond.forget
-  v2p4b_eol.forget
-  v2p4b_eol_allowed.forget
+    # Rule V2.4b: metal3 (< 0.34um) end-of-line overlap. is 0.06µm
+    logger.info('Executing rule V2.4b')
+    v2p4b_cond = metal3.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+    v2p4b_eol_allowed = metal3.edges.with_length(nil, 0.34.um)
+    v2p4b_eol = v2p4b_eol_allowed.interacting(v2p4b_cond.first_edges).interacting(v2p4b_cond.second_edges)
+                                 .not(v2p4b_cond.first_edges).not(v2p4b_cond.second_edges)
+    v2p4b_l1 = via2.edges.enclosed(v2p4b_eol, 0.06.um, projection)
+    v2p4b_l1.output('V2.4b', 'V2.4p : metal3 (< 0.34um) end-of-line overlap. : 0.06µm')
+    v2p4b_l1.forget
+    v2p4b_cond.forget
+    v2p4b_eol.forget
+    v2p4b_eol_allowed.forget
 
-  # Rule V2.4c: If metal3 overlap via2 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm
-  logger.info('Executing rule V2.4c')
-  via2_4c_cond_edges = via2.edges.not_outside(via2.enclosed(metal3, 0.04.um, projection).edges)
-  via2_4c_check_corner = via2_4c_cond_edges.extended_in(0.002.um)
-  via2_4c_check = via2.edges.interacting(via2_4c_check_corner).not(via2_4c_cond_edges)
-  via2_4c_cond_corner = via2_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
-  via2_4c_l1 = via2_4c_check.enclosed(metal3.edges, 0.06.um, projection).polygons
-  via2_4c_l2 = via2.interacting(via2_4c_cond_corner)
-  via2_4c_l = via2_4c_l1.or(via2_4c_l2)
-  via2_4c_l.output('V2.4c',
-                   'V2.4c : If metal3 overlap via2 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm')
-  via2_4c_l.forget
-  via2_4c_l2.forget
-  via2_4c_l1.forget
-  via2_4c_cond_edges.forget
-  via2_4c_check_corner.forget
-  via2_4c_cond_corner.forget
-  via2_4c_check.forget
+    # Rule V2.4c: If metal3 overlap via2 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm
+    logger.info('Executing rule V2.4c')
+    via2_4c_cond_edges = via2.edges.not_outside(via2.enclosed(metal3, 0.04.um, projection).edges)
+    via2_4c_check_corner = via2_4c_cond_edges.extended_in(0.002.um)
+    via2_4c_check = via2.edges.interacting(via2_4c_check_corner).not(via2_4c_cond_edges)
+    via2_4c_cond_corner = via2_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
+    via2_4c_l1 = via2_4c_check.enclosed(metal3.edges, 0.06.um, projection).polygons
+    via2_4c_l2 = via2.interacting(via2_4c_cond_corner)
+    via2_4c_l = via2_4c_l1.or(via2_4c_l2)
+    via2_4c_l.output('V2.4c',
+                     'V2.4c : If metal3 overlap via2 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm')
+    via2_4c_l.forget
+    via2_4c_l2.forget
+    via2_4c_l1.forget
+    via2_4c_cond_edges.forget
+    via2_4c_check_corner.forget
+    via2_4c_cond_corner.forget
+    via2_4c_check.forget
+  end
 end
 # frozen_string_literal: true
 
 ################################################################################################
-# Copyright 2022 GlobalFoundries PDK Authors
+# Copyright 2023 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -3475,29 +3955,31 @@ if FEOL
   mdn1_l1.output('MDN.1', 'MDN.1 : Min MVSD width (for litho purpose). : 1µm')
   mdn1_l1.forget
 
-  if CONNECTIVITY_RULES
-    logger.info('CONNECTIVITY_RULES section')
-    connected_mdn_2a, unconnected_mdn_2b = conn_space(mvsd, 1.um, 2.um, euclidian)
+  unless SPLIT_DEEP
+    if CONNECTIVITY_RULES
+      logger.info('CONNECTIVITY_RULES section')
+      connected_mdn_2a, unconnected_mdn_2b = conn_space(mvsd, 1.um, 2.um, euclidian)
 
-    # Rule MDN.2a: Min MVSD space [Same Potential]. is 1µm
-    logger.info('Executing rule MDN.2a')
-    mdn2a_l1 = connected_mdn_2a
-    mdn2a_l1.output('MDN.2a', 'MDN.2a : Min MVSD space [Same Potential]. : 1µm')
-    mdn2a_l1.forget
+      # Rule MDN.2a: Min MVSD space [Same Potential]. is 1µm
+      logger.info('Executing rule MDN.2a')
+      mdn2a_l1 = connected_mdn_2a
+      mdn2a_l1.output('MDN.2a', 'MDN.2a : Min MVSD space [Same Potential]. : 1µm')
+      mdn2a_l1.forget
 
-    # Rule MDN.2b: Min MVSD space [Diff Potential]. is 2µm
-    logger.info('Executing rule MDN.2b')
-    mdn2b_l1 = unconnected_mdn_2b
+      # Rule MDN.2b: Min MVSD space [Diff Potential]. is 2µm
+      logger.info('Executing rule MDN.2b')
+      mdn2b_l1 = unconnected_mdn_2b
 
-  else
-    logger.info('CONNECTIVITY_RULES disabled section')
-    # Rule MDN.2b: Min MVSD space [Diff Potential]. is 2µm
-    logger.info('Executing rule MDN.2b')
-    mdn2b_l1 = mvsd.space(2.um, euclidian)
+    else
+      logger.info('CONNECTIVITY_RULES disabled section')
+      # Rule MDN.2b: Min MVSD space [Diff Potential]. is 2µm
+      logger.info('Executing rule MDN.2b')
+      mdn2b_l1 = mvsd.space(2.um, euclidian)
 
+    end
+    mdn2b_l1.output('MDN.2b', 'MDN.2b : Min MVSD space [Diff Potential]. : 2µm')
+    mdn2b_l1.forget # CONNECTIVITY_RULES
   end
-  mdn2b_l1.output('MDN.2b', 'MDN.2b : Min MVSD space [Diff Potential]. : 2µm')
-  mdn2b_l1.forget # CONNECTIVITY_RULES
 
   # Rule MDN.3a: Min transistor channel length is 0.6µm
   logger.info('Executing rule MDN.3a')
@@ -3617,29 +4099,31 @@ if FEOL
   mdn7a_l1.output('MDN.7a', 'MDN.7a : Min LDMOS_XTOR enclose Dualgate.: 0 um')
   mdn7a_l1.forget
 
-  if CONNECTIVITY_RULES
-    logger.info('CONNECTIVITY_RULES section')
-    connected_mdn_8a, unconnected_mdn_8b = conn_separation(mvsd, nwell, 1, 2, euclidian)
+  unless SPLIT_DEEP
+    if CONNECTIVITY_RULES
+      logger.info('CONNECTIVITY_RULES section')
+      connected_mdn_8a, unconnected_mdn_8b = conn_separation(mvsd, nwell, 1, 2, euclidian)
 
-    # Rule MDN.8a: Min LDNMOS drain MVSD space to any other equal potential Nwell space.
-    logger.info('Executing rule MDN.8a')
-    mdn8a_l1 = connected_mdn_8a.join(mvsd.not_outside(nwell))
-    mdn8a_l1.output('MDN.8a', 'MDN.8a : Min LDNMOS drain MVSD space to any other equal potential Nwell space.')
-    mdn8a_l1.forget
+      # Rule MDN.8a: Min LDNMOS drain MVSD space to any other equal potential Nwell space.
+      logger.info('Executing rule MDN.8a')
+      mdn8a_l1 = connected_mdn_8a.join(mvsd.not_outside(nwell))
+      mdn8a_l1.output('MDN.8a', 'MDN.8a : Min LDNMOS drain MVSD space to any other equal potential Nwell space.')
+      mdn8a_l1.forget
 
-    # Rule MDN.8b: Min LDNMOS drain MVSD space to any other different potential Nwell space.
-    logger.info('Executing rule MDN.8b')
-    mdn8b_l1 = unconnected_mdn_8b.join(mvsd.not_outside(nwell))
+      # Rule MDN.8b: Min LDNMOS drain MVSD space to any other different potential Nwell space.
+      logger.info('Executing rule MDN.8b')
+      mdn8b_l1 = unconnected_mdn_8b.join(mvsd.not_outside(nwell))
 
-  else
-    logger.info('CONNECTIVITY_RULES disabled section')
-    # Rule MDN.8b: Min LDNMOS drain MVSD space to any other different potential Nwell space.
-    logger.info('Executing rule MDN.8b')
-    mdn8b_l1 = mvsd.separation(nwell, 2.um, euclidian).polygons(0.001.um).join(mvsd.not_outside(nwell))
+    else
+      logger.info('CONNECTIVITY_RULES disabled section')
+      # Rule MDN.8b: Min LDNMOS drain MVSD space to any other different potential Nwell space.
+      logger.info('Executing rule MDN.8b')
+      mdn8b_l1 = mvsd.separation(nwell, 2.um, euclidian).polygons(0.001.um).join(mvsd.not_outside(nwell))
 
+    end
+    mdn8b_l1.output('MDN.8b', 'MDN.8b : Min LDNMOS drain MVSD space to any other different potential Nwell space.')
+    mdn8b_l1.forget # CONNECTIVITY_RULES
   end
-  mdn8b_l1.output('MDN.8b', 'MDN.8b : Min LDNMOS drain MVSD space to any other different potential Nwell space.')
-  mdn8b_l1.forget # CONNECTIVITY_RULES
 
   # Rule MDN.9: Min LDNMOS drain MVSD space to NCOMP (Nplus AND COMP) outside LDNMOS drain MVSD. is 4µm
   logger.info('Executing rule MDN.9')
@@ -3901,55 +4385,56 @@ if FEOL
   lpw1_l1.output('LPW.1_MV', 'LPW.1_MV : Min. LVPWELL Width. : 0.74µm')
   lpw1_l1.forget
 
-  if CONNECTIVITY_RULES
-    logger.info('CONNECTIVITY_RULES section')
+  unless SPLIT_DEEP
+    if CONNECTIVITY_RULES
+      logger.info('CONNECTIVITY_RULES section')
 
-    connected_lvpwell_3p3v, unconnected_lvpwell_3p3v = conn_space(lvpwell_dn, 0.86, 1.4, euclidian)
-    connected_lvpwell_5p0v, unconnected_lvpwell_5p0v = conn_space(lvpwell_dn, 0.86, 1.7, euclidian)
+      connected_lvpwell_3p3v, unconnected_lvpwell_3p3v = conn_space(lvpwell_dn, 0.86, 1.4, euclidian)
+      connected_lvpwell_5p0v, unconnected_lvpwell_5p0v = conn_space(lvpwell_dn, 0.86, 1.7, euclidian)
 
-    # Rule LPW.2a_LV: Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. is 1.4µm
-    logger.info('Executing rule LPW.2a_LV')
-    lpw2a_l1 = unconnected_lvpwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
-    lpw2a_l1.output('LPW.2a_LV',
-                    'LPW.2a_LV : Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. : 1.4µm')
-    lpw2a_l1.forget
+      # Rule LPW.2a_LV: Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. is 1.4µm
+      logger.info('Executing rule LPW.2a_LV')
+      lpw2a_l1 = unconnected_lvpwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
+      lpw2a_l1.output('LPW.2a_LV',
+                      'LPW.2a_LV : Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. : 1.4µm')
+      lpw2a_l1.forget
 
-    # Rule LPW.2a_MV: Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. is 1.7µm
-    logger.info('Executing rule LPW.2a_MV')
-    lpw2a_l1 = unconnected_lvpwell_5p0v.overlapping(dualgate)
-    lpw2a_l1.output('LPW.2a_MV',
-                    'LPW.2a_MV : Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. : 1.7µm')
-    lpw2a_l1.forget
+      # Rule LPW.2a_MV: Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. is 1.7µm
+      logger.info('Executing rule LPW.2a_MV')
+      lpw2a_l1 = unconnected_lvpwell_5p0v.overlapping(dualgate)
+      lpw2a_l1.output('LPW.2a_MV',
+                      'LPW.2a_MV : Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. : 1.7µm')
+      lpw2a_l1.forget
 
-    # Rule LPW.2b_LV: Min. LVPWELL to LVPWELL Space [Equi potential]. is 0.86µm
-    logger.info('Executing rule LPW.2b_LV')
-    lpw2b_l1 = connected_lvpwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
-    lpw2b_l1.output('LPW.2b_LV', 'LPW.2b_LV : Min. LVPWELL to LVPWELL Space [Equi potential]. : 0.86µm')
-    lpw2b_l1.forget
+      # Rule LPW.2b_LV: Min. LVPWELL to LVPWELL Space [Equi potential]. is 0.86µm
+      logger.info('Executing rule LPW.2b_LV')
+      lpw2b_l1 = connected_lvpwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
+      lpw2b_l1.output('LPW.2b_LV', 'LPW.2b_LV : Min. LVPWELL to LVPWELL Space [Equi potential]. : 0.86µm')
+      lpw2b_l1.forget
 
-    # Rule LPW.2b_MV: Min. LVPWELL to LVPWELL Space [Equi potential]. is 0.86µm
-    logger.info('Executing rule LPW.2b_MV')
-    lpw2b_l1 = connected_lvpwell_5p0v.overlapping(dualgate)
-    lpw2b_l1.output('LPW.2b_MV', 'LPW.2b_MV : Min. LVPWELL to LVPWELL Space [Equi potential]. : 0.86µm')
-    lpw2b_l1.forget
+      # Rule LPW.2b_MV: Min. LVPWELL to LVPWELL Space [Equi potential]. is 0.86µm
+      logger.info('Executing rule LPW.2b_MV')
+      lpw2b_l1 = connected_lvpwell_5p0v.overlapping(dualgate)
+      lpw2b_l1.output('LPW.2b_MV', 'LPW.2b_MV : Min. LVPWELL to LVPWELL Space [Equi potential]. : 0.86µm')
+      lpw2b_l1.forget
 
-  else
-    logger.info('CONNECTIVITY_RULES disabled section')
+    else
+      logger.info('CONNECTIVITY_RULES disabled section')
 
-    # Rule LPW.2a_LV: Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. is 1.4µm
-    logger.info('Executing rule LPW.2a_LV')
-    lpw2a_l1 = lvpwell_dn.isolated(1.4.um, euclidian)
-    lpw2a_l1.output('LPW.2a_LV',
-                    'LPW.2a_LV : Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. : 1.4µm')
-    lpw2a_l1.forget
+      # Rule LPW.2a_LV: Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. is 1.4µm
+      logger.info('Executing rule LPW.2a_LV')
+      lpw2a_l1 = lvpwell_dn.isolated(1.4.um, euclidian)
+      lpw2a_l1.output('LPW.2a_LV',
+                      'LPW.2a_LV : Min. LVPWELL to LVWELL Space (Inside DNWELL) [Different potential]. : 1.4µm')
+      lpw2a_l1.forget
 
-    # Rule LPW.2a_MV: Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. is 1.7µm
-    logger.info('Executing rule LPW.2a_MV')
-    lpw2a_l1 = lvpwell_dn_mv.isolated(1.7.um, euclidian)
-    lpw2a_l1.output('LPW.2a_MV',
-                    'LPW.2a_MV : Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. : 1.7µm')
-    lpw2a_l1.forget
-
+      # Rule LPW.2a_MV: Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. is 1.7µm
+      logger.info('Executing rule LPW.2a_MV')
+      lpw2a_l1 = lvpwell_dn_mv.isolated(1.7.um, euclidian)
+      lpw2a_l1.output('LPW.2a_MV',
+                      'LPW.2a_MV : Min. LVPWELL to LVPWELL Space (Inside DNWELL) [Different potential]. : 1.7µm')
+      lpw2a_l1.forget
+    end
   end
 
   # Rule LPW.3: Min. DNWELL enclose LVPWELL. is 2.5µm
@@ -4088,58 +4573,59 @@ if FEOL
   co_pcomp_check.forget
   co_5b_pcomp_butted.forget
 
-  # Rule CO.6: Metal1 overlap of contact >= 0.005 um.
-  logger.info('Executing rule CO.6')
-  co6_l1 = contact.enclosed(metal1, 0.005.um, euclidian).polygons(0.001.um)
-  co6_l2 = contact.not(metal1)
-  co6_l = co6_l1.or(co6_l2)
-  co6_l.output('CO.6', 'CO.6 : Metal1 overlap of contact >= 0.005 um')
-  co6_l1.forget
-  co6_l2.forget
-  co6_l.forget
+  unless SPLIT_DEEP
+    # Rule CO.6: Metal1 overlap of contact >= 0.005 um.
+    logger.info('Executing rule CO.6')
+    co6_l1 = contact.enclosed(metal1, 0.005.um, euclidian).polygons(0.001.um)
+    co6_l2 = contact.not(metal1)
+    co6_l = co6_l1.or(co6_l2)
+    co6_l.output('CO.6', 'CO.6 : Metal1 overlap of contact >= 0.005 um')
+    co6_l1.forget
+    co6_l2.forget
+    co6_l.forget
 
-  # Rule CO.6a: (i) Metal1 (< 0.34um) end-of-line overlap. is 0.06µm.
-  ## (Applies to all < 0.34µm wide metal lines,
-  ## excluding metal branches shorter than 0.24µm.)
-  logger.info('Executing rule CO.6a')
-  cont_6a_cond = metal1.width(0.34.um + 1.dbu).with_length(0.24.um, nil, both)
-  cont_6a_cond_edge1 = cont_6a_cond.first_edges
-  cont_6a_cond_edge2 = cont_6a_cond.second_edges
-  cont_6a_eol = metal1_edges.with_length(nil, 0.34.um).interacting(cont_6a_cond_edge1).interacting(cont_6a_cond_edge2)
-                            .not(cont_6a_cond_edge1).not(cont_6a_cond_edge2)
-  cont_6a_l1 = contact_edges.enclosed(cont_6a_eol, 0.06.um, projection)
-  cont_6a_l1.output('CO.6a', 'CO.6a : (i) Metal1 (< 0.34um) end-of-line overlap contact
-                     (Applies to all < 0.34µm wide metal lines,
-                     excluding metal branches shorter than 0.24µm) : 0.06µm')
-  cont_6a_l1.forget
-  cont_6a_cond.forget
-  cont_6a_eol.forget
-  cont_6a_cond.forget
-  cont_6a_cond_edge1.forget
-  cont_6a_cond_edge2.forget
-  contact_edges.forget
+    # Rule CO.6a: (i) Metal1 (< 0.34um) end-of-line overlap. is 0.06µm.
+    ## (Applies to all < 0.34µm wide metal lines,
+    ## excluding metal branches shorter than 0.24µm.)
+    logger.info('Executing rule CO.6a')
+    cont_6a_cond = metal1.width(0.34.um + 1.dbu).with_length(0.24.um, nil, both)
+    cont_6a_cond_edge1 = cont_6a_cond.first_edges
+    cont_6a_cond_edge2 = cont_6a_cond.second_edges
+    cont_6a_eol = metal1_edges.with_length(nil, 0.34.um).interacting(cont_6a_cond_edge1).interacting(cont_6a_cond_edge2)
+                              .not(cont_6a_cond_edge1).not(cont_6a_cond_edge2)
+    cont_6a_l1 = contact_edges.enclosed(cont_6a_eol, 0.06.um, projection)
+    cont_6a_l1.output('CO.6a', 'CO.6a : (i) Metal1 (< 0.34um) end-of-line overlap contact
+                      (Applies to all < 0.34µm wide metal lines,
+                      excluding metal branches shorter than 0.24µm) : 0.06µm')
+    cont_6a_l1.forget
+    cont_6a_cond.forget
+    cont_6a_eol.forget
+    cont_6a_cond.forget
+    cont_6a_cond_edge1.forget
+    cont_6a_cond_edge2.forget
+    contact_edges.forget
 
-  # Rule CO.6b: (ii) If Metal1 overlaps contact by < 0.04um on one side,
-  ## adjacent metal1 edges overlap is 0.06µm
-  logger.info('Executing rule CO.6b')
-  cont_6b_cond_edges = main_contact_edges.not_outside(main_contact.enclosed(metal1, 0.04.um, projection).edges)
-  cont_6b_check_corner = cont_6b_cond_edges.extended_in(0.002.um)
-  cont_6b_check = main_contact_edges.interacting(cont_6b_check_corner).not(cont_6b_cond_edges)
-  cont_6b_cond_corner = cont_6b_cond_edges.width(0.002.um, angle_limit(135)).polygons(0.001.um)
-  cont_6b_l1 = cont_6b_check.enclosed(metal1_edges, 0.06.um, projection).polygons(0.001.um)
-  cont_6b_l2 = main_contact.interacting(cont_6b_cond_corner)
-  cont_6b_l = cont_6b_l1.or(cont_6b_l2)
-  cont_6b_l.output('CO.6b', 'CO.6b : (ii) If Metal1 overlaps contact by < 0.04um on one side,
-                      adjacent metal1 edges overlap : 0.06µm')
-  cont_6b_l2.forget
-  cont_6b_l1.forget
-  cont_6b_cond_corner.forget
-  cont_6b_check.forget
-  cont_6b_check_corner.forget
-  cont_6b_cond_edges.forget
-  metal1_edges.forget
-  main_contact_edges.forget
-
+    # Rule CO.6b: (ii) If Metal1 overlaps contact by < 0.04um on one side,
+    ## adjacent metal1 edges overlap is 0.06µm
+    logger.info('Executing rule CO.6b')
+    cont_6b_cond_edges = main_contact_edges.not_outside(main_contact.enclosed(metal1, 0.04.um, projection).edges)
+    cont_6b_check_corner = cont_6b_cond_edges.extended_in(0.002.um)
+    cont_6b_check = main_contact_edges.interacting(cont_6b_check_corner).not(cont_6b_cond_edges)
+    cont_6b_cond_corner = cont_6b_cond_edges.width(0.002.um, angle_limit(135)).polygons(0.001.um)
+    cont_6b_l1 = cont_6b_check.enclosed(metal1_edges, 0.06.um, projection).polygons(0.001.um)
+    cont_6b_l2 = main_contact.interacting(cont_6b_cond_corner)
+    cont_6b_l = cont_6b_l1.or(cont_6b_l2)
+    cont_6b_l.output('CO.6b', 'CO.6b : (ii) If Metal1 overlaps contact by < 0.04um on one side,
+                        adjacent metal1 edges overlap : 0.06µm')
+    cont_6b_l2.forget
+    cont_6b_l1.forget
+    cont_6b_cond_corner.forget
+    cont_6b_check.forget
+    cont_6b_check_corner.forget
+    cont_6b_cond_edges.forget
+    metal1_edges.forget
+    main_contact_edges.forget
+  end
   # Rule CO.6c is a guideline rule.
   ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_13.html
 
@@ -4174,6 +4660,204 @@ if FEOL
   co11_l1.output('CO.11', 'CO.11 : Contact on field oxide is forbidden.')
   co11_l1.forget
 
+end
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+# Metal stack
+#================================================
+#----------------------via3----------------------
+#================================================
+if BEOL && (METAL_LEVEL == '4LM' || METAL_LEVEL == '5LM' || METAL_LEVEL == '6LM') && SPLIT_DEEP
+  # Rule V3.3b: metal3 overlap of via3.
+  logger.info('Executing rule V3.3b')
+  v33b_l1 = via3.not(metal3)
+  v33b_l2 = via3.enclosed(metal3, 0.01.um, euclidian).polygons(0.001.um)
+  v33b_l = v33b_l1.or(v33b_l2)
+  v33b_l.output('V3.3b', 'V3.3b : metal3 overlap of via3 >= 0.01')
+  v33b_l1.forget
+  v33b_l2.forget
+  v33b_l.forget
+
+  # Rule V3.3c: metal3 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+  logger.info('Executing rule V3.3c')
+  v3p3c_cond = metal3.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+  v3p3c_eol_allowed = metal3.edges.with_length(nil, 0.34.um)
+  v3p3c_cond_edge1 = v3p3c_cond.first_edges
+  v3p3c_cond_edge2 = v3p3c_cond.second_edges
+  v3p3c_eol = v3p3c_eol_allowed.interacting(v3p3c_cond_edge1).interacting(v3p3c_cond_edge2)
+                               .not(v3p3c_cond_edge1).not(v3p3c_cond_edge2)
+  v3p3c_l1 = via3.edges.enclosed(v3p3c_eol, 0.06.um, projection)
+  v3p3c_l1.output('V3.3c', 'V3.3c : metal3 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+  v3p3c_l1.forget
+  v3p3c_cond.forget
+  v3p3c_eol.forget
+  v3p3c_eol_allowed.forget
+  v3p3c_cond_edge1.forget
+  v3p3c_cond_edge2.forget
+
+  # Rule V3.3d:  If metal3 overlap via3 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm
+  logger.info('Executing rule V3.3d')
+  via3_3d_cond_edges = via3.edges.not_outside(via3.enclosed(metal3, 0.04.um, projection).edges)
+  via3_3d_check_corner = via3_3d_cond_edges.extended_in(0.002.um)
+  via3_3d_check = via3.edges.interacting(via3_3d_check_corner).not(via3_3d_cond_edges)
+  via3_cond_corner = via3_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
+  via3_3d_l1 = via3_3d_check.enclosed(metal3.edges, 0.06.um, projection).polygons
+  via3_3d_l2 = via3.interacting(via3_cond_corner)
+  via3_3d_l = via3_3d_l1.or(via3_3d_l2)
+  via3_3d_l.output('V3.3d',
+                   'V3.3d : If metal3 overlap via3 by < 0.04um on one side, adjacent metal3 edges overlap. : 0.06µm')
+  via3_3d_l.forget
+  via3_3d_l2.forget
+  via3_3d_l1.forget
+  via3_3d_cond_edges.forget
+  via3_3d_check_corner.forget
+  via3_cond_corner.forget
+  via3_3d_check.forget
+
+  # Rule V3.3e is not a DRC check
+  ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
+
+  # Rule V3.4a: metal4 overlap of via3.
+  logger.info('Executing rule V3.4a')
+  via3_4a_l1 = via3.enclosed(metal4, 0.01.um, euclidian).polygons(0.001.um)
+  via3_4a_l2 = via3.not(metal4)
+  via3_4a_l = via3_4a_l1.or(via3_4a_l2)
+  via3_4a_l.output('V3.4a', 'V3.4a : metal4 overlap of via3 >= 0.01 um')
+  via3_4a_l1.forget
+  via3_4a_l2.forget
+  via3_4a_l.forget
+
+  # Rule V3.4b: metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+  logger.info('Executing rule V3.4b')
+  v3p4b_cond = metal4.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+  v3p4b_eol_allowed = metal4.edges.with_length(nil, 0.34.um)
+  v3p4b_eol = v3p4b_eol_allowed.interacting(v3p4b_cond.first_edges).interacting(v3p4b_cond.second_edges)
+                               .not(v3p4b_cond.first_edges).not(v3p4b_cond.second_edges)
+  v3p4b_l1 = via3.edges.enclosed(v3p4b_eol, 0.06.um, projection)
+  v3p4b_l1.output('V3.4b', 'V3.4p : metal4 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+  v3p4b_l1.forget
+  v3p4b_cond.forget
+  v3p4b_eol.forget
+  v3p4b_eol_allowed.forget
+
+  # Rule V3.4c: If metal4 overlap via3 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm
+  logger.info('Executing rule V3.4c')
+  via3_4c_cond_edges = via3.edges.not_outside(via3.enclosed(metal4, 0.04.um, projection).edges)
+  via3_4c_check_corner = via3_4c_cond_edges.extended_in(0.002.um)
+  via3_4c_check = via3.edges.interacting(via3_4c_check_corner).not(via3_4c_cond_edges)
+  via3_4c_cond_corner = via3_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
+  via3_4c_l1 = via3_4c_check.enclosed(metal4.edges, 0.06.um, projection).polygons
+  via3_4c_l2 = via3.interacting(via3_4c_cond_corner)
+  via3_4c_l = via3_4c_l1.or(via3_4c_l2)
+  via3_4c_l.output('V3.4c',
+                   'V3.4c : If metal4 overlap via3 by < 0.04um on one side, adjacent metal4 edges overlap. : 0.06µm')
+  via3_4c_l.forget
+  via3_4c_l2.forget
+  via3_4c_l1.forget
+  via3_4c_cond_edges.forget
+  via3_4c_check_corner.forget
+  via3_4c_cond_corner.forget
+  via3_4c_check.forget
+end
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#--------------------CONTACT---------------------
+#================================================
+if FEOL && SPLIT_DEEP
+  logger.info('Starting CONTACT derivations')
+  contact_edges = contact.edges
+  main_contact = contact.not(sramcore)
+  main_contact_edges = main_contact.edges
+  metal1_edges = metal1.edges
+
+  # Rule CO.6: Metal1 overlap of contact >= 0.005 um.
+  logger.info('Executing rule CO.6')
+  co6_l1 = contact.enclosed(metal1, 0.005.um, euclidian).polygons(0.001.um)
+  co6_l2 = contact.not(metal1)
+  co6_l = co6_l1.or(co6_l2)
+  co6_l.output('CO.6', 'CO.6 : Metal1 overlap of contact >= 0.005 um')
+  co6_l1.forget
+  co6_l2.forget
+  co6_l.forget
+
+  # Rule CO.6a: (i) Metal1 (< 0.34um) end-of-line overlap. is 0.06µm.
+  ## (Applies to all < 0.34µm wide metal lines,
+  ## excluding metal branches shorter than 0.24µm.)
+  logger.info('Executing rule CO.6a')
+  cont_6a_cond = metal1.width(0.34.um + 1.dbu).with_length(0.24.um, nil, both)
+  cont_6a_cond_edge1 = cont_6a_cond.first_edges
+  cont_6a_cond_edge2 = cont_6a_cond.second_edges
+  cont_6a_eol = metal1_edges.with_length(nil, 0.34.um).interacting(cont_6a_cond_edge1).interacting(cont_6a_cond_edge2)
+                            .not(cont_6a_cond_edge1).not(cont_6a_cond_edge2)
+  cont_6a_l1 = contact_edges.enclosed(cont_6a_eol, 0.06.um, projection)
+  cont_6a_l1.output('CO.6a', 'CO.6a : (i) Metal1 (< 0.34um) end-of-line overlap contact
+                      (Applies to all < 0.34µm wide metal lines,
+                      excluding metal branches shorter than 0.24µm) : 0.06µm')
+  cont_6a_l1.forget
+  cont_6a_cond.forget
+  cont_6a_eol.forget
+  cont_6a_cond.forget
+  cont_6a_cond_edge1.forget
+  cont_6a_cond_edge2.forget
+  contact_edges.forget
+
+  # Rule CO.6b: (ii) If Metal1 overlaps contact by < 0.04um on one side,
+  ## adjacent metal1 edges overlap is 0.06µm
+  logger.info('Executing rule CO.6b')
+  cont_6b_cond_edges = main_contact_edges.not_outside(main_contact.enclosed(metal1, 0.04.um, projection).edges)
+  cont_6b_check_corner = cont_6b_cond_edges.extended_in(0.002.um)
+  cont_6b_check = main_contact_edges.interacting(cont_6b_check_corner).not(cont_6b_cond_edges)
+  cont_6b_cond_corner = cont_6b_cond_edges.width(0.002.um, angle_limit(135)).polygons(0.001.um)
+  cont_6b_l1 = cont_6b_check.enclosed(metal1_edges, 0.06.um, projection).polygons(0.001.um)
+  cont_6b_l2 = main_contact.interacting(cont_6b_cond_corner)
+  cont_6b_l = cont_6b_l1.or(cont_6b_l2)
+  cont_6b_l.output('CO.6b', 'CO.6b : (ii) If Metal1 overlaps contact by < 0.04um on one side,
+                        adjacent metal1 edges overlap : 0.06µm')
+  cont_6b_l2.forget
+  cont_6b_l1.forget
+  cont_6b_cond_corner.forget
+  cont_6b_check.forget
+  cont_6b_check_corner.forget
+  cont_6b_cond_edges.forget
+  metal1_edges.forget
+  main_contact_edges.forget
 end
 # frozen_string_literal: true
 
@@ -4891,7 +5575,7 @@ end
 # frozen_string_literal: true
 
 ################################################################################################
-# Copyright 2022 GlobalFoundries PDK Authors
+# Copyright 2023 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -4917,30 +5601,32 @@ if FEOL
   dn1_l1.output('DN.1', 'DN.1 : Min. DNWELL Width : 1.7µm')
   dn1_l1.forget
 
-  if CONNECTIVITY_RULES
-    logger.info('CONNECTIVITY_RULES section')
+  unless SPLIT_DEEP
+    if CONNECTIVITY_RULES
+      logger.info('CONNECTIVITY_RULES section')
 
-    connected_dnwell, unconnected_dnwell = conn_space(dnwell, 2.5, 5.42, euclidian)
-    # Rule DN.2a: Min. DNWELL Space (Equi-potential), Merge if the space is less than is 2.5µm
-    logger.info('Executing rule DN.2a')
-    dn2a_l1 = connected_dnwell
-    dn2a_l1.output('DN.2a', 'DN.2a : Min. DNWELL Space (Equi-potential), Merge if the space is less than : 2.5µm')
-    dn2a_l1.forget
+      connected_dnwell, unconnected_dnwell = conn_space(dnwell, 2.5, 5.42, euclidian)
+      # Rule DN.2a: Min. DNWELL Space (Equi-potential), Merge if the space is less than is 2.5µm
+      logger.info('Executing rule DN.2a')
+      dn2a_l1 = connected_dnwell
+      dn2a_l1.output('DN.2a', 'DN.2a : Min. DNWELL Space (Equi-potential), Merge if the space is less than : 2.5µm')
+      dn2a_l1.forget
 
-    # Rule DN.2b: Min. DNWELL Space (Different potential) is 5.42µm
-    logger.info('Executing rule DN.2b')
-    dn2b_l1 = unconnected_dnwell
+      # Rule DN.2b: Min. DNWELL Space (Different potential) is 5.42µm
+      logger.info('Executing rule DN.2b')
+      dn2b_l1 = unconnected_dnwell
 
-  else
-    logger.info('CONNECTIVITY_RULES disabled section')
+    else
+      logger.info('CONNECTIVITY_RULES disabled section')
 
-    # Rule DN.2b_: Min. DNWELL Space (Different potential) is 5.42µm
-    logger.info('Executing rule DN.2b')
-    dn2b_l1 = dnwell.isolated(5.42.um, euclidian)
+      # Rule DN.2b_: Min. DNWELL Space (Different potential) is 5.42µm
+      logger.info('Executing rule DN.2b')
+      dn2b_l1 = dnwell.isolated(5.42.um, euclidian)
 
+    end
+    dn2b_l1.output('DN.2b', 'DN.2b : Min. DNWELL Space (Different potential) : 5.42µm')
+    dn2b_l1.forget # CONNECTIVITY_RULES
   end
-  dn2b_l1.output('DN.2b', 'DN.2b : Min. DNWELL Space (Different potential) : 5.42µm')
-  dn2b_l1.forget # CONNECTIVITY_RULES
 
   # Rule DN.3: Each DNWELL shall be directly surrounded by PCOMP guard ring
   ## tied to the P-substrate potential.
@@ -5186,13 +5872,13 @@ if FEOL
   df6_exclude = otp_mk.or(ymtp_mk).or(sramcore).or(mvsd).or(mvpsd)
   df6_comp = comp.interacting(tgate).not(df6_exclude)
   df6_poly = poly2.not(df6_exclude)
-  df6_l1 = df6_poly.enclosed(comp_3p3v.and(df6_comp), 0.24.um, euclidian)
+  df6_l1 = comp_3p3v.and(df6_comp).enclosing(df6_poly, 0.24.um, euclidian)
   df6_l1.output('DF.6_LV', 'DF.6_LV : Min. COMP extend beyond gate (it also means source/drain overhang). : 0.24µm')
   df6_l1.forget
 
   # Rule DF.6_MV: Min. COMP extend beyond gate (it also means source/drain overhang). is 0.4µm
   logger.info('Executing rule DF.6_MV')
-  df6_l1 = df6_poly.enclosed(comp_56v.and(df6_comp), 0.4.um, euclidian)
+  df6_l1 = comp_56v.and(df6_comp).enclosing(df6_poly, 0.4.um, euclidian)
   df6_l1.output('DF.6_MV', 'DF.6_MV : Min. COMP extend beyond gate (it also means source/drain overhang). : 0.4µm')
   df6_l1.forget
   df6_exclude.forget
@@ -5448,7 +6134,7 @@ end
 # frozen_string_literal: true
 
 ################################################################################################
-# Copyright 2022 GlobalFoundries PDK Authors
+# Copyright 2023 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -5510,19 +6196,21 @@ if FEOL
   nat5_l1.forget
   poly_nat_mv.forget
 
-  if CONNECTIVITY_RULES
-    logger.info('CONNECTIVITY_RULES section')
-    _connected_nat, unconnected_nat = conn_space(natcomp, 10, 10, transparent)
+  unless SPLIT_DEEP
+    if CONNECTIVITY_RULES
+      logger.info('CONNECTIVITY_RULES section')
+      _connected_nat, unconnected_nat = conn_space(natcomp, 10, 10, transparent)
 
-    # Rule NAT.6: Two or more COMPs if connected to different potential
-    ## are not allowed under same NAT layer.
-    logger.info('Executing rule NAT.6')
-    nat6_l1 = comp.and(nat).interacting(unconnected_nat.inside(nat.covering(comp, 2)).not(poly2))
-    nat6_l1.output('NAT.6', "NAT.6 : Two or more COMPs if connected to different potential
-                        are not allowed under same NAT layer.")
-    nat6_l1.forget
+      # Rule NAT.6: Two or more COMPs if connected to different potential
+      ## are not allowed under same NAT layer.
+      logger.info('Executing rule NAT.6')
+      nat6_l1 = comp.and(nat).interacting(unconnected_nat.inside(nat.covering(comp, 2)).not(poly2))
+      nat6_l1.output('NAT.6', "NAT.6 : Two or more COMPs if connected to different potential
+                          are not allowed under same NAT layer.")
+      nat6_l1.forget
+    end
+    natcomp.forget
   end
-  natcomp.forget
 
   # Rule NAT.7: Minimum NAT to NAT spacing. is 0.74µm
   logger.info('Executing rule NAT.7')
@@ -5568,6 +6256,76 @@ if FEOL
                      (Poly2 resistor is not allowed inside NAT).")
   nat12_l1.forget
   poly_nat.forget
+end
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#-------------------10V LDNMOS-------------------
+#================================================
+if FEOL && SPLIT_DEEP
+  if CONNECTIVITY_RULES
+    logger.info('CONNECTIVITY_RULES section')
+    connected_mdn_2a, unconnected_mdn_2b = conn_space(mvsd, 1.um, 2.um, euclidian)
+
+    # Rule MDN.2a: Min MVSD space [Same Potential]. is 1µm
+    logger.info('Executing rule MDN.2a')
+    mdn2a_l1 = connected_mdn_2a
+    mdn2a_l1.output('MDN.2a', 'MDN.2a : Min MVSD space [Same Potential]. : 1µm')
+    mdn2a_l1.forget
+
+    # Rule MDN.2b: Min MVSD space [Diff Potential]. is 2µm
+    logger.info('Executing rule MDN.2b')
+    mdn2b_l1 = unconnected_mdn_2b
+
+  else
+    logger.info('CONNECTIVITY_RULES disabled section')
+    # Rule MDN.2b: Min MVSD space [Diff Potential]. is 2µm
+    logger.info('Executing rule MDN.2b')
+    mdn2b_l1 = mvsd.space(2.um, euclidian)
+
+  end
+  mdn2b_l1.output('MDN.2b', 'MDN.2b : Min MVSD space [Diff Potential]. : 2µm')
+  mdn2b_l1.forget # CONNECTIVITY_RULES
+
+  if CONNECTIVITY_RULES
+    logger.info('CONNECTIVITY_RULES section')
+    connected_mdn_8a, unconnected_mdn_8b = conn_separation(mvsd, nwell, 1, 2, euclidian)
+
+    # Rule MDN.8a: Min LDNMOS drain MVSD space to any other equal potential Nwell space.
+    logger.info('Executing rule MDN.8a')
+    mdn8a_l1 = connected_mdn_8a.join(mvsd.not_outside(nwell))
+    mdn8a_l1.output('MDN.8a', 'MDN.8a : Min LDNMOS drain MVSD space to any other equal potential Nwell space.')
+    mdn8a_l1.forget
+
+    # Rule MDN.8b: Min LDNMOS drain MVSD space to any other different potential Nwell space.
+    logger.info('Executing rule MDN.8b')
+    mdn8b_l1 = unconnected_mdn_8b.join(mvsd.not_outside(nwell))
+
+  else
+    logger.info('CONNECTIVITY_RULES disabled section')
+    # Rule MDN.8b: Min LDNMOS drain MVSD space to any other different potential Nwell space.
+    logger.info('Executing rule MDN.8b')
+    mdn8b_l1 = mvsd.separation(nwell, 2.um, euclidian).polygons(0.001.um).join(mvsd.not_outside(nwell))
+
+  end
+  mdn8b_l1.output('MDN.8b', 'MDN.8b : Min LDNMOS drain MVSD space to any other different potential Nwell space.')
+  mdn8b_l1.forget # CONNECTIVITY_RULES
 end
 # frozen_string_literal: true
 
@@ -6056,7 +6814,43 @@ end
 # frozen_string_literal: true
 
 ################################################################################################
-# Copyright 2022 GlobalFoundries PDK Authors
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#-----------------NATIVE VT NMOS-----------------
+#================================================
+if FEOL && SPLIT_DEEP
+  if CONNECTIVITY_RULES
+    logger.info('CONNECTIVITY_RULES section')
+    _connected_nat, unconnected_nat = conn_space(natcomp, 10, 10, transparent)
+
+    # Rule NAT.6: Two or more COMPs if connected to different potential
+    ## are not allowed under same NAT layer.
+    logger.info('Executing rule NAT.6')
+    nat6_l1 = comp.and(nat).interacting(unconnected_nat.inside(nat.covering(comp, 2)).not(poly2))
+    nat6_l1.output('NAT.6', "NAT.6 : Two or more COMPs if connected to different potential
+                          are not allowed under same NAT layer.")
+    nat6_l1.forget
+  end
+  natcomp.forget
+end
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -6351,32 +7145,32 @@ if FEOL
   mdp10_exclude.forget
   mvpsd_mv.forget
 
-  if CONNECTIVITY_RULES
-    logger.info('CONNECTIVITY_RULES section')
+  unless SPLIT_DEEP
+    if CONNECTIVITY_RULES
+      logger.info('CONNECTIVITY_RULES section')
 
-    connected_mdp_10b, unconnected_mdp_10a = conn_space(mvpsd, 1, 2, euclidian)
+      connected_mdp_10b, unconnected_mdp_10a = conn_space(mvpsd, 1, 2, euclidian)
 
-    # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
-    logger.info('Executing rule MDP.10a')
-    mdp10a_l1 = unconnected_mdp_10a
-    mdp10a_l1.output('MDP.10a', 'MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm')
-    mdp10a_l1.forget
+      # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
+      logger.info('Executing rule MDP.10a')
+      mdp10a_l1 = unconnected_mdp_10a
+      mdp10a_l1.output('MDP.10a', 'MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm')
+      mdp10a_l1.forget
 
-    # Rule MDP.10b: Min MVPSD space [same potential]. Merge if space less than 1um. is 1µm
-    logger.info('Executing rule MDP.10b')
-    mdp10b_l1 = connected_mdp_10b
-    mdp10b_l1.output('MDP.10b', 'MDP.10b : Min MVPSD space [same potential]. Merge if space less than 1um. : 1µm')
-    mdp10b_l1.forget
+      # Rule MDP.10b: Min MVPSD space [same potential]. Merge if space less than 1um. is 1µm
+      logger.info('Executing rule MDP.10b')
+      mdp10b_l1 = connected_mdp_10b
+      mdp10b_l1.output('MDP.10b', 'MDP.10b : Min MVPSD space [same potential]. Merge if space less than 1um. : 1µm')
+      mdp10b_l1.forget
+    else
+      logger.info('CONNECTIVITY_RULES disabled section')
 
-  else
-    logger.info('CONNECTIVITY_RULES disabled section')
-
-    # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
-    logger.info('Executing rule MDP.10a')
-    mdp10a_l1 = mvpsd.space(2.um, euclidian)
-    mdp10a_l1.output('MDP.10a', 'MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm')
-    mdp10a_l1.forget
-
+      # Rule MDP.10a: Min MVPSD space within LDMOS_XTOR marking [diff potential]. is 2µm
+      logger.info('Executing rule MDP.10a')
+      mdp10a_l1 = mvpsd.space(2.um, euclidian)
+      mdp10a_l1.output('MDP.10a', 'MDP.10a : Min MVPSD space within LDMOS_XTOR marking [diff potential]. : 2µm')
+      mdp10a_l1.forget
+    end
   end
 
   # Rule MDP.11: Min MVPSD enclosing PCOMP in the drain
@@ -6631,6 +7425,220 @@ end
 # frozen_string_literal: true
 
 ################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#---------------------NWELL----------------------
+#================================================
+if FEOL && SPLIT_DEEP
+
+  logger.info('Starting NWELL derivations')
+
+  nw_lv = nwell.not_interacting(v5_xtor).not_interacting(dualgate)
+  nw_mv = nwell.overlapping(dualgate)
+
+  if CONNECTIVITY_RULES
+
+    logger.info('CONNECTIVITY_RULES section')
+
+    connected_nwell_3p3v, unconnected_nwell_3p3v = conn_space(nwell, 0.6, 1.4, euclidian)
+    connected_nwell_5p0v, unconnected_nwell_5p0v = conn_space(nwell, 0.74, 1.7, euclidian)
+
+    # Rule NW.2a_LV: Min. Nwell Space (Outside DNWELL) [Equi-potential],
+    ## Merge if the space is less than is 0.6µm.
+    logger.info('Executing rule NW.2a_LV')
+    nw2a_l1 = connected_nwell_3p3v.not_inside(ymtp_mk).not_interacting(v5_xtor).not_interacting(dualgate)
+    nw2a_l1.output('NW.2a_LV',
+                   'NW.2a_LV : Min. Nwell Space (Outside DNWELL) [Equi-potential],
+                      Merge if the space is less than. : 0.6µm')
+    nw2a_l1.forget
+
+    # Rule NW.2a_MV: Min. Nwell Space (Outside DNWELL) [Equi-potential],
+    ## Merge if the space is less than is 0.74µm.
+    logger.info('Executing rule NW.2a_MV')
+    nw2a_l1 = connected_nwell_5p0v.not_inside(ymtp_mk).overlapping(dualgate)
+    nw2a_l1.output('NW.2a_MV',
+                   'NW.2a_MV : Min. Nwell Space (Outside DNWELL) [Equi-potential],
+                      Merge if the space is less than. : 0.74µm')
+    nw2a_l1.forget
+
+    # Rule NW.2b_LV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.4µm.
+    logger.info('Executing rule NW.2b_LV')
+    nw2b_l1 = unconnected_nwell_3p3v.not_interacting(v5_xtor).not_interacting(dualgate)
+    nw2b_l1.output('NW.2b_LV', 'NW.2b_LV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.4µm.')
+    nw2b_l1.forget
+
+    # Rule NW.2b_MV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.7µm.
+    logger.info('Executing rule NW.2b_MV')
+    nw2b_l1 = unconnected_nwell_5p0v.overlapping(dualgate)
+
+  else
+    logger.info('CONNECTIVITY_RULES disabled section')
+
+    # Rule NW.2b_LV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.4µm.
+    logger.info('Executing rule NW.2b_LV')
+    nw2b_l1 = nw_lv.isolated(1.4.um, euclidian)
+    nw2b_l1.output('NW.2b_LV', 'NW.2b_LV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.4µm')
+    nw2b_l1.forget
+
+    # Rule NW.2b_MV: Min. Nwell Space (Outside DNWELL) [Different potential] is 1.7µm.
+    logger.info('Executing rule NW.2b_MV')
+    nw2b_l1 = nw_mv.isolated(1.7.um, euclidian)
+
+  end
+  nw2b_l1.output('NW.2b_MV', 'NW.2b_MV : Min. Nwell Space (Outside DNWELL) [Different potential]: 1.7µm')
+  nw2b_l1.forget # CONNECTIVITY_RULES
+end
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#----------------------via1----------------------
+#================================================
+if BEOL && SPLIT_DEEP
+  # Rule V1.3c: metal1 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+  logger.info('Executing rule V1.3c')
+  v1p3c_cond = metal1.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+  v1p3c_eol_allowed = metal1.edges.with_length(nil, 0.34.um)
+  v1p3c_cond_edge1 = v1p3c_cond.first_edges
+  v1p3c_cond_edge2 = v1p3c_cond.second_edges
+  v1p3c_eol = v1p3c_eol_allowed.interacting(v1p3c_cond_edge1).interacting(v1p3c_cond_edge2)
+                               .not(v1p3c_cond_edge1).not(v1p3c_cond_edge2)
+  v1p3c_l1 = via1.edges.enclosed(v1p3c_eol, 0.06.um, projection)
+  v1p3c_l1.output('V1.3c', 'V1.3c : metal1 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+  v1p3c_l1.forget
+  v1p3c_cond.forget
+  v1p3c_eol.forget
+  v1p3c_cond_edge1.forget
+  v1p3c_cond_edge2.forget
+
+  # Rule V1.3d: If metal1 overlap via1 by < 0.04um on one side, adjacent metal1 edges overlap. : 0.06µm
+  logger.info('Executing rule V1.3d')
+  via1_3d_cond_edges = via1.edges.not_outside(via1.enclosed(metal1, 0.04.um, projection).edges)
+  via1_3d_check_corner = via1_3d_cond_edges.extended_in(0.002.um)
+  via1_3d_check = via1.edges.interacting(via1_3d_check_corner).not(via1_3d_cond_edges)
+  via1_cond_corner = via1_3d_cond_edges.width(0.002.um, angle_limit(135)).polygons
+  via1_3d_l1 = via1_3d_check.enclosed(metal1.edges, 0.06.um, projection).polygons
+  via1_3d_l2 = via1.interacting(via1_cond_corner)
+  via1_3d_l = via1_3d_l1.or(via1_3d_l2)
+  via1_3d_l.output('V1.3d',
+                   'V1.3d : If metal1 overlap via1 by < 0.04um on one side, adjacent metal1 edges overlap. : 0.06µm')
+  via1_3d_l.forget
+  via1_3d_l2.forget
+  via1_3d_l1.forget
+  via1_3d_cond_edges.forget
+  via1_3d_check_corner.forget
+  via1_cond_corner.forget
+  via1_3d_check.forget
+
+  # Rule V1.3e is not a DRC check
+  ## Please refer to https://gf180mcu-pdk.readthedocs.io/en/latest/physical_verification/design_manual/drm_07_15.html
+
+  # Rule V1.4a: metal2 overlap of via1.
+  logger.info('Executing rule V1.4a')
+  via1_4a_l1 = via1.enclosed(metal2, 0.01.um, euclidian).polygons(0.001.um)
+  via1_4a_l2 = via1.not(metal2)
+  via1_4a_l = via1_4a_l1.or(via1_4a_l2)
+  via1_4a_l.output('V1.4a', 'V1.4a : metal2 overlap of via1 >= 0.01 um')
+  via1_4a_l1.forget
+  via1_4a_l2.forget
+  via1_4a_l.forget
+
+  # Rule V1.4b: metal2 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+  ## excluding Metal branches shorter than 0.28µm.) is 0.06µm
+  logger.info('Executing rule V1.4b')
+  v1p4b_cond = metal2.width(0.34.um + 1.dbu).with_length(0.28.um, nil, both)
+  v1p4b_eol_allowed = metal2.edges.with_length(nil, 0.34.um)
+  v1p4b_eol = v1p4b_eol_allowed.interacting(v1p4b_cond.first_edges).interacting(v1p4b_cond.second_edges)
+                               .not(v1p4b_cond.first_edges).not(v1p4b_cond.second_edges)
+  v1p4b_l1 = via1.edges.enclosed(v1p4b_eol, 0.06.um, projection)
+  v1p4b_l1.output('V1.4b', 'V1.4p : metal2 (< 0.34um) end-of-line overlap. (Applies to all < 0.34µm wide Metal lines,
+                    excluding Metal branches shorter than 0.28µm.) : 0.06µm')
+  v1p4b_l1.forget
+  v1p4b_cond.forget
+  v1p4b_eol.forget
+  v1p4b_eol_allowed.forget
+
+  # Rule V1.4c: If metal2 overlap via1 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm
+  logger.info('Executing rule V1.4c')
+  via1_4c_cond_edges = via1.edges.not_outside(via1.enclosed(metal2, 0.04.um, projection).edges)
+  via1_4c_check_corner = via1_4c_cond_edges.extended_in(0.002.um)
+  via1_4c_check = via1.edges.interacting(via1_4c_check_corner).not(via1_4c_cond_edges)
+  via1_4c_cond_corner = via1_4c_cond_edges.width(0.002.um, angle_limit(135)).polygons
+  via1_4c_l1 = via1_4c_check.enclosed(metal2.edges, 0.06.um, projection).polygons
+  via1_4c_l2 = via1.interacting(via1_4c_cond_corner)
+  via1_4c_l = via1_4c_l1.or(via1_4c_l2)
+  via1_4c_l.output('V1.4c',
+                   'V1.4c : If metal2 overlap via1 by < 0.04um on one side, adjacent metal2 edges overlap. : 0.06µm')
+  via1_4c_l.forget
+  via1_4c_l2.forget
+  via1_4c_l1.forget
+  via1_4c_cond_edges.forget
+  via1_4c_check_corner.forget
+  via1_4c_cond_corner.forget
+  via1_4c_check.forget
+end
+# frozen_string_literal: true
+
+################################################################################################
+# Copyright 2023 GlobalFoundries PDK Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################################
+
+#================================================
+#---------------------METAL1---------------------
+#================================================
+if BEOL && SPLIT_DEEP
+  # Rule M1.1: min. metal1 width is 0.23µm
+  logger.info('Executing rule M1.1')
+  m11_l1 = metal1.not(sramcore).width(0.23.um, euclidian)
+  m11_l1.output('M1.1', 'M1.1 : min. metal1 width : 0.23µm')
+  m11_l1.forget
+end
+# frozen_string_literal: true
+
+################################################################################################
 # Copyright 2022 GlobalFoundries PDK Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -6859,10 +7867,11 @@ if FEOL
 
   # Rule PL.12: V5_Xtor enclose 5V Comp.
   logger.info('Executing rule PL.12')
-  pl12_l1 = comp.interacting(v5_xtor).not(v5_xtor)
+  pl12_comp = comp.interacting(poly2)
+  pl12_l1 = pl12_comp.interacting(v5_xtor).not(v5_xtor)
   pl12_l1.output('PL.12', 'PL.12 : V5_Xtor enclose 5V Comp.')
   pl12_l1.forget
-
+  pl12_comp.forget
 end
 # frozen_string_literal: true
 

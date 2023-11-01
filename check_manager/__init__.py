@@ -241,7 +241,7 @@ class KlayoutBEOL(KlayoutDRC):
         if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
         if 'gf180mcuD' in precheck_config['pdk_path'].stem:
-            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep']
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep', '-rd', 'density=false', '-rd', 'split_deep=false', '-rd', 'slow_via=false']
 
 
 class KlayoutFEOL(KlayoutDRC):
@@ -257,7 +257,7 @@ class KlayoutFEOL(KlayoutDRC):
         if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
         if 'gf180mcuD' in precheck_config['pdk_path'].stem:
-            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep']
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep', '-rd', 'density=false', '-rd', 'split_deep=false', '-rd', 'slow_via=false']
 
 
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
@@ -287,7 +287,7 @@ class KlayoutOffgrid(KlayoutDRC):
         if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
         if 'gf180mcuD' in precheck_config['pdk_path'].stem:
-            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep']
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep', '-rd', 'density=false', '-rd', 'split_deep=false', '-rd', 'slow_via=false']
 
 
 class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
