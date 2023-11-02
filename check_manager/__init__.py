@@ -31,6 +31,7 @@ from checks.license_check import license_check
 from checks.xor_check import xor_check
 from checks.lvs_check.lvs import run_lvs
 from checks.oeb_check.oeb import run_oeb
+from checks.pdn_check.pdn import run_pdn
 
 
 class CheckManagerNotFound(Exception):
@@ -74,7 +75,7 @@ class Consistency(CheckManager):
 class Defaults(CheckManager):
     __ref__ = 'default'
     __surname__ = 'Default'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
@@ -101,7 +102,7 @@ class Defaults(CheckManager):
 class Documentation(CheckManager):
     __ref__ = 'documentation'
     __surname__ = 'Documentation'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
@@ -119,7 +120,7 @@ class Documentation(CheckManager):
 class GpioDefines(CheckManager):
     __ref__ = 'gpio_defines'
     __surname__ = 'GPIO-Defines'
-    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital']
 
     def __init__(self, precheck_config, project_config):
@@ -142,7 +143,7 @@ class GpioDefines(CheckManager):
 class Lvs(CheckManager):
     __ref__ = 'lvs'
     __surname__ = 'LVS'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
@@ -171,7 +172,7 @@ class Lvs(CheckManager):
 class Oeb(CheckManager):
     __ref__ = 'oeb'
     __surname__ = 'OEB'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital']
 
     def __init__(self, precheck_config, project_config):
@@ -231,35 +232,39 @@ class KlayoutDRC(CheckManager):
 class KlayoutBEOL(KlayoutDRC):
     __ref__ = 'klayout_beol'
     __surname__ = 'Klayout BEOL'
-    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'beol=true']
-        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+        if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
+        if 'gf180mcuD' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep', '-rd', 'density=false', '-rd', 'split_deep=false', '-rd', 'slow_via=false']
 
 
 class KlayoutFEOL(KlayoutDRC):
     __ref__ = 'klayout_feol'
     __surname__ = 'Klayout FEOL'
-    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'feol=true']
-        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+        if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
+        if 'gf180mcuD' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep', '-rd', 'density=false', '-rd', 'split_deep=false', '-rd', 'slow_via=false']
 
 
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
-    __supported_pdks__ = ['gf180mcuC','sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
@@ -273,15 +278,17 @@ class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
 class KlayoutOffgrid(KlayoutDRC):
     __ref__ = 'klayout_offgrid'
     __surname__ = 'Klayout Offgrid'
-    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
         self.drc_script_path = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_mr.drc"
         self.klayout_cmd_extra_args = ['-rd', 'offgrid=true']
-        if 'gf180mcu' in precheck_config['pdk_path'].stem:
+        if 'gf180mcuC' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=9K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true']
+        if 'gf180mcuD' in precheck_config['pdk_path'].stem:
+            self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep', '-rd', 'density=false', '-rd', 'split_deep=false', '-rd', 'slow_via=false']
 
 
 class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
@@ -311,7 +318,7 @@ class KlayoutZeroArea(KlayoutDRC):
 class License(CheckManager):
     __ref__ = 'license'
     __surname__ = 'License'
-    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
@@ -391,7 +398,7 @@ class MagicDRC(CheckManager):
 class Makefile(CheckManager):
     __ref__ = 'makefile'
     __surname__ = 'Makefile'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
@@ -409,7 +416,7 @@ class Makefile(CheckManager):
 class Manifest(CheckManager):
     __ref__ = 'manifest'
     __surname__ = 'Manifest'
-    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
@@ -428,7 +435,7 @@ class Manifest(CheckManager):
 class XOR(CheckManager):
     __ref__ = 'xor'
     __surname__ = 'XOR'
-    __supported_pdks__ = ['gf180mcuC', 'sky130A', 'sky130B']
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
     __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
@@ -457,6 +464,26 @@ class XOR(CheckManager):
         return self.result
 
 
+class PDNMulti(CheckManager):
+    __ref__ = 'pdnmulti'
+    __surname__ = 'PDNMulti'
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD']
+    __supported_type__ = ['digital']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.config_file = self.precheck_config['input_directory'] / f"openlane/{self.project_config['user_module']}/config.json"
+
+    def run(self):
+        self.result = run_pdn(self.config_file)
+
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.project_config['user_module']}, has no PDN PITCH violations.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.project_config['user_module']}, has PDN PITCH violations.")
+        return self.result
+
+
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
     (License.__ref__, License),
@@ -465,6 +492,7 @@ open_source_checks = OrderedDict([
     (Documentation.__ref__, Documentation),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
+    (PDNMulti.__ref__, PDNMulti),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),

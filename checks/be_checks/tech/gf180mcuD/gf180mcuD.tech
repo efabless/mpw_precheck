@@ -3011,6 +3011,8 @@ extract
 
  tiedown alldiffnonfet
 
+variants ()
+  
  substrate *ppdiff,*mvppdiff,space/w,pwell well $SUB -dnwell,isosub
 
 # Layer resistance

@@ -2,6 +2,7 @@
 	"STD_CELL_LIBRARY": "gf180mcu_fd_sc_mcu7t5v0",
 	"INCLUDE_CONFIGS": [
 		"$LVS_ROOT/tech/$PDK/lvs_config.sram512x8m8wm1.json",
+
 		"$LVS_ROOT/tech/$PDK/lvs_config.base.json",
 		"$UPRJ_ROOT/lvs/user_project_wrapper/lvs_config.json"
 	],
@@ -30,6 +31,7 @@
 		"$CARAVEL_ROOT/verilog/gl/housekeeping.v",
 		"$CARAVEL_ROOT/verilog/gl/mprj_io_buffer.v",
 		"$CARAVEL_ROOT/verilog/gl/spare_logic_block.v",
+
 		"$UPRJ_ROOT/verilog/gl/gpio_defaults_block_*.v",
 		"$UPRJ_ROOT/verilog/gl/user_id_programming.v",
 		"$UPRJ_ROOT/verilog/gl/caravel_core.v"

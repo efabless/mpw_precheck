@@ -37,6 +37,7 @@
 		"$PDK_ROOT/$PDK/libs.ref/gf180mcu_fd_io/spice/*.spice"
 	],
 	"LVS_VERILOG_FILES": [
+
 		"$CARAVEL_ROOT/verilog/gl/chip_io.v"
 	],
 	"LAYOUT_FILE": "$UPRJ_ROOT/gds/caravel.gds"

@@ -12,7 +12,8 @@ def klayout_gds_drc_check(check_name, drc_script_path, gds_input_file_path, outp
     run_drc_check_cmd = ['klayout', '-b', '-r', drc_script_path,
                          '-rd', f"input={gds_input_file_path}",
                          '-rd', f"topcell={gds_input_file_path.stem}",
-                         '-rd', f"report={report_file_path}"]
+                         '-rd', f"report={report_file_path}",
+                         '-rd', f"thr={os.cpu_count()}"]
     run_drc_check_cmd.extend(klayout_cmd_extra_args)
 
     log_file_path = logs_directory / f'{check_name}_check.log'
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     gds_input_file_path = Path(args.gds_input_file_path)
     output_directory = Path(args.output_directory)
 
-    klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent.parent / "tech-files/sky130A_mr.drc"
+    klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent.parent / "tech-files/gf180mcuD_mr.drc"
 
     extra_args = []
     if args.feol:
