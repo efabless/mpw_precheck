@@ -602,15 +602,15 @@ fi
 
 if [[ $cvc_status -eq 0 && $(grep -c '^CVC: End:' $LOG_ROOT/cvc.oeb.log) -ne 1 ]]; then
 	# CVC finished abnormally
-	exit 4
+	exit 5
 
 elif [[ $cvc_status -eq 0 && $(grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report) -gt 0 ]]; then
 	# CVC finished normally, but detected errors
-	exit 5
+	exit 6
 
 elif [[ $cvc_status -eq 0 && $(grep -c Warning $SIGNOFF_ROOT/cvc.oeb.report) -gt 0 ]]; then
 	# CVC finished normally, but detected warings
-	exit 6
+	exit 7
 
 else
 	exit $cvc_status
