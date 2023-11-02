@@ -15,7 +15,7 @@ tech
 end
 
 version
- version 1.0.453-0-g559a117
+ version 1.0.446-0-gdd7771c
  description "Global Foundries 180mcu: open PDK rules and DRC"
  requires magic-8.3.411
 end
@@ -1236,32 +1236,9 @@ style drc
  options calma-permissive-labels
  gridlimit 5
 
- # Check that all p-diff and n-ohmic have either nwell or dnwell
+ # Check that all p-diff and n-ohmic has either nwell or dnwell
  templayer missing_nwell *nsd,*mvnsd,*pdiff,*mvpdiff,*pdiode,pdiffres,mvpdiffres,pfet,mvpfet,mvnvaractor
  and-not dnwell,nwell
-
- # Check that all p-ohmic and n-diff have either pwell + dnwell
- # or nothing.  Can check the pwell surround at the same time.
-
- templayer pohmic_missing_pwell *psd
- grow 120
- and dnwell
- and-not pwell,pbase
-
- templayer mvpohmic_missing_pwell *mvpsd,mvpvaractor
- grow 160
- and dnwell
- and-not pwell
-
- templayer pdiff_missing_pwell *ndiff,*ndiode,ndiffres,nfet
- grow 430
- and dnwell
- and-not pwell
-
- templayer mvpdiff_missing_pwell *mvndiff,mvndiffres,mvnfet
- grow 600
- and dnwell
- and-not pwell
 
  # Check for MV and LV devices in the same dnwell
  templayer mv_dnwell
@@ -1370,7 +1347,7 @@ style  import variants (),(nowell)
  scalefactor 50 nanometers
  gridlimit 5
 
- options ignore-unknown-layer-labels
+ options ignore-unknown-layer-labels options no-reconnect-labels 
 
  ignore SRAMDEF
  ignore FET5VDEF
@@ -1446,6 +1423,7 @@ variants *
  copyup mvndifcheck
 
  layer mvndiff mvndiffarea
+ labels DIFF
 
  # Copy mvndiff areas up for contact checks
  templayer mvxndifcheck mvndifcheck
@@ -1466,6 +1444,7 @@ variants *
  grow 140
  shrink 140
  and-not sccathode
+ labels DIFF
 
  # Schottky contact
  layer schottkyc SCHOTTKY
@@ -1484,6 +1463,7 @@ variants *
  and-not PPLUS
  and-not DUALGATE
  and-not NAT
+ labels DIFF
 
  layer nndiode DIFF
  and NPLUS
@@ -1493,6 +1473,7 @@ variants *
  and-not PPLUS
  and-not DUALGATE
  and NAT
+ labels DIFF
 
  templayer ndiodearea DIODE
  and NPLUS
@@ -1505,6 +1486,7 @@ variants *
  and SBLK
  and NPLUS
  and-not DUALGATE
+ labels DIFF
 
  templayer pdiffarea DIFF
  and-not POLY
@@ -1517,6 +1499,7 @@ variants *
  copyup pdifcheck
 
  layer pdiff pdiffarea
+ labels DIFF
 
  layer mvndiode DIFF
  and NPLUS
@@ -1525,6 +1508,7 @@ variants *
  and-not PPLUS
  and DUALGATE
  and-not NAT
+ labels DIFF
 
  layer mvnndiode DIFF
  and NPLUS
@@ -1533,6 +1517,7 @@ variants *
  and-not PPLUS
  and DUALGATE
  and NAT
+ labels DIFF
 
  templayer mvndiodearea DIODE
  and NPLUS
@@ -1545,6 +1530,7 @@ variants *
  and SBLK
  and NPLUS
  and DUALGATE
+ labels DIFF
 
  templayer mvpdiffarea DIFF
  and-not POLY
@@ -1557,6 +1543,7 @@ variants *
  copyup mvpdifcheck
 
  layer mvpdiff mvpdiffarea
+ labels DIFF
 
  # Copy pdiff areas up for contact checks
  templayer xpdifcheck pdifcheck
@@ -1568,6 +1555,7 @@ variants *
  and-not NPLUS
  and-not DUALGATE
  and DIODE
+ labels DIFF
 
  templayer pdiodearea DIODE
  and PPLUS
@@ -1584,9 +1572,11 @@ variants *
 
  layer pfet pfetarea
  and-not MOSCAP
+ labels DIFF
 
  layer pcap pfetarea
  and MOSCAP
+ labels DIFF
 
  templayer pfetexpand pfetarea
  grow 530
@@ -1606,6 +1596,7 @@ variants *
  and-not RESDEF
  and DUALGATE
  and DIODE
+ labels DIFF
 
  templayer mvpdiodearea DIODE
  and PPLUS
@@ -1622,9 +1613,11 @@ variants *
 
  layer mvpfet mvpfetarea
  and-not MOSCAP
+ labels DIFF
 
  layer mvpcap mvpfetarea
  and MOSCAP
+ labels DIFF
 
  templayer mvpfetexpand mvpfetarea
  grow 530
@@ -1635,12 +1628,14 @@ variants *
  and-not POLY
  and nwelldef
  and pfetexpand
+ labels DIFF
 
  layer pdiffres DIFF
  and-not POLY
  and PPLUS
  and nwelldef
  and SBLK
+ labels DIFF
 
  layer nfet DIFF
  and POLY
@@ -1650,6 +1645,7 @@ variants *
  and NPLUS
  and-not NAT
  and-not MOSCAP
+ labels DIFF
 
  layer ncap DIFF
  and POLY
@@ -1659,6 +1655,7 @@ variants *
  and NPLUS
  and-not NAT
  and MOSCAP
+ labels DIFF
 
  layer nnfet DIFF
  and POLY
@@ -1667,6 +1664,7 @@ variants *
  and-not nwelldef
  and NPLUS
  and NAT
+ labels DIFF
 
  templayer nsdarea DIFF
  and NPLUS
@@ -1676,6 +1674,7 @@ variants *
  and-not DUALGATE
 
  layer nsd nsdarea
+ labels DIFF
 
  templayer nsdexpand nsdarea
  grow 500
@@ -1694,6 +1693,7 @@ variants *
  copyup psubcheck
 
  layer psd psdarea
+ labels DIFF
 
  templayer psdexpand psdarea
  grow 500
@@ -1704,12 +1704,14 @@ variants *
  and nwelldef
  and DUALGATE
  and mvpfetexpand
+ labels DIFF
 
  layer mvpdiffres DIFF
  and-not POLY
  and PPLUS
  and SBLK
  and DUALGATE
+ labels DIFF
 
  layer mvnfet DIFF
  and POLY
@@ -1719,6 +1721,7 @@ variants *
  and-not nwelldef
  and DUALGATE
  and-not MOSCAP
+ labels DIFF
 
  layer mvncap DIFF
  and POLY
@@ -1728,6 +1731,7 @@ variants *
  and-not nwelldef
  and DUALGATE
  and MOSCAP
+ labels DIFF
 
  layer mvnnfet DIFF
  and POLY
@@ -1736,6 +1740,7 @@ variants *
  and NAT
  and-not nwelldef
  and DUALGATE
+ labels DIFF
 
  templayer mvnsdarea DIFF
  and NPLUS
@@ -1746,6 +1751,7 @@ variants *
  copyup mvnsubcheck
 
  layer mvnsd mvnsdarea
+ labels DIFF
 
  templayer mvnsdexpand mvnsdarea
  grow 500
@@ -1764,6 +1770,7 @@ variants *
  copyup mvpsubcheck
 
  layer mvpsd mvpsdarea
+ labels DIFF
 
  templayer mvpsdexpand mvpsdarea
  grow 500
@@ -1831,17 +1838,20 @@ variants *
  and-not SBLK
  and PPLUS
  and RESDEF
+ labels POLY
 
  layer rnps POLY
  and-not SBLK
  and NPLUS
  and RESDEF
+ labels POLY
 
  layer rpp POLY
  and SBLK
  and PPLUS
  and-not HRES
  and RESDEF
+ labels POLY
 
  # POLY + SBLK without RESDEF may be a salicide-blocked transistor.
  # The SBLK will be regenerated on GDS output and the poly should be
@@ -1850,28 +1860,33 @@ variants *
  and-not DIFF
  and SBLK
  and-not RESDEF
+ labels POLY
 
  layer efuse POLY
  and-not DIFF
  and PLFUSE
+ labels POLY
 
  layer rnp POLY
  and SBLK
  and NPLUS
  and RESDEF
  and-not HRES
+ labels POLY
 
  layer hires POLY
  and SBLK
  and HRES
  and RESDEF
  and-not DUALGATE
+ labels POLY
 
  layer mvhires POLY
  and SBLK
  and HRES
  and RESDEF
  and DUALGATE
+ labels POLY
 
  # We define poly under HRES but not under SBLK to be plain poly
  layer poly POLY
@@ -2316,24 +2331,28 @@ variants *
  and NPLUS
  and nwelldef
  and-not DUALGATE
+ labels POLY
 
  layer mvnvar POLY
  and DIFF
  and NPLUS
  and nwelldef
  and DUALGATE
+ labels POLY
 
  layer pvar POLY
  and DIFF
  and PPLUS
  and-not nwelldef
  and-not DUALGATE
+ labels POLY
 
  layer mvpvar POLY
  and DIFF
  and PPLUS
  and-not nwelldef
  and DUALGATE
+ labels POLY
 
  calma DNWELL 12 0
  calma NWELL 21 0
@@ -2521,21 +2540,12 @@ drc
 	"Deep N-well overlap of P-Diffusion < %d (DF.4e)"
  # Use CIF-DRC rule to ensure that at least one exists.
  cifmaxwidth missing_nwell 0 bend_illegal \
-	"P-diffusion and N-ohmic must be over N-well or deep N-well"
- # Use CIF-DRC rules to ensure where pwell must be inside dnwell
- cifmaxwidth pohmic_missing_pwell 0 bend_illegal \
-	"P-well must surround P-ohmic in deep N-well by 0.12um (DF.5)"
- cifmaxwidth mvpohmic_missing_pwell 0 bend_illegal \
-	"P-well must surround MV P-ohmic in deep N-well by 0.16um (DF.5)"
- cifmaxwidth ndiff_missing_pwell 0 bend_illegal \
-	"P-well must surround N-diffusion inside deep N-well by 0.43um (DF.8)"
- cifmaxwidth mvndiff_missing_pwell 0 bend_illegal \
-	"P-well must surround MV N-diffusion inside deep N-well by 0.60um (DF.8)"
+	"P-diffusion and M-ohmic must be over N-well or deep N-well (DN.11)"
 
-# surround *psd pwell 120 absence_ok \
-#	"P-well overlap of P-Ohmic < %d (DF.5)"
-# surround *mvpsd pwell  160 absence_ok \
-#	"MV P-well overlap of MV P-Ohmic < %d (DF.5)"
+ surround *psd pwell 120 absence_ok \
+	"P-field overlap of P-Ohmic < %d (DF.5)"
+ surround *mvpsd pwell  160 absence_ok \
+	"MV P-field overlap of MV P-Ohmic < %d (DF.5)"
 
  # NAT requires additional spacing rules
  spacing *nndiode,*mvnndiode *psd,*mvpsd 610 touching_illegal \
@@ -3012,7 +3022,6 @@ extract
  tiedown alldiffnonfet
 
 variants ()
-  
  substrate *ppdiff,*mvppdiff,space/w,pwell well $SUB -dnwell,isosub
 
 # Layer resistance
