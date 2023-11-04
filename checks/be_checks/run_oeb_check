@@ -610,7 +610,7 @@ elif [[ $cvc_status -eq 0 && $(grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report) -gt 0
 
 elif [[ $cvc_status -eq 0 && $(grep -c Warning $SIGNOFF_ROOT/cvc.oeb.report) -gt 0 ]]; then
 	# CVC finished normally, but detected warings
-	exit 7
+	exit 4
 
 else
 	exit $cvc_status
