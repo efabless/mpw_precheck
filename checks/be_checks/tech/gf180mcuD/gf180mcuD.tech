@@ -15,7 +15,7 @@ tech
 end
 
 version
- version 1.0.453-0-g559a117
+ version 1.0.455-1-ge0f692f
  description "Global Foundries 180mcu: open PDK rules and DRC"
  requires magic-8.3.411
 end
@@ -3011,8 +3011,6 @@ extract
 
  tiedown alldiffnonfet
 
-variants ()
-  
  substrate *ppdiff,*mvppdiff,space/w,pwell well $SUB -dnwell,isosub
 
 # Layer resistance
@@ -3931,8 +3929,7 @@ variants (nowell)
 
 
 variants *
- device csubcircuit cap_mim_2f0fF *mimcap  *m4   l=c_length w=c_width
-
+ device csubcircuit cap_mim_2f0_m4m5_noshield *mimcap  *m4   l=c_length w=c_width
 end
 
 #-----------------------------------------------------

@@ -1,7 +1,9 @@
 {
 	"EXTRACT_FLATGLOB": [
-		"*nmos_*_*",
-		"*pmos_*_*"
+		"*nmos_*_*[A-Z]*",
+		"*mim_*_*[A-Z]*",
+		"*ppolyf_*_*[A-Z]*",
+		"*pmos_*_*[A-Z]*"
 	],
 	"EXTRACT_ABSTRACT": [
 		"*__fill_*",

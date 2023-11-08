@@ -1,18 +1,9 @@
-vccd power 1.8
-vccd1 power 1.8
-vccd2 power 1.8
-vdda power 3.3
-vdda1 power 3.3
-vdda1_2 power 3.3
-vdda2 power 3.3
-vddio power 3.3
-vddio_2 power 3.3
-vssa power 0.0
-vssa1 power 0.0
-vssa1_2 power 0.0
-vssa2 power 0.0
-vssd power 0.0
-vssd1 power 0.0
-vssd2 power 0.0
-vssio power 0.0
-vssio_2 power 0.0
+VDD power 5.0
+VSS power 0.0
+clock input min@0.0 max@5.0
+flash_clk input min@0.0 max@5.0
+flash_csb input min@0.0 max@5.0
+flash_io* input min@0.0 max@5.0
+gpio input min@0.0 max@5.0
+resetb input min@0.0 max@5.0
+mprj_io[*] input min@0.0 max@5.0
