@@ -28,6 +28,7 @@ R sky130_fd_pr__res_generic_m3 model=switch_on
 R sky130_fd_pr__res_generic_m4 model=switch_on
 R sky130_fd_pr__res_generic_m5 model=switch_on
 R sky130_fd_pr__res_generic_nd R=l/w*120
+R sky130_fd_pr__res_generic_pd R=l/w*197
 R sky130_fd_pr__res_generic_nd__hv R=l/w*114
 R sky130_fd_pr__res_generic_pd__hv R=l/w*191
 R sky130_fd_pr__res_generic_po R=l/w*48
@@ -43,6 +44,7 @@ R sky130_fd_pr__res_high_po_0p69 R=l/0.69*300
 R sky130_fd_pr__res_high_po_1p41 R=l/1.42*300
 R sky130_fd_pr__res_high_po_2p86 R=l/2.86*300
 R sky130_fd_pr__res_high_po_5p73 R=l/5.72*300
+R sky130_fd_pr__res_iso_pw R=l/w*4400
 R sky130_fd_pr__reram_reram_cell R=10
 
 MN sky130_fd_pr__nfet_01v8 Vth=0.2 Vgs=1.8 Vds=1.8
