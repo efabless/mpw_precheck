@@ -39,6 +39,7 @@ if { $HAS_SRAM } {
         load $PDK_PATH/libs.ref/sky130_sram_macros/maglef/${x}.mag
     }
 }
+load (UNNAMED)
 gds read $GDS_UT_PATH
 
 set fout [open $DRC_REPORT w]

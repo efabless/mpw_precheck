@@ -65,7 +65,9 @@ def magic_gds_drc_check(gds_ut_path, design_name, pdk_path, output_directory):
         if check_if_binary_has(sram, gds_ut_path):
             sram_modules_in_gds.append(sram)  # only the name of the module
 
-    magicrc_file_path = parent_directory.parent.parent / 'tech-files' / 'sky130A.magicrc'
+    pdk_name = str(Path(pdk_path).stem)
+    rcfile_name = pdk_name + '.magicrc'
+    magicrc_file_path = Path(pdk_path) / 'libs.tech' / 'magic' / rcfile_name
     magic_drc_tcl_path = parent_directory / 'magic_drc_check.tcl'
     design_magic_drc_mag_file_path = outputs_directory / f"{design_name}.magic.drc.mag"
     esd_fet = 'sky130_fd_io__signal_5_sym_hv_local_5term'
