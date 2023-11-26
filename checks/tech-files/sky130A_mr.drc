@@ -39,12 +39,6 @@ CU = false  # do not change
 # choose betwen only one of  AL  or  CU  back-end flow here :
 backend_flow = AL
 
-FEOL = false
-BEOL = false
-OFFGRID = false
-SEAL = false
-FLOATING_MET = false
-
 # enable / disable rule groups
 if $feol  == "1"        || $feol == "true"
   FEOL         = true # front-end-of-line checks
