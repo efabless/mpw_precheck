@@ -16,6 +16,39 @@
  <dsl-interpreter-name>drc-dsl-xml</dsl-interpreter-name>
  <text>
 
+#
+# Ways to call. Required parameters: input, report, top_cell. Optional: full_area (um^2).
+# 1. klayout -b -r met_min_ca_density.lydrc -rd input=InFile.gds -rd report=/dir/out.rpt -rd top_cell=mytop -rd
+# 2. klayout -b -r met_min_ca_density.lydrc -rd input=InFile.gds -rd report=/dir/out.rpt -rd top_cell=mytop -rd full_area=10278400.1111
+# 3. klayout -b -r met_min_ca_density.lydrc -rd input=InFile.gds -rd report=/dir/out.rpt -rd top_cell=mytop -rd full_area=legacy-prBoundary
+#  those modes are:
+# 1. For sky130/project_wrapper hardwired default full_area=10278400.0 (from: 2920x3520): OMIT script option -rd full_area=...
+# 2. Pass your own explicitly via script options: -rd full_area=...    (e.g. -rd full_area=10278400)
+# 3. To force old/obsolete mode: use script options: -rd full_area=legacy-prBoundary
+#
+# IMPORTANT: Default mode #1 is ONLY relevant for the sky130 project_wrapper; for all else including full-chip you MUST use mode #2 or #3.
+# Mode #3 is really only of use/meaning if there's a big solid prBoundary shape, i.e. "close" to covering the whole topcell.
+#
+# WARNING: If report path is RELATIVE, it gets written RELATIVE to the input gds file!
+#
+# NOTES:
+# Marker-error shapes (in non-legacy mode) are cell's extent (bounding-box), which for arbitrary user-projects
+# may have a shape and total-area significantly different from intended project_wrapper size and aspect-ratio.
+# This bbox's area is not necessarily same or related to full_area (either built-in default, or user's explicit parameter).
+#
+# In _default_content/gds/user_project_wrapper.gds, the prBoundary covers (0,0;2920,3520), but there is
+# metal OUTSIDE this box. Such metal (even outside the drawn prB, or outside of (0,0;2920,3520)) IS COUNTED
+# towards the density ratio, despite the denominator being always just a fixed 2920x3520 rect. If prB was
+# covered 100% by metal, the outer metal area would yield density greater than 1; yielding a negative
+# clear-area-density.
+#
+# The XOR-check is expected to ensure project_wrapper stays within the lines, such that default full_area is meaningful.
+# In other words: fix XOR-check errors first, then recheck density and address its errors.
+#
+# For legacy-mode, metal-area was divided by prBoundary shape-area. When prB is less/smaller than metal,
+# such a "density" number can easily become greater than 1; yielding a negative clear-area-density.
+#
+
 source($input, $top_cell)
 report("Density Checks", $report)
 
@@ -66,9 +99,44 @@ via4 = polygons(via4_wildcard)
 
 m5 = polygons(m5_wildcard)
 
-chip_boundary = input(235,4)
+chip_boundary = input(235,4)  # legacy-mode only used these shapes, both as input(total area) and output(markers)
 #area = (m4+m4fill).area
-full_area = chip_boundary.area
+
+# built-in fixed default for sky130/project_wrapper.  Use if no -rd full_area=...
+full_area = 10278400.0
+mode = "using full_area=#{full_area.to_s} built-in sky130/project_wrapper default-value"
+
+# prb_bbox=chip_boundary.bbox.to_s
+# prb_bboxa=chip_boundary.bbox.area
+# puts "full_area=#{full_area}"
+# puts "prb.bbox=#{prb_bbox}"
+# puts "prb.bbox.area=#{prb_bboxa}"
+
+if   $full_area
+  if $full_area == "legacy-prBoundary"
+    mode = "using full_area=chip_boundary.area (lpp:235,4), due script-parameter 'full_area=#{$full_area}'"
+    # could also be (the not equivalent): chip_boundary.bbox.area
+    full_area = chip_boundary.area
+  else
+    # error shape to write (whole topcell bbox), up to one per metal layer.
+    # (But this bbox area is not necessarily equal to full_area).
+    chip_boundary = extent
+    val = $full_area.to_f
+    # XML! Could use ENTITY: "val &lt;= 0" (val less-than-or-equal 0) but "0 >= val" is more readable, sadly.
+    if 0 >= val
+      STDERR.puts "ERROR: 'full_area=#{$full_area}' script-parameter parsed as non-positive value: #{val}"
+      STDERR.flush
+      exit 1
+    else
+      full_area = val
+      mode = "using 'full_area=#{$full_area}' script-parameter, parsed as: #{full_area}"
+    end
+  end
+end
+
+
+puts "area-mode: #{mode}"
+STDOUT.flush
 
 #li1_wildcard = "67/20"
 #li1fill_wildcard = "56/28"
