@@ -51,6 +51,6 @@ if __name__ == "__main__":
     result = compare_layers(gds_file, layer_map_file_path)
 
     if result:
-        logging.info("PDN multiple check Passed!")
+        logging.info("valid layers check Passed!")
     else:
-        logging.error("PDN multiple check Failed!")
+        logging.error("valid layers check Failed!")
