@@ -32,6 +32,7 @@ from checks.xor_check import xor_check
 from checks.lvs_check.lvs import run_lvs
 from checks.oeb_check.oeb import run_oeb
 from checks.pdn_check.pdn import run_pdn
+from checks.valid_layers_check.valid_layers import compare_layers
 
 
 class CheckManagerNotFound(Exception):
@@ -484,6 +485,27 @@ class PDNMulti(CheckManager):
         return self.result
 
 
+class ValidLayers(CheckManager):
+    __ref__ = 'validlayers'
+    __surname__ = 'ValidLayers'
+    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.gds_input_file_path = self.precheck_config['input_directory'] / f"gds/{self.project_config['user_module']}.gds"
+        self.layer_map = self.precheck_config['pdk_path'] / f"libs.tech/klayout/tech/{self.precheck_config['pdk_path'].name}.map"
+
+    def run(self):
+        self.result = compare_layers(self.gds_input_file_path, self.layer_map)
+
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.project_config['user_module']}, has no invalid layers.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.project_config['user_module']}, has invalid layers.")
+        return self.result
+
+
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
     (License.__ref__, License),
@@ -492,6 +514,7 @@ open_source_checks = OrderedDict([
     (Documentation.__ref__, Documentation),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
+    (ValidLayers.__ref__, ValidLayers),
     (PDNMulti.__ref__, PDNMulti),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
@@ -510,6 +533,7 @@ private_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
+    (ValidLayers.__ref__, ValidLayers),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),
