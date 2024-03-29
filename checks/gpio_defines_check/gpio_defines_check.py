@@ -176,8 +176,8 @@ def main(*args, **kwargs):
     # Form set of the USER_CONFIG_GPIO_*_INIT indexes we require. Different for caravel vs caravan.
     want = {i for i in range(5, 38)}
     if project_type == 'analog':
-        # For caravan, the span 15...25 is a don't care.
-        list(want.remove(i) for i in range(15, 26))
+        # For caravan, the span 14...24 is a don't care.
+        list(want.remove(i) for i in range(14, 25))
 
     wantLen = len(want)
     ills = []
