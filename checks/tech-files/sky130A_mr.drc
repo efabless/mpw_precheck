@@ -79,10 +79,10 @@ else
   FLOATING_MET = false
 end
 
-if $sram_exclude == "1" || $sram_exclude == "true"
-  SRAM_EXCLUDE = true # back-end-of-line checks
-else
+if $sram_exclude == "0" || $sram_exclude == "false"
   SRAM_EXCLUDE = false
+else
+  SRAM_EXCLUDE = true
 end
 
 # klayout setup
