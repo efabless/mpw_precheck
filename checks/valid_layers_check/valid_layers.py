@@ -1,16 +1,16 @@
 import argparse
 import pya
 import logging
+import csv
 from pathlib import Path
 
 def parse_layer_map(layer_map_file_path):
     layer_map = set()
-    with open(layer_map_file_path, 'r') as file:
-        for line in file:
-            parts = line.split()
-            if len(parts) >= 4:  # Ensure line has enough parts to extract layer and datatype
-                layer = parts[-2]
-                datatype = parts[-1]
+    with open(layer_map_file_path, 'r') as layer_map_file:
+        csv_reader = csv.reader(layer_map_file, delimiter=',')
+        for row in csv_reader:
+            if len(row) == 2:
+                layer, datatype = row
                 layer_map.add((int(layer), int(datatype)))
     return layer_map
 
@@ -25,6 +25,8 @@ def get_layers_from_gds(gds_file_path):
     return layers_in_gds
 
 def compare_layers(gds_file_path, layer_map_file_path):
+    gds_file_path = str(Path(gds_file_path).absolute())
+    layer_map_file_path = str(Path(layer_map_file_path).absolute())
     layers_in_gds = get_layers_from_gds(gds_file_path)
     layer_map = parse_layer_map(layer_map_file_path)
     

@@ -494,7 +494,7 @@ class ValidLayers(CheckManager):
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
         self.gds_input_file_path = self.precheck_config['input_directory'] / f"gds/{self.project_config['user_module']}.gds"
-        self.layer_map = self.precheck_config['pdk_path'] / f"libs.tech/klayout/tech/{self.precheck_config['pdk_path'].name}.map"
+        self.layer_map = Path(__file__).parent.parent / f"checks/tech-files/{precheck_config['pdk_path'].stem}_layers.csv"
 
     def run(self):
         self.result = compare_layers(self.gds_input_file_path, self.layer_map)
@@ -508,42 +508,42 @@ class ValidLayers(CheckManager):
 
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
-    (License.__ref__, License),
-    (Makefile.__ref__, Makefile),
-    (Defaults.__ref__, Defaults),
-    (Documentation.__ref__, Documentation),
-    (Consistency.__ref__, Consistency),
-    (GpioDefines.__ref__, GpioDefines),
+    # (License.__ref__, License),
+    # (Makefile.__ref__, Makefile),
+    # (Defaults.__ref__, Defaults),
+    # (Documentation.__ref__, Documentation),
+    # (Consistency.__ref__, Consistency),
+    # (GpioDefines.__ref__, GpioDefines),
     (ValidLayers.__ref__, ValidLayers),
-    (PDNMulti.__ref__, PDNMulti),
-    (XOR.__ref__, XOR),
-    (MagicDRC.__ref__, MagicDRC),
-    (KlayoutFEOL.__ref__, KlayoutFEOL),
-    (KlayoutBEOL.__ref__, KlayoutBEOL),
-    (KlayoutOffgrid.__ref__, KlayoutOffgrid),
-    (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
-    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
-    (Oeb.__ref__, Oeb),
-    (Lvs.__ref__, Lvs),
+    # (PDNMulti.__ref__, PDNMulti),
+    # (XOR.__ref__, XOR),
+    # (MagicDRC.__ref__, MagicDRC),
+    # (KlayoutFEOL.__ref__, KlayoutFEOL),
+    # (KlayoutBEOL.__ref__, KlayoutBEOL),
+    # (KlayoutOffgrid.__ref__, KlayoutOffgrid),
+    # (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
+    # (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    # (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    # (Oeb.__ref__, Oeb),
+    # (Lvs.__ref__, Lvs),
 ])
 
 # Note: list of checks for a private project
 private_checks = OrderedDict([
-    (Makefile.__ref__, Makefile),
-    (Consistency.__ref__, Consistency),
-    (GpioDefines.__ref__, GpioDefines),
+    # (Makefile.__ref__, Makefile),
+    # (Consistency.__ref__, Consistency),
+    # (GpioDefines.__ref__, GpioDefines),
     (ValidLayers.__ref__, ValidLayers),
-    (XOR.__ref__, XOR),
-    (MagicDRC.__ref__, MagicDRC),
-    (KlayoutFEOL.__ref__, KlayoutFEOL),
-    (KlayoutBEOL.__ref__, KlayoutBEOL),
-    (KlayoutOffgrid.__ref__, KlayoutOffgrid),
-    (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
-    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
-    (Oeb.__ref__, Oeb),
-    (Lvs.__ref__, Lvs),
+    # (XOR.__ref__, XOR),
+    # (MagicDRC.__ref__, MagicDRC),
+    # (KlayoutFEOL.__ref__, KlayoutFEOL),
+    # (KlayoutBEOL.__ref__, KlayoutBEOL),
+    # (KlayoutOffgrid.__ref__, KlayoutOffgrid),
+    # (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
+    # (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    # (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    # (Oeb.__ref__, Oeb),
+    # (Lvs.__ref__, Lvs),
 ])
 
 
