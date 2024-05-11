@@ -55,7 +55,7 @@
 		""
 	],
 	"LVS_SPICE_FILES": [
-		"$LVS_ROOT/spice/sky130_*_io.1_0_410+.spice"
+		"$PDK_ROOT/$PDK/libs.ref/sky130_fd_io/spice/*.spice"
 	],
 	"LVS_VERILOG_FILES": [
 		"$CARAVEL_ROOT/verilog/gl/constant_block.v",
