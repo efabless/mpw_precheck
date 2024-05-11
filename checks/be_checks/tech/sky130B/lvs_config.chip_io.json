@@ -6,11 +6,11 @@
 	"TOP_SOURCE": "chip_io",
 	"TOP_LAYOUT": "$TOP_SOURCE",
 	"EXTRACT_FLATGLOB": [
+		"*_CDNS_*",
 		"*sky130_fd_pr__*example*",
 		"*sky130_ef_io__com*",
 		"*sky130_ef_io__connect*",
 		"*sky130_ef_io__corner*",
-		"*sky130_ef_io__gpiov2_pad",
 		"*sky130_ef_io__*_overlay",
 		"*sky130_fd_io__amux*",
 		"*sky130_fd_io__amx_inv1",
@@ -55,7 +55,7 @@
 		""
 	],
 	"LVS_SPICE_FILES": [
-		"$PDK_ROOT/$PDK/libs.ref/sky130_fd_io/spice/*.spice"
+		"$LVS_ROOT/spice/sky130_*_io.1_0_410+.spice"
 	],
 	"LVS_VERILOG_FILES": [
 		"$CARAVEL_ROOT/verilog/gl/constant_block.v",

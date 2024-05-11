@@ -43,6 +43,7 @@ while [[ "$1" == "--"* ]]; do
 done
 
 if [[ $# -gt 4 ]]; then
+	echo $0 $*
 	echo "usage: run_be_checks [--noextract] [lvs_config_file [netlist_top [layout_top [layout_file]]]]"
 	exit 1
 fi

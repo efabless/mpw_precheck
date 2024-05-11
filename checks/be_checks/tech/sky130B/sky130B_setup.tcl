@@ -163,10 +163,11 @@ lappend devices sky130_fd_pr__pfet_01v8_lvt
 lappend devices sky130_fd_pr__pfet_01v8_mvt
 lappend devices sky130_fd_pr__pfet_01v8_hvt
 lappend devices sky130_fd_pr__pfet_g5v0d10v5
-lappend devices sky130_fd_pr__special_pfet_pass
-lappend devices sky130_fd_pr__special_pfet_latch
-lappend devices sky130_fd_pr__special_nfet_pass
 lappend devices sky130_fd_pr__special_nfet_latch
+lappend devices sky130_fd_pr__special_nfet_pass
+lappend devices sky130_fd_pr__special_pfet_latch
+lappend devices sky130_fd_pr__special_nfet_01v8
+lappend devices sky130_fd_pr__special_pfet_01v8_hvt
 lappend devices sky130_fd_pr__cap_var_lvt
 lappend devices sky130_fd_pr__cap_var_hvt
 lappend devices sky130_fd_pr__cap_var
@@ -371,6 +372,21 @@ foreach dev $devices {
 }
 
 #---------------------------------------------------------------
+# ReRAM
+#---------------------------------------------------------------
+
+set devices {sky130_fd_pr_reram__reram_cell}
+
+foreach dev $devices {
+    if {[lsearch $cells1 $dev] >= 0} {
+	property "-circuit1 $dev" delete Tfilament_0
+    }
+    if {[lsearch $cells2 $dev] >= 0} {
+	property "-circuit2 $dev" delete Tfilament_0
+    }
+}
+
+#---------------------------------------------------------------
 # Schematic cells which are not extractable
 #---------------------------------------------------------------
 
@@ -391,7 +407,6 @@ foreach dev $devices {
 #---------------------------------------------------------------
 # e.g., ignore class "-circuit2 sky130_fc_sc_hd__decap_3"
 #---------------------------------------------------------------
-#Added programatically.
 
 #---------------------------------------------------------------
 # Allow the fill, decap, etc., cells to be parallelized
@@ -536,3 +551,5 @@ foreach cell $cells1 {
 	}
     }
 }
+
+#Added programatically.

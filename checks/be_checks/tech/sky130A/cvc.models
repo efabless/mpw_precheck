@@ -47,6 +47,7 @@ R sky130_fd_pr__res_high_po_5p73 R=l/5.73*300
 R sky130_fd_pr__res_iso_pw R=l/w*4400
 
 MN sky130_fd_pr__nfet_01v8 Vth=0.2 Vgs=1.8 Vds=1.8
+MN sky130_fd_pr__special_nfet_01v8 Vth=0.2 Vgs=1.8 Vds=1.8
 MN sky130_fd_pr__nfet_01v8_lvt Vth=0.1 Vgs=1.8 Vds=1.8
 MN sky130_fd_pr__special_nfet_latch Vth=0.2 Vgs=1.8 Vds=1.8
 MN sky130_fd_pr__special_nfet_pass Vth=0.2 Vgs=1.8 Vds=1.8
@@ -59,6 +60,7 @@ MN sky130_fd_bs_flash__special_sonosfet_star Vth=0.2
 MP sky130_fd_pr__pfet_01v8 Vth=-0.2 Vgs=1.8 Vds=1.8
 MP sky130_fd_pr__pfet_01v8_lvt Vth=-0.1 Vgs=1.8 Vds=1.8
 MP sky130_fd_pr__pfet_01v8_hvt Vth=-0.3 Vgs=1.8 Vds=1.8
+MP sky130_fd_pr__special_pfet_01v8_hvt Vth=-0.3 Vgs=1.8 Vds=1.8
 MP sky130_fd_pr__special_pfet_pass Vth=-0.2 Vgs=1.8 Vds=1.8
 MP sky130_fd_pr__special_pfet_latch Vth=-0.2 Vgs=1.8 Vds=1.8
 MP sky130_fd_pr__pfet_g5v0d10v5 Vth=-0.2
