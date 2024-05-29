@@ -14,7 +14,7 @@ tech
 end
 
 version
- version 1.0.446-0-gdd7771c
+ version 1.0.470-0-g6d4d117
  description "SkyWater SKY130: Open Source rules and DRC"
  requires magic-8.3.411
 end
@@ -50,7 +50,9 @@ end
 # sky130_fd_pr__nfet_03v3_nvt	nnfet		native nFET
 # sky130_fd_pr__pfet_g5v0d10v5	mvpfet		thickox pFET
 # sky130_fd_pr__nfet_g5v0d10v5	mvnfet		thickox nFET
-# sky130_fd_pr__nfet_01v8_nvt	mvnnfet		thickox native nFET
+# sky130_fd_pr__nfet_05v0_nvt	mvnnfet		thickox native nFET
+# sky130_fd_pr__nfet_g5v0d16v0	mvnfet		extended-drain nFET***
+# sky130_fd_pr__pfet_g5v0d16v0	mvpfet		extended-drain pFET***
 # sky130_fd_pr__diode_pw2nd_05v5 ndiode		n+ diff diode
 # sky130_fd_pr__diode_pw2nd_05v5_lvt ndiodelvt	low Vt n+ diff diode
 # sky130_fd_pr__diode_pw2nd_05v5_nvt nndiode	diode with nndiff
@@ -87,6 +89,10 @@ end
 # (**) nFET and pFET in standard cells are the same as devices
 # outside of the standard cell except for the DRC rule for
 # FET to diffusion contact spacing (which is 0.05um, not 0.055um)
+#
+# (***) The extended-drain devices have the same identifying
+# FET type as the thick oxide devices, but the drain side of the
+# device is represented by layer extdrain extending to nsd or psd.
 #
 #-------------------------------------------------------------
 # The following devices are not extracted but are represented
@@ -186,6 +192,7 @@ types
   active nsubdiffcont,nsubstratencontact,nsc,ntapc
   active mvpsubdiffcont,mvpsubstratepcontact,mvpsc,mvptapc
   active mvnsubdiffcont,mvnsubstratencontact,mvnsc,mvntapc
+  active extdrain,ed
  -active obsactive
  -active mvobsactive
 
@@ -237,7 +244,6 @@ types
   metal1 rmetal1,rm1,rmet1
   metal1 via1,m2contact,m2cut,m2c,via,v,v1
  -metal1 obsm1
-  metal1 padl
  -metal1 m1fill
 
 
@@ -326,8 +332,6 @@ contact
   mimcc  mimcap metal4
   mim2cc mimcap2 metal5
 
-  padl m1 m2 m3 m4 m5 glass
-
   mrdlc metal5 mrdl
   pi2   mrdl ubm
 end
@@ -412,8 +416,6 @@ aliases
   allm4	   	*m4,rm4
   allm5	   	*m5,rm5
 
-  allpad	padl
-
   psub		pwell
 
   obstypes	obswell,mvobsactive,obsactive,obsli,obsmcon,obsm1,obsm2,obsm3,obsm4,obsm5,obsmrdl,obscomment
@@ -479,6 +481,8 @@ styles
   mvpdc     pdiffusion     metal1  contact_X'es hvpdiff_mask
   mvnsc     ndiff_in_nwell metal1  contact_X'es hvndiff_mask
   mvpsc     pdiff_in_pwell metal1  contact_X'es hvpdiff_mask
+
+  extdrain  nselect pselect
 
   poly      polysilicon 
   polyfill  polysilicon
@@ -568,8 +572,6 @@ styles
 
   obswell   cwell
   obsactive implant4
-
-  padl      metal6 via6 overglass
 
   magnet    substrate_field_implant
   rotate    via3alt
@@ -663,6 +665,8 @@ end
 connect
   *nwell,*nsd,*mvnsd,dnwell,pnp,photo *nwell,*nsd,*mvnsd,dnwell,pnp,photo
   pwell,*psd,*mvpsd,npn,isosub  pwell,*psd,*mvpsd,npn,isosub
+  *mvnsd ed
+  *mvpsd ed
   *li,coreli,lifill	*li,coreli,lifill
   *m1,m1fill,obsmcon	*m1,m1fill,obsmcon
   *m2,m2fill	*m2,m2fill
@@ -674,7 +678,7 @@ connect
    allnactivenonfet	allnactivenonfet
    allpactivenonfet	allpactivenonfet
   *poly,xpc,allfets,polyfill	*poly,xpc,allfets,polyfill
-  # RDL connects to m5 (i.e., padl) through glass cut
+  # RDL connects to m5 through glass cut
   *mrdl			*mrdl
   glass			metrdl
 end
@@ -731,9 +735,34 @@ style gdsii
 # NWELL
 #----------------------------------------------------------------
 
+ # Identify LDMOS drain areas
+ templayer ndrainarea
+	bloat-all ed *mvnsd
+	and-not ed
+
+ templayer pdrainarea
+	bloat-all ed *mvpsd
+	and-not ed
+
+ # Generate n-well under extended-drain nFET
+ templayer extnwell
+	bloat-or *mvnsd * 0 extdrain 1150
+	and-not *mvnsd
+	or ndrainarea
+	grow 660
+
+ # Erase n-well under extended-drain pFET
+ templayer extpwell
+	bloat-or *mvpsd * 0 extdrain 590
+	and-not *mvpsd
+	or pdrainarea
+	grow 860
+
  layer NWELL 	allnwell
 	bloat-all rpw dnwell
 	and-not rpw,pwell
+	or extnwell
+	and-not extpwell
  	calma 	64 20
 
  layer WELLTXT
@@ -760,7 +789,13 @@ style gdsii
 # DIFF
 #----------------------------------------------------------------
 
+ # Extended-drain FETs cut the diffusion under the gate
+ templayer ldbreak
+	bloat-or *mvnsd * 0 extdrain 1585
+	bloat-or *mvpsd * 0 extdrain 1190
+
  layer DIFF 	allnactivenontap,allpactivenontap,allactiveres
+	and-not	ldbreak
  	calma 	65 20
 
  layer DIFFTXT
@@ -828,6 +863,15 @@ style gdsii
  	close   265000
 	mask-hints NSDM
  	calma	93 44
+
+#----------------------------------------------------------------
+# EDID (Extended drain identifier)
+#----------------------------------------------------------------
+
+ layer EDID
+	bloat-all extdrain *mvnsd,*mvpsd,mvnfet,mvpfet,*mvndiff,*mvpdiff
+	labels	extdrain
+	calma	81 57
 
 #----------------------------------------------------------------
 # LVID
@@ -1015,7 +1059,9 @@ style gdsii
 # HVI (includes rules NWELL 8-11 and DIFFTAP 14-26)
 #----------------------------------------------------------------
 
- templayer thkox_area 	alldiffmv,mvvar
+ templayer thkox_area ed
+	grow 475
+	or alldiffmv,mvvar
 	grow	185
 	bloat-all alldiffmv nwell
 	grow 345
@@ -1110,7 +1156,7 @@ style gdsii
 
  # POLYRES extends to edge of contact cut
  layer POLYRES xhrpoly,uhrpoly
-	grow 60
+	grow 80
 	and xpc
 	or xhrpoly,uhrpoly
 	calma 66 13
@@ -1305,7 +1351,7 @@ style gdsii
 	calma	74 16
 
   layer PI1	*metrdl
-	and	padl,glass
+	and	m5,glass
 	# Test only---needs GDS layer number
 
   layer	UBM	*metrdl
@@ -1941,7 +1987,7 @@ style wafflefill variants (),(tiled)
 # diff or poly.
 #---------------------------------------------------------
 
- templayer      obstruct_li_coarse allli,allpad,obsli,lifill,fillblock,fillblock4
+ templayer      obstruct_li_coarse allli,obsli,lifill,fillblock,fillblock4
         grow    2800
 	or	alldiff,allpoly
 	grow	200
@@ -1953,7 +1999,7 @@ style wafflefill variants (),(tiled)
         shrink  1495
         grow    1495
 
- templayer      obstruct_li_medium allli,allpad,obsli,lifill,fillblock,fillblock4
+ templayer      obstruct_li_medium allli,obsli,lifill,fillblock,fillblock4
         grow    2500
 	or	lifill_coarse
 	grow	300
@@ -1966,7 +2012,7 @@ style wafflefill variants (),(tiled)
         shrink  745
         grow    745
 
- templayer      obstruct_li_fine allli,allpad,obsli,lifill,fillblock,fillblock4
+ templayer      obstruct_li_fine allli,obsli,lifill,fillblock,fillblock4
 	or	lifill_coarse,lifill_medium
 	grow	300
 	or	alldiff,allpoly
@@ -1987,7 +2033,7 @@ style wafflefill variants (),(tiled)
 # MET1 fill
 #---------------------------------------------------
 
- templayer      obstruct_m1_coarse allm1,allpad,obsm1,m1fill,fillblock,fillblock4
+ templayer      obstruct_m1_coarse allm1,obsm1,m1fill,fillblock,fillblock4
         grow    3000
  templayer	met1fill_coarse topbox
         # slots   0 2000 200 0 2000 200 700 0
@@ -1997,7 +2043,7 @@ style wafflefill variants (),(tiled)
         shrink  995
         grow    995
 
- templayer      obstruct_m1_medium allm1,allpad,obsm1,m1fill,fillblock,fillblock4
+ templayer      obstruct_m1_medium allm1,obsm1,m1fill,fillblock,fillblock4
         grow    2800
 	or	met1fill_coarse
         grow    200
@@ -2008,7 +2054,7 @@ style wafflefill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m1_fine allm1,allpad,obsm1,m1fill,fillblock,fillblock4
+ templayer      obstruct_m1_fine allm1,obsm1,m1fill,fillblock,fillblock4
         grow    300
 	or	met1fill_coarse,met1fill_medium
         grow    200
@@ -2019,7 +2065,7 @@ style wafflefill variants (),(tiled)
         shrink  285
         grow    285
 
- templayer      obstruct_m1_veryfine allm1,allpad,obsm1,m1fill,fillblock,fillblock4
+ templayer      obstruct_m1_veryfine allm1,obsm1,m1fill,fillblock,fillblock4
         grow    100
 	or	met1fill_coarse,met1fill_medium,met1fill_fine
         grow    200
@@ -2039,7 +2085,7 @@ style wafflefill variants (),(tiled)
 #---------------------------------------------------
 # MET2 fill
 #---------------------------------------------------
- templayer      obstruct_m2 allm2,allpad,obsm2,m2fill,fillblock,fillblock4
+ templayer      obstruct_m2 allm2,obsm2,m2fill,fillblock,fillblock4
         grow    3000
  templayer	met2fill_coarse topbox
         # slots   0 2000 200 0 2000 200 700 350
@@ -2049,7 +2095,7 @@ style wafflefill variants (),(tiled)
         shrink  995
         grow    995
 
- templayer      obstruct_m2_medium allm2,allpad,obsm2,m2fill,fillblock,fillblock4
+ templayer      obstruct_m2_medium allm2,obsm2,m2fill,fillblock,fillblock4
         grow    2800
 	or	met2fill_coarse
         grow    200
@@ -2060,7 +2106,7 @@ style wafflefill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m2_fine allm2,allpad,obsm2,m2fill,fillblock,fillblock4
+ templayer      obstruct_m2_fine allm2,obsm2,m2fill,fillblock,fillblock4
         grow    300
 	or	met2fill_coarse,met2fill_medium
         grow    200
@@ -2071,7 +2117,7 @@ style wafflefill variants (),(tiled)
         shrink  285
         grow    285
 
- templayer      obstruct_m2_veryfine allm2,allpad,obsm2,m2fill,fillblock,fillblock4
+ templayer      obstruct_m2_veryfine allm2,obsm2,m2fill,fillblock,fillblock4
         grow    100
 	or	met2fill_coarse,met2fill_medium,met2fill_fine
         grow    200
@@ -2091,7 +2137,7 @@ style wafflefill variants (),(tiled)
 #---------------------------------------------------
 # MET3 fill
 #---------------------------------------------------
- templayer      obstruct_m3 allm3,allpad,obsm3,m3fill,fillblock,fillblock4
+ templayer      obstruct_m3 allm3,glass,obsm3,m3fill,fillblock,fillblock4
         grow    3000
  templayer	met3fill_coarse topbox
         # slots   0 2000 300 0 2000 300 700 700
@@ -2101,7 +2147,7 @@ style wafflefill variants (),(tiled)
         shrink  995
         grow    995
 
- templayer      obstruct_m3_medium allm3,allpad,obsm3,m3fill,fillblock,fillblock4
+ templayer      obstruct_m3_medium allm3,glass,obsm3,m3fill,fillblock,fillblock4
         grow    2700
 	or	met3fill_coarse
         grow    300
@@ -2112,7 +2158,7 @@ style wafflefill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m3_fine allm3,allpad,obsm3,m3fill,fillblock,fillblock4
+ templayer      obstruct_m3_fine allm3,glass,obsm3,m3fill,fillblock,fillblock4
         grow    200
 	or	met3fill_coarse,met3fill_medium
         grow    300
@@ -2123,7 +2169,7 @@ style wafflefill variants (),(tiled)
         shrink  285
         grow    285
 
- templayer      obstruct_m3_veryfine allm3,allpad,obsm3,m3fill,fillblock,fillblock4
+ templayer      obstruct_m3_veryfine allm3,glass,obsm3,m3fill,fillblock,fillblock4
 	# Note: Adding 0.1 to waffle rule to clear wide spacing rule
         grow    100
 	or	met3fill_coarse,met3fill_medium,met3fill_fine
@@ -2144,7 +2190,9 @@ style wafflefill variants (),(tiled)
 #---------------------------------------------------
 # MET4 fill
 #---------------------------------------------------
- templayer      obstruct_m4 allm4,allpad,obsm4,m4fill,fillblock,fillblock4
+ templayer      obstruct_m4 glass
+	grow	2500
+ 	or	allm4,obsm4,m4fill,fillblock,fillblock4
         grow    3000
  templayer	met4fill_coarse topbox
         # slots   0 2000 300 0 2000 300 700 1050
@@ -2154,7 +2202,9 @@ style wafflefill variants (),(tiled)
         shrink  995
         grow    995
 
- templayer      obstruct_m4_medium allm4,allpad,obsm4,m4fill,fillblock,fillblock4
+ templayer	obstruct_m4_medium glass
+	grow	2500
+	or	allm4,obsm4,m4fill,fillblock,fillblock4
         grow    2700
 	or	met4fill_coarse
         grow    300
@@ -2165,7 +2215,9 @@ style wafflefill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m4_fine allm4,allpad,obsm4,m4fill,fillblock,fillblock4
+ templayer      obstruct_m4_fine glass
+	grow	5000
+ 	or	allm4,obsm4,m4fill,fillblock,fillblock4
         grow    200
 	or	met4fill_coarse,met4fill_medium
         grow    300
@@ -2176,7 +2228,9 @@ style wafflefill variants (),(tiled)
         shrink  285
         grow    285
 
- templayer      obstruct_m4_veryfine allm4,allpad,obsm4,m4fill,fillblock,fillblock4
+ templayer      obstruct_m4_veryfine glass
+	grow	5100
+	or	allm4,obsm4,m4fill,fillblock,fillblock4
 	# Note: Adding 0.1 to waffle rule to clear wide spacing rule
         grow    100
 	or	met4fill_coarse,met4fill_medium,met4fill_fine
@@ -2197,7 +2251,7 @@ style wafflefill variants (),(tiled)
 #---------------------------------------------------
 # MET5 fill
 #---------------------------------------------------
- templayer      obstruct_m5 allm5,allpad,obsm5,m5fill,fillblock
+ templayer      obstruct_m5 allm5,glass,obsm5,m5fill,fillblock
         grow    3000
  templayer	met5fill_coarse topbox
         slots   0 5000 1600 0 5000 1600 1000 100
@@ -2206,7 +2260,7 @@ style wafflefill variants (),(tiled)
         shrink  2495
         grow    2495
 
- templayer      obstruct_m5_medium allm5,allpad,obsm5,m5fill,fillblock
+ templayer      obstruct_m5_medium allm5,glass,obsm5,m5fill,fillblock
         grow    1400
 	or	met5fill_coarse
         grow    1600
@@ -2221,6 +2275,27 @@ style wafflefill variants (),(tiled)
 	or	met5fill_medium
  	calma 	59 28
 
+style subcutout
+ # generates a new subcut layer from the cell boundary, with windows for existing subcut and dnwell
+ # should be used on a flattened layout
+ scalefactor 10  nanometers
+ options calma-permissive-labels
+ gridlimit 5
+
+ templayer CELLBOUND
+	boundary
+
+ templayer large_dnwell dnwell
+	grow 10
+
+ templayer large_isosub isosub
+	grow 10
+
+ layer  SUBCUT	CELLBOUND
+	grow 10
+	and-not large_dnwell
+	and-not large_isosub
+	calma	81 53
 end
 
 #-----------------------------------------------------------------------
@@ -2234,7 +2309,7 @@ style  sky130 variants (),(vendor),(nowell)
  scalefactor 10 nanometers
  gridlimit 5
 
- options ignore-unknown-layer-labels no-reconnect-labels
+ options ignore-unknown-layer-labels
 
  ignore NPC
  ignore SEALID
@@ -2244,6 +2319,7 @@ style  sky130 variants (),(vendor),(nowell)
  ignore POLYMOD
  ignore LOWTAPDENSITY
  ignore FILLOBSPOLY
+ ignore FILLOBSFOM
  ignore MET5BLOCK
  ignore OUTLINE
  ignore POLYCUT
@@ -2812,6 +2888,47 @@ variants *
  labels TAP
  labels TAPTXT text
 
+ # Fill in FET under extended drain
+ layer mvpfet EDID
+ and POLY
+ and-not DIFF
+ and-not TAP
+ and-not NWELL
+
+ layer mvnfet EDID
+ and POLY
+ and-not DIFF
+ and-not TAP
+ and NWELL
+
+ # Restrict where nwell is merged
+ templayer ldmos_nwell EDID
+ grow 1200
+ and NWELL
+
+ # Remove or add well under extended FET gate
+ layer nwell EDID
+ and POLY
+ and DIFF
+ and PSDM
+ grow 685
+ or ldmos_nwell
+ grow 420
+ shrink 420
+
+ layer pwell EDID
+ and POLY
+ and DIFF
+ and NSDM
+ grow 660
+ grow 420
+ shrink 420
+
+ layer ed EDID
+ and-not POLY
+ and-not DIFF
+ and-not TAP
+
  templayer mvnsdexpand mvnsdarea
  grow 500
 
@@ -2918,8 +3035,8 @@ variants *
  templayer xpolyterm RPM,URPM
  and POLY
  and-not POLYRES
- # add back the 0.06um contact surround in the direction of the resistor
- grow 60
+ # add back the 0.08um contact surround in the direction of the resistor
+ grow 80
  and POLY
 
  layer xpc xpolyterm
@@ -3729,8 +3846,6 @@ variants *
  and-not FILLOBSM5
  labels FILLOBSM1,FILLOBSM2,FILLOBSM3,FILLOBSM4
 
- layer obsactive  FILLOBSFOM
-
 # MOS Varactor
 
  layer var POLY
@@ -3778,6 +3893,8 @@ variants *
  calma PSDM 94 20
  # HVI (THKOX)
  calma HVI 75 20
+ # EDID
+ calma EDID 81 57
  # NPC
  calma NPC 95 20
  # P+ POLY MASK
@@ -3825,7 +3942,7 @@ variants *
  calma PADDIFFID 81 6
  calma PADMETALID 81 8
  calma PADCENTERID 81 20
- 
+
  # LICON
  calma CONT 66 44
  calma LI   67 20
@@ -4082,6 +4199,15 @@ variants (fast),(full)
  edge4way (*pdiff)/a (*nsd)/a 400 ~(*pdiff)/a 0 0 "NSDM width < %d (diff/tap.5)"
  edge4way (*ndiff)/a (*psd)/a 400 ~(*ndiff)/a 0 0 "PSDM width < %d (diff/tap.5)"
 
+ # Extended drain rules
+ edge4way space/a ed/a 5000 ~(space)/a 0 0 "LDNFET/LDPFET width < %d (denmos/depmos.2)"
+ edge4way (*mvndiff)/a mvnfet 1055 ~(ed)/a 0 0 "LDNFET length < %d (denmos.1)"
+ edge4way (*mvnsd)/a ed/a 2510 ~(*mvndiff)/a 0 0 \
+	"LDNFET drain to source < %d (denmos.6 + denmos.3)"
+ edge4way (*mvpdiff)/a mvpfet 1050 ~(ed)/a 0 0 "LDPFET length < %d (depmos.1)"
+ edge4way (*mvpsd)/a ed/a 2110 ~(*mvpdiff)/a 0 0 \
+	"LDPFET drain to source < %d (depmos.6 + depmos.3)"
+
  area  *nsd,*mvnsd 70110 150 "N-tap minimum area < 0.07011um^2 (nsd.10b)"
  area  *psd,*mvpsd 70110 150 "P-tap minimum area < 0.07011um^2 (psd.10b)"
 
@@ -4180,6 +4306,17 @@ variants (fast),(full)
  edge4way allfetsnolvt allactivenonfet 415 \
 	~(pfetlvt,nfetlvt,pdiodelvt,ndiodelvt)/a allfetsnolvt 415 \
 	"Min. spacing between FET and LVTN in S/D direction < %d (lvtn.3b)"
+
+#--------------------------------------------------------------------
+# HVNTM 
+#--------------------------------------------------------------------
+
+variants (full)
+ # This requires extra spacing of hvndiff if a ptap is in between
+ cifwidth hvntm_generate 700 "Width of HVNTM < %d (hvntm.1)"
+ cifspacing hvntm_generate hvntm_generate 700 touching_ok \
+	"HVNTM spacing < %d (hvntm.2)"
+variants *
 
 #--------------------------------------------------------------------
 # NPC (Nitride poly Cut)
@@ -4511,7 +4648,7 @@ variants (full)
  width metrdl 10000 "RDL width < %d (rdl.1)"
  spacing metrdl metrdl 10000 touching_ok "RDL spacing < %d (rdl.2)"
  surround glass metrdl 10750 absence_ok "RDL must surround glass cut by %d (rdl.3)"
- spacing padl metrdl 19660 surround_ok "RDL spacing to unrelated pad < %d (rdl.6)"
+ spacing glass metrdl 19660 surround_ok "RDL spacing to unrelated pad < %d (rdl.6)"
 
 variants (fast),(full)
 
@@ -5699,12 +5836,18 @@ variants (),(si),(hrhc),(lrhc),(hrlc),(lrlc)
 	*pdiff,pdiffres *pdiff,pdiffres nwell error l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__pfet_01v8_hvt pfethvt,scpfethvt \
-	*pdiff,pdiffres *pdiff,pdiffres nwell error l=l w=w \
-	a1=as p1=ps a2=ad p2=pd
+	*pdiff,pdiffres *pdiff,pdiffres nwell error w>=0.42 l=l \
+	w=w a1=as p1=ps a2=ad p2=pd
+ device msubcircuit sky130_fd_pr__special_pfet_01v8_hvt scpfethvt \
+	*pdiff,pdiffres *pdiff,pdiffres nwell error w<0.42 l=l \
+	w=w a1=as p1=ps a2=ad p2=pd
 
  device msubcircuit sky130_fd_pr__nfet_01v8 nfet,scnfet \
-	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error l=l w=w \
-	a1=as p1=ps a2=ad p2=pd
+	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error \
+	w>=0.42 l=l w=w a1=as p1=ps a2=ad p2=pd
+ device msubcircuit sky130_fd_pr__special_nfet_01v8 scnfet \
+	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error \
+	w<0.42 l=l w=w a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__special_nfet_latch npd \
 	*ndiff,ndiffres *ndiff,ndiffres pwell,space/w error l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
@@ -5748,6 +5891,10 @@ variants (),(si),(hrhc),(lrhc),(hrlc),(lrlc)
  device msubcircuit Ignore mvpfet *mvpdiff,mvpdiffres pwell,space/w nwell error +npn,pnp
 
  # Extended drain devices (must appear before the regular devices)
+ device msubcircuit sky130_fd_pr__nfet_g5v0d16v0 mvnfet *mvndiff \
+	extdrain,*mvnsd pwell,space/w error l=l w=w a1=as p1=ps a2=ad p2=pd
+ device msubcircuit sky130_fd_pr__pfet_g5v0d16v0 mvpfet *mvpdiff \
+	extdrain,*mvpsd nwell error l=l w=w a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__nfet_20v0_nvt mvnnfet *mvndiff,mvndiffres \
 	dnwell pwell,space/w error l=l w=w a1=as a2=ad p1=ps p2=pd
  device msubcircuit sky130_fd_pr__nfet_20v0 mvnfet *mvndiff,mvndiffres \
@@ -5784,29 +5931,29 @@ variants (),(si),(hrhc),(lrhc),(hrlc),(lrlc)
 	photo pwell,space/w error a=area
 
  device rsubcircuit sky130_fd_pr__res_high_po	    xhrpoly \
-	xpc nwell,pwell,space/w error l=l w=w
+	xpc nwell,pwell,space/w error l=l+0.16 w=w
  device rsubcircuit sky130_fd_pr__res_high_po_0p35 xhrpoly \
-	xpc nwell,pwell,space/w error w>0.34 w<0.36 l=l
+	xpc nwell,pwell,space/w error w>0.34 w<0.36 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_high_po_0p69  xhrpoly \
-	xpc nwell,pwell,space/w error w>0.68 w<0.70 l=l
+	xpc nwell,pwell,space/w error w>0.68 w<0.70 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_high_po_1p41  xhrpoly \
-	xpc nwell,pwell,space/w error w>1.40 w<1.42 l=l
+	xpc nwell,pwell,space/w error w>1.40 w<1.42 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_high_po_2p85  xhrpoly \
-	xpc nwell,pwell,space/w error w>2.84 w<2.86 l=l
+	xpc nwell,pwell,space/w error w>2.84 w<2.86 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_high_po_5p73  xhrpoly \
-	xpc nwell,pwell,space/w error w>5.72 w<5.74 l=l
+	xpc nwell,pwell,space/w error w>5.72 w<5.74 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po	     uhrpoly \
-	xpc nwell,pwell,space/w error l=l w=w
+	xpc nwell,pwell,space/w error l=l+0.16 w=w
  device rsubcircuit sky130_fd_pr__res_xhigh_po_0p35  uhrpoly \
-	xpc nwell,pwell,space/w error w>0.34 w<0.36 l=l
+	xpc nwell,pwell,space/w error w>0.34 w<0.36 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po_0p69  uhrpoly \
-	xpc nwell,pwell,space/w error w>0.68 w<0.70 l=l
+	xpc nwell,pwell,space/w error w>0.68 w<0.70 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po_1p41  uhrpoly \
-	xpc nwell,pwell,space/w error w>1.40 w<1.42 l=l
+	xpc nwell,pwell,space/w error w>1.40 w<1.42 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po_2p85  uhrpoly \
-	xpc nwell,pwell,space/w error w>2.84 w<2.86 l=l
+	xpc nwell,pwell,space/w error w>2.84 w<2.86 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po_5p73  uhrpoly \
-	xpc nwell,pwell,space/w error w>5.72 w<5.74 l=l
+	xpc nwell,pwell,space/w error w>5.72 w<5.74 l=l+0.16
 
  device rsubcircuit sky130_fd_pr__res_generic_nd     ndiffres \
 	*ndiff pwell,space/w  error l=l w=w
@@ -5840,45 +5987,51 @@ variants (),(si),(hrhc),(lrhc),(hrlc),(lrlc)
 variants (nowell)
 
  device msubcircuit sky130_fd_pr__pfet_01v8 pfet,scpfet \
-	*pdiff,pdiffres *pdiff,pdiffres  l=l w=w \
+	*pdiff,pdiffres *pdiff,pdiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__special_pfet_latch ppu \
-	*pdiff,pdiffres *pdiff,pdiffres  l=l w=w \
+	*pdiff,pdiffres *pdiff,pdiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__pfet_01v8_lvt pfetlvt \
-	*pdiff,pdiffres *pdiff,pdiffres  l=l w=w \
+	*pdiff,pdiffres *pdiff,pdiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__pfet_01v8_mvt pfetmvt \
-	*pdiff,pdiffres *pdiff,pdiffres  l=l w=w \
+	*pdiff,pdiffres *pdiff,pdiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__pfet_01v8_hvt pfethvt,scpfethvt \
-	*pdiff,pdiffres *pdiff,pdiffres  l=l w=w \
-	a1=as p1=ps a2=ad p2=pd
+	*pdiff,pdiffres *pdiff,pdiffres w>=0.42 l=l \
+	w=w a1=as p1=ps a2=ad p2=pd
+ device msubcircuit sky130_fd_pr__special_pfet_01v8_hvt scpfethvt \
+	*pdiff,pdiffres *pdiff,pdiffres w<0.42 l=l \
+	w=w a1=as p1=ps a2=ad p2=pd
 
  device msubcircuit sky130_fd_pr__nfet_01v8 nfet,scnfet \
-	*ndiff,ndiffres *ndiff,ndiffres  l=l w=w \
+	*ndiff,ndiffres *ndiff,ndiffres \
+	w>=0.42 l=l w=w a1=as p1=ps a2=ad p2=pd
+ device msubcircuit sky130_fd_pr__special_nfet_01v8 scnfet \
+	*ndiff,ndiffres *ndiff,ndiffres \
+	w<0.42 l=l w=w a1=as p1=ps a2=ad p2=pd
+ device msubcircuit sky130_fd_pr__special_nfet_latch npd \
+	*ndiff,ndiffres *ndiff,ndiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__special_nfet_latch npd \
-	*ndiff,ndiffres *ndiff,ndiffres  l=l w=w \
-	a1=as p1=ps a2=ad p2=pd
- device msubcircuit sky130_fd_pr__special_nfet_latch npd \
-	*ndiff,ndiffres *srampvar  l=l w=w \
+	*ndiff,ndiffres *srampvar l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__special_nfet_pass npass \
-	*ndiff,ndiffres *ndiff,ndiffres  l=l w=w \
+	*ndiff,ndiffres *ndiff,ndiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__nfet_01v8_lvt nfetlvt \
-	*ndiff,ndiffres *ndiff,ndiffres  l=l w=w \
+	*ndiff,ndiffres *ndiff,ndiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_bs_flash__special_sonosfet_star nsonos \
-	*ndiff,ndiffres *ndiff,ndiffres  l=l w=w \
+	*ndiff,ndiffres *ndiff,ndiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device subcircuit sky130_fd_pr__cap_var_lvt varactor \
-	*nndiff  l=l w=w
+	*nndiff l=l w=w
  device subcircuit sky130_fd_pr__cap_var_hvt varhvt \
-	*nndiff  l=l w=w
+	*nndiff l=l w=w
  device subcircuit sky130_fd_pr__cap_var mvvaractor \
-	*mvnndiff  l=l w=w
+	*mvnndiff l=l w=w
 
  # Bipolars
 # device msubcircuit sky130_fd_pr__npn_05v5 npn *ndiff dnwell space/w error a1=area
@@ -5894,13 +6047,17 @@ variants (nowell)
 # device msubcircuit sky130_fd_pr__npn_11v0 npn *mvndiff dnwell space/w error a1=area
 # device msubcircuit sky130_fd_pr__npn_11v0_W1p00L1p00 npn *mvndiff \
 #	dnwell space/w error a1>0.99 a1<1.01
-
+#
  # Ignore the extended-drain FET geometry that forms part of the high-voltage
  # bipolar devices.
 # device msubcircuit Ignore mvnfet *mvndiff,mvndiffres dnwell pwell,space/w error +npn,pnp
 # device msubcircuit Ignore mvpfet *mvpdiff,mvpdiffres pwell,space/w nwell error +npn,pnp
 
  # Extended drain devices (must appear before the regular devices)
+# device msubcircuit sky130_fd_pr__nfet_g5v0d16v0 mvnfet *mvndiff \
+#	extdrain,*mvnsd pwell,space/w error l=l w=w a1=as p1=ps a2=ad p2=pd
+# device msubcircuit sky130_fd_pr__pfet_g5v0d16v0 mvpfet *mvpdiff \
+#	extdrain,*mvpsd nwell error l=l w=w a1=as p1=ps a2=ad p2=pd
 # device msubcircuit sky130_fd_pr__nfet_20v0_nvt mvnnfet *mvndiff,mvndiffres \
 #	dnwell pwell,space/w error l=l w=w a1=as a2=ad p1=ps p2=pd
 # device msubcircuit sky130_fd_pr__nfet_20v0 mvnfet *mvndiff,mvndiffres \
@@ -5909,22 +6066,22 @@ variants (nowell)
 #	pwell,space/w nwell error l=l w=w a1=as a2=ad p1=ps p2=pd
 
  device msubcircuit sky130_fd_pr__pfet_g5v0d10v5 mvpfet \
-	*mvpdiff,mvpdiffres *mvpdiff,mvpdiffres  l=l w=w \
+	*mvpdiff,mvpdiffres *mvpdiff,mvpdiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__nfet_g5v0d10v5 mvnfet \
-	*mvndiff,mvndiffres *mvndiff,mvndiffres  l=l w=w \
+	*mvndiff,mvndiffres *mvndiff,mvndiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__nfet_05v0_nvt mvnnfet \
-	*mvndiff,mvndiffres *mvndiff,mvndiffres  l=l w=w \
+	*mvndiff,mvndiffres *mvndiff,mvndiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__nfet_03v3_nvt nnfet \
-	*mvndiff,mvndiffres *mvndiff,mvndiffres  l=l w=w \
+	*mvndiff,mvndiffres *mvndiff,mvndiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__esd_nfet_g5v0d10v5 mvnfetesd \
-	*mvndiff,mvndiffres *mvndiff,mvndiffres  l=l w=w \
+	*mvndiff,mvndiffres *mvndiff,mvndiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
  device msubcircuit sky130_fd_pr__esd_pfet_g5v0d10v5 mvpfetesd \
-	*mvpdiff,mvpdiffres *mvpdiff,mvpdiffres  l=l w=w \
+	*mvpdiff,mvpdiffres *mvpdiff,mvpdiffres l=l w=w \
 	a1=as p1=ps a2=ad p2=pd
 
  device resistor sky130_fd_pr__res_generic_l1 rli1 *li,coreli
@@ -5937,40 +6094,40 @@ variants (nowell)
 #	photo pwell,space/w error a=area
 
  device rsubcircuit sky130_fd_pr__res_high_po	    xhrpoly \
-	xpc  l=l w=w
+	xpc l=l+0.16 w=w
  device rsubcircuit sky130_fd_pr__res_high_po_0p35 xhrpoly \
-	xpc  w>0.34 w<0.36 l=l
+	xpc w>0.34 w<0.36 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_high_po_0p69  xhrpoly \
-	xpc  w>0.68 w<0.70 l=l
+	xpc w>0.68 w<0.70 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_high_po_1p41  xhrpoly \
-	xpc  w>1.40 w<1.42 l=l
+	xpc w>1.40 w<1.42 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_high_po_2p85  xhrpoly \
-	xpc  w>2.84 w<2.86 l=l
+	xpc w>2.84 w<2.86 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_high_po_5p73  xhrpoly \
-	xpc  w>5.72 w<5.74 l=l
+	xpc w>5.72 w<5.74 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po	     uhrpoly \
-	xpc  l=l w=w
+	xpc l=l+0.16 w=w
  device rsubcircuit sky130_fd_pr__res_xhigh_po_0p35  uhrpoly \
-	xpc  w>0.34 w<0.36 l=l
+	xpc w>0.34 w<0.36 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po_0p69  uhrpoly \
-	xpc  w>0.68 w<0.70 l=l
+	xpc w>0.68 w<0.70 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po_1p41  uhrpoly \
-	xpc  w>1.40 w<1.42 l=l
+	xpc w>1.40 w<1.42 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po_2p85  uhrpoly \
-	xpc  w>2.84 w<2.86 l=l
+	xpc w>2.84 w<2.86 l=l+0.16
  device rsubcircuit sky130_fd_pr__res_xhigh_po_5p73  uhrpoly \
-	xpc  w>5.72 w<5.74 l=l
+	xpc w>5.72 w<5.74 l=l+0.16
 
  device rsubcircuit sky130_fd_pr__res_generic_nd     ndiffres \
-	*ndiff  l=l w=w
+	*ndiff l=l w=w
  device rsubcircuit sky130_fd_pr__res_generic_pd     pdiffres \
-	*pdiff  l=l w=w
+	*pdiff l=l w=w
 # device rsubcircuit sky130_fd_pr__res_iso_pw   rpw \
 #        pwell dnwell error l=l w=w
  device rsubcircuit sky130_fd_pr__res_generic_nd__hv  mvndiffres \
-	*mvndiff  l=l w=w
+	*mvndiff l=l w=w
  device rsubcircuit sky130_fd_pr__res_generic_pd__hv  mvpdiffres \
-	*mvpdiff  l=l w=w
+	*mvpdiff l=l w=w
 
  device resistor sky130_fd_pr__res_generic_po rmp *poly
  device resistor sky130_fd_pr__res_generic_po mrp1 *poly
@@ -5980,7 +6137,7 @@ variants (nowell)
 # device pdiode sky130_fd_pr__diode_pd2nw_05v5_lvt *pdiodelvt nwell a=area*1E12 p=pj*1E6
 # device pdiode sky130_fd_pr__diode_pd2nw_05v5_hvt *pdiodehvt nwell a=area*1E12 p=pj*1E6
 # device pdiode sky130_fd_pr__diode_pd2nw_11v0 *mvpdiode nwell a=area*1E12 p=pj*1E6
-#
+
 # device ndiode sky130_fd_pr__diode_pw2nd_05v5 *ndiode pwell,space/w a=area*1E12 p=pj*1E6
 # device ndiode sky130_fd_pr__diode_pw2nd_05v5_lvt *ndiodelvt pwell,space/w a=area*1E12 p=pj*1E6
 # device ndiode sky130_fd_pr__diode_pw2nd_05v5_nvt *nndiode pwell,space/w a=area*1E12 p=pj*1E6
@@ -6035,17 +6192,7 @@ variants (nowell)
  device resistor sky130_fd_pr__res_generic_m4 rm4 *m4
  device resistor sky130_fd_pr__res_generic_m5 rm5 *m5
 
- device resistor sky130_fd_pr__res_high_po_0p35 xhrpoly xpc +res0p35
- device resistor sky130_fd_pr__res_high_po_0p69 xhrpoly xpc +res0p69
- device resistor sky130_fd_pr__res_high_po_1p41 xhrpoly xpc +res1p41
- device resistor sky130_fd_pr__res_high_po_2p85 xhrpoly xpc +res2p85
- device resistor sky130_fd_pr__res_high_po_5p73 xhrpoly xpc +res5p73
  device resistor sky130_fd_pr__res_high_po xhrpoly xpc 
- device resistor sky130_fd_pr__res_xhigh_po_0p35 uhrpoly xpc +res0p35
- device resistor sky130_fd_pr__res_xhigh_po_0p69 uhrpoly xpc +res0p69
- device resistor sky130_fd_pr__res_xhigh_po_1p41 uhrpoly xpc +res1p41
- device resistor sky130_fd_pr__res_xhigh_po_2p85 uhrpoly xpc +res2p85
- device resistor sky130_fd_pr__res_xhigh_po_5p73 uhrpoly xpc +res5p73
  device resistor sky130_fd_pr__res_xhigh_po uhrpoly xpc 
  device resistor sky130_fd_pr__res_generic_po  mrp1     *poly 
  device resistor sky130_fd_pr__res_generic_nd  ndiffres *ndiff 
