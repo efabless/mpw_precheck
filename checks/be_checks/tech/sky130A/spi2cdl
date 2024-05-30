@@ -23,7 +23,7 @@ awk '
         print "C" $0, "$SUB=" bulk;
         next;
 }
-/^X.*pr__res_generic.*=/ {
+/^X.*pr__res_generic_po.*=/ {
         print "R" $0;
         next;
 }
