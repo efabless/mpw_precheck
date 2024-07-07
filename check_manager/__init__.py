@@ -54,7 +54,7 @@ class Consistency(CheckManager):
     __ref__ = 'consistency'
     __surname__ = 'Consistency'
     __supported_pdks__ = ['sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -154,6 +154,8 @@ class Lvs(CheckManager):
             self.design_name = "user_analog_project_wrapper"
         elif self.project_config['type'] == "openframe":
             self.design_name = "openframe_project_wrapper"
+        elif self.project_config['type'] == "mpc":
+            self.design_name = "user_project"
         else:
             self.design_name = "user_project_wrapper"
         self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
@@ -183,6 +185,8 @@ class Oeb(CheckManager):
             self.design_name = "user_analog_project_wrapper"
         elif self.project_config['type'] == "openframe":
             self.design_name = "openframe_project_wrapper"
+        elif self.project_config['type'] == "mpc":
+            self.design_name = "user_project"
         else:
             self.design_name = "user_project_wrapper"
         self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
