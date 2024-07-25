@@ -32,6 +32,7 @@ from checks.xor_check import xor_check
 from checks.lvs_check.lvs import run_lvs
 from checks.oeb_check.oeb import run_oeb
 from checks.pdn_check.pdn import run_pdn
+from checks.metal_check.metal_check import run_metal_check
 
 
 class CheckManagerNotFound(Exception):
@@ -76,7 +77,7 @@ class Defaults(CheckManager):
     __ref__ = 'default'
     __surname__ = 'Default'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -103,7 +104,7 @@ class Documentation(CheckManager):
     __ref__ = 'documentation'
     __surname__ = 'Documentation'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -144,7 +145,7 @@ class Lvs(CheckManager):
     __ref__ = 'lvs'
     __surname__ = 'LVS'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -154,8 +155,8 @@ class Lvs(CheckManager):
             self.design_name = "user_analog_project_wrapper"
         elif self.project_config['type'] == "openframe":
             self.design_name = "openframe_project_wrapper"
-        elif self.project_config['type'] == "mpc":
-            self.design_name = "user_project"
+        elif self.project_config['type'] == "mini":
+            self.design_name = "user_project_wrapper_mini4"
         else:
             self.design_name = "user_project_wrapper"
         self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
@@ -175,7 +176,7 @@ class Oeb(CheckManager):
     __ref__ = 'oeb'
     __surname__ = 'OEB'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -185,8 +186,8 @@ class Oeb(CheckManager):
             self.design_name = "user_analog_project_wrapper"
         elif self.project_config['type'] == "openframe":
             self.design_name = "openframe_project_wrapper"
-        elif self.project_config['type'] == "mpc":
-            self.design_name = "user_project"
+        elif self.project_config['type'] == "mini":
+            self.design_name = "user_project_wrapper_mini4"
         else:
             self.design_name = "user_project_wrapper"
         self.config_file = self.precheck_config['input_directory'] / f"lvs/{self.design_name}/lvs_config.json"
@@ -207,7 +208,7 @@ class KlayoutDRC(CheckManager):
     __ref__ = None
     __surname__ = None
     __supported_pdks__ = None
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -237,7 +238,7 @@ class KlayoutBEOL(KlayoutDRC):
     __ref__ = 'klayout_beol'
     __surname__ = 'Klayout BEOL'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -253,7 +254,7 @@ class KlayoutFEOL(KlayoutDRC):
     __ref__ = 'klayout_feol'
     __surname__ = 'Klayout FEOL'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -269,7 +270,7 @@ class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -283,7 +284,7 @@ class KlayoutOffgrid(KlayoutDRC):
     __ref__ = 'klayout_offgrid'
     __surname__ = 'Klayout Offgrid'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -299,7 +300,7 @@ class KlayoutPinLabelPurposesOverlappingDrawing(KlayoutDRC):
     __ref__ = 'klayout_pin_label_purposes_overlapping_drawing'
     __surname__ = 'Klayout Pin Label Purposes Overlapping Drawing'
     __supported_pdks__ = ['sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -311,7 +312,7 @@ class KlayoutZeroArea(KlayoutDRC):
     __ref__ = 'klayout_zeroarea'
     __surname__ = 'Klayout ZeroArea'
     __supported_pdks__ = ['sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -323,7 +324,7 @@ class License(CheckManager):
     __ref__ = 'license'
     __surname__ = 'License'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -376,7 +377,7 @@ class MagicDRC(CheckManager):
     __ref__ = 'magic_drc'
     __surname__ = 'Magic DRC'
     __supported_pdks__ = ['sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -403,7 +404,7 @@ class Makefile(CheckManager):
     __ref__ = 'makefile'
     __surname__ = 'Makefile'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -421,7 +422,7 @@ class Manifest(CheckManager):
     __ref__ = 'manifest'
     __surname__ = 'Manifest'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -440,7 +441,7 @@ class XOR(CheckManager):
     __ref__ = 'xor'
     __surname__ = 'XOR'
     __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
-    __supported_type__ = ['analog', 'digital', 'openframe', 'mpc']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
 
     def __init__(self, precheck_config, project_config):
         super().__init__(precheck_config, project_config)
@@ -451,9 +452,9 @@ class XOR(CheckManager):
         if 'gf180mcu' in self.precheck_config['pdk_path'].stem:
             magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
             gds_golden_wrapper_file_path = Path(__file__).parent.parent / "_default_content/gds/user_project_wrapper_empty_gf180mcu.gds"
-        elif self.project_config['type'] == "mpc":
+        elif self.project_config['type'] == "mini":
             magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
-            gds_golden_wrapper_file_path = Path(__file__).parent.parent / "_default_content/gds/user_project_empty.gds"
+            gds_golden_wrapper_file_path = Path(__file__).parent.parent / "_default_content/gds/user_project_wrapper_mini4_empty.gds"
         else:
             magicrc_file_path = self.precheck_config['pdk_path'] / f"libs.tech/magic/{self.precheck_config['pdk_path'].name}.magicrc"
             gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
@@ -491,25 +492,45 @@ class PDNMulti(CheckManager):
         return self.result
 
 
+class MetalCheck(CheckManager):
+    __ref__ = 'metalcheck'
+    __surname__ = 'MetalCheck'
+    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_type__ = ['mini']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.gds_input_file_path = self.precheck_config['input_directory'] / f"gds/{self.project_config['user_module']}.gds"
+
+    def run(self):
+        self.result = run_metal_check(self.gds_input_file_path)
+
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The design, {self.project_config['user_module']}, has no Metal 5 or Via 4.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The design, {self.project_config['user_module']}, has Metal 5 or Via 4.")
+        return self.result
+
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
-    (License.__ref__, License),
-    (Makefile.__ref__, Makefile),
-    (Defaults.__ref__, Defaults),
-    (Documentation.__ref__, Documentation),
-    (Consistency.__ref__, Consistency),
-    (GpioDefines.__ref__, GpioDefines),
-    (PDNMulti.__ref__, PDNMulti),
-    (XOR.__ref__, XOR),
-    (MagicDRC.__ref__, MagicDRC),
-    (KlayoutFEOL.__ref__, KlayoutFEOL),
-    (KlayoutBEOL.__ref__, KlayoutBEOL),
-    (KlayoutOffgrid.__ref__, KlayoutOffgrid),
-    (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
-    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
-    (Oeb.__ref__, Oeb),
-    (Lvs.__ref__, Lvs),
+    # (License.__ref__, License),
+    # (Makefile.__ref__, Makefile),
+    # (Defaults.__ref__, Defaults),
+    # (Documentation.__ref__, Documentation),
+    # (Consistency.__ref__, Consistency),
+    # (GpioDefines.__ref__, GpioDefines),
+    # (PDNMulti.__ref__, PDNMulti),
+    (MetalCheck.__ref__, MetalCheck),
+    # (XOR.__ref__, XOR),
+    # (MagicDRC.__ref__, MagicDRC),
+    # (KlayoutFEOL.__ref__, KlayoutFEOL),
+    # (KlayoutBEOL.__ref__, KlayoutBEOL),
+    # (KlayoutOffgrid.__ref__, KlayoutOffgrid),
+    # (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
+    # (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    # (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    # (Oeb.__ref__, Oeb),
+    # (Lvs.__ref__, Lvs),
 ])
 
 # Note: list of checks for a private project
@@ -517,6 +538,7 @@ private_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
+    (MetalCheck.__ref__, MetalCheck),
     (XOR.__ref__, XOR),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),

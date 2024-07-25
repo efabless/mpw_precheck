@@ -67,8 +67,8 @@ def get_project_config(project_path, caravel_root):
     analog_gds_path = project_path / 'gds/user_analog_project_wrapper.gds'
     digital_gds_path = project_path / 'gds/user_project_wrapper.gds'
     openframe_gds_path = project_path / 'gds/openframe_project_wrapper.gds'
-    mpc_gds_path = project_path / 'gds/user_project.gds'
-    if analog_gds_path.exists() and not digital_gds_path.exists() and not openframe_gds_path.exists() and not mpc_gds_path.exists():
+    mini_gds_path = project_path / 'gds/user_project_wrapper_mini4.gds'
+    if analog_gds_path.exists() and not digital_gds_path.exists() and not openframe_gds_path.exists() and not mini_gds_path.exists():
         project_config['type'] = 'analog'
         project_config['netlist_type'] = 'spice'
         project_config['top_module'] = 'caravan'
@@ -76,7 +76,7 @@ def get_project_config(project_path, caravel_root):
         project_config['golden_wrapper'] = 'user_analog_project_wrapper_empty'
         project_config['top_netlist'] = caravel_root / "spi/lvs/caravan.spice"
         project_config['user_netlist'] = project_path / "netgen/user_analog_project_wrapper.spice"
-    elif digital_gds_path.exists() and not analog_gds_path.exists() and not openframe_gds_path.exists() and not mpc_gds_path.exists():
+    elif digital_gds_path.exists() and not analog_gds_path.exists() and not openframe_gds_path.exists() and not mini_gds_path.exists():
         project_config['type'] = 'digital'
         project_config['netlist_type'] = 'verilog'
         project_config['top_module'] = 'caravel'
@@ -84,7 +84,7 @@ def get_project_config(project_path, caravel_root):
         project_config['golden_wrapper'] = 'user_project_wrapper_empty'
         project_config['top_netlist'] = caravel_root / "verilog/gl/caravel.v"
         project_config['user_netlist'] = project_path / "verilog/gl/user_project_wrapper.v"
-    elif openframe_gds_path.exists() and not analog_gds_path.exists() and not digital_gds_path.exists() and not mpc_gds_path.exists():
+    elif openframe_gds_path.exists() and not analog_gds_path.exists() and not digital_gds_path.exists() and not mini_gds_path.exists():
         project_config['type'] = 'openframe'
         project_config['netlist_type'] = 'verilog'
         project_config['top_module'] = 'caravel_openframe'
@@ -92,14 +92,14 @@ def get_project_config(project_path, caravel_root):
         project_config['golden_wrapper'] = 'openframe_project_wrapper_empty'
         project_config['top_netlist'] = caravel_root / "verilog/gl/caravel_openframe.v"
         project_config['user_netlist'] = project_path / "verilog/gl/openframe_project_wrapper.v"
-    elif mpc_gds_path.exists() and not openframe_gds_path.exists() and not analog_gds_path.exists() and not digital_gds_path.exists():
-        project_config['type'] = 'mpc'
+    elif mini_gds_path.exists() and not openframe_gds_path.exists() and not analog_gds_path.exists() and not digital_gds_path.exists():
+        project_config['type'] = 'mini'
         project_config['netlist_type'] = 'verilog'
         project_config['top_module'] = 'caravel'
-        project_config['user_module'] = 'user_project'
-        project_config['golden_wrapper'] = 'user_project_empty'
+        project_config['user_module'] = 'user_project_wrapper_mini4'
+        project_config['golden_wrapper'] = 'user_project_wrapper_mini4_empty'
         project_config['top_netlist'] = caravel_root / "verilog/gl/caravel.v"
-        project_config['user_netlist'] = project_path / "verilog/gl/user_project.v"
+        project_config['user_netlist'] = project_path / "verilog/gl/user_project_wrapper_mini4.v"
     else:
         logging.fatal("{{IDENTIFYING PROJECT TYPE FAILED}} A single valid GDS was not found. "
                       "If your project is digital, a GDS file should exist under the project's 'gds' directory named 'user_project_wrapper(.gds/.gds.gz)'. "

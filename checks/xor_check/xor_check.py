@@ -51,8 +51,8 @@ def gds_xor_check(input_directory, output_directory, magicrc_file_path, gds_gold
             tcl_erase_box_file_path = parent_directory / 'erase_box_gf180mcu.tcl'
         elif project_config['type'] == "openframe":
             tcl_erase_box_file_path = parent_directory / 'erase_box_openframe.tcl'
-        elif project_config['type'] == "mpc":
-            tcl_erase_box_file_path = parent_directory / 'erase_box_mpc.tcl'
+        elif project_config['type'] == "mini":
+            tcl_erase_box_file_path = parent_directory / 'erase_box_mini4.tcl'
         else:
             tcl_erase_box_file_path = parent_directory / 'erase_box.tcl'
         magic_gds_erase_box_ut_cmd = ['magic', '-dnull', '-noconsole', '-rcfile', magicrc_file_path, tcl_erase_box_file_path,

@@ -461,7 +461,7 @@ elif [[ $DESIGN_NAME == *user_project_wrapper ]]; then
 		gn analog_io[28]
 		q
 	cvcin
-elif [[ $DESIGN_NAME == *user_project ]]; then
+elif [[ $DESIGN_NAME == *user_project_wrapper_mini4 ]]; then
 	cat >$WORK_ROOT/cvc.oeb.script <<-cvcin
 		c 6
 		gn io_in[0]
