@@ -43,6 +43,7 @@ while [[ "$1" == "--"* ]]; do
 done
 
 if [[ $# -gt 4 ]]; then
+	echo $0 $*
 	echo "usage: run_be_checks [--noextract] [lvs_config_file [netlist_top [layout_top [layout_file]]]]"
 	exit 1
 fi
@@ -124,7 +125,7 @@ if [[ -f $LVS_ROOT/tech/$PDK/cvc.power.$TOP_SOURCE || -f ${CONFIG_FILE%/*}/cvc.p
 	cvc_status=$?
 fi
 
-if [[ $TOP_SOURCE == *user_*project_wrapper && $SKIP_OEB == no ]]; then
+if [[ $TOP_SOURCE == *user_*project* && $SKIP_OEB == no ]]; then
 	$LVS_ROOT/run_oeb_check --noextract
 	oeb_status=$?
 fi
@@ -156,7 +157,7 @@ CVC result:"
 	grep 'CVC: Total:' $LOG_ROOT/cvc.log
 fi
 
-if [[ $TOP_SOURCE == *user_*project_wrapper && $SKIP_OEB == no ]]; then
+if [[ $TOP_SOURCE == *user_*project* && $SKIP_OEB == no ]]; then
 	oeb_errors=$(grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report)
 	oeb_warnings=$(grep -c Warning $SIGNOFF_ROOT/cvc.oeb.report)
 	echo "

@@ -461,6 +461,155 @@ elif [[ $DESIGN_NAME == *user_project_wrapper ]]; then
 		gn analog_io[28]
 		q
 	cvcin
+elif [[ $DESIGN_NAME == *user_project_wrapper_mini4 ]]; then
+	cat >$WORK_ROOT/cvc.oeb.script <<-cvcin
+		c 6
+		gn io_in[0]
+		gn io_in[1]
+		gn io_in[2]
+		gn io_in[3]
+		gn io_in[4]
+		gn io_in[5]
+		gn io_in[6]
+		gn io_in[7]
+		gn io_in[8]
+		gn io_in[9]
+		gn io_in[10]
+		gn io_in[11]
+		gn io_in[12]
+		gn io_in[13]
+		gn io_in[14]
+		gn io_in[15]
+		gn io_in[16]
+		gn io_in[17]
+		gn io_in[18]
+		gn io_in[19]
+		gn io_in[20]
+		gn io_in[21]
+		gn io_in[22]
+		gn io_in[23]
+		gn io_in[24]
+		gn io_in[25]
+		gn io_in[26]
+		gn io_in[27]
+		gn io_in[28]
+		gn io_in[29]
+		gn io_in[30]
+		gn io_in[31]
+		gn io_in[32]
+		gn io_in[33]
+		gn io_in[34]
+		gn io_in[35]
+		gn io_out[0]
+		gn io_out[1]
+		gn io_out[2]
+		gn io_out[3]
+		gn io_out[4]
+		gn io_out[5]
+		gn io_out[6]
+		gn io_out[7]
+		gn io_out[8]
+		gn io_out[9]
+		gn io_out[10]
+		gn io_out[11]
+		gn io_out[12]
+		gn io_out[13]
+		gn io_out[14]
+		gn io_out[15]
+		gn io_out[16]
+		gn io_out[17]
+		gn io_out[18]
+		gn io_out[19]
+		gn io_out[20]
+		gn io_out[21]
+		gn io_out[22]
+		gn io_out[23]
+		gn io_out[24]
+		gn io_out[25]
+		gn io_out[26]
+		gn io_out[27]
+		gn io_out[28]
+		gn io_out[29]
+		gn io_out[30]
+		gn io_out[31]
+		gn io_out[32]
+		gn io_out[33]
+		gn io_out[34]
+		gn io_out[35]
+		gn io_oeb[0]
+		gn io_oeb[1]
+		gn io_oeb[2]
+		gn io_oeb[3]
+		gn io_oeb[4]
+		gn io_oeb[5]
+		gn io_oeb[6]
+		gn io_oeb[7]
+		gn io_oeb[8]
+		gn io_oeb[9]
+		gn io_oeb[10]
+		gn io_oeb[11]
+		gn io_oeb[12]
+		gn io_oeb[13]
+		gn io_oeb[14]
+		gn io_oeb[15]
+		gn io_oeb[16]
+		gn io_oeb[17]
+		gn io_oeb[18]
+		gn io_oeb[19]
+		gn io_oeb[20]
+		gn io_oeb[21]
+		gn io_oeb[22]
+		gn io_oeb[23]
+		gn io_oeb[24]
+		gn io_oeb[25]
+		gn io_oeb[26]
+		gn io_oeb[27]
+		gn io_oeb[28]
+		gn io_oeb[29]
+		gn io_oeb[30]
+		gn io_oeb[31]
+		gn io_oeb[32]
+		gn io_oeb[33]
+		gn io_oeb[34]
+		gn io_oeb[35]
+		gn io_in[0]
+		gn io_in[1]
+		gn io_in[2]
+		gn io_in[3]
+		gn io_in[4]
+		gn io_in[5]
+		gn io_in[6]
+		gn io_in[7]
+		gn io_in[8]
+		gn io_in[9]
+		gn io_in[10]
+		gn io_in[11]
+		gn io_in[12]
+		gn io_in[13]
+		gn io_in[14]
+		gn io_in[15]
+		gn io_in[16]
+		gn io_in[17]
+		gn io_in[18]
+		gn io_in[19]
+		gn io_in[20]
+		gn io_in[21]
+		gn io_in[22]
+		gn io_in[23]
+		gn io_in[24]
+		gn io_in[25]
+		gn io_in[26]
+		gn io_in[27]
+		gn io_in[28]
+		gn io_in[29]
+		gn io_in[30]
+		gn io_in[31]
+		gn io_in[32]
+		gn io_in[33]
+		gn io_in[34]
+		gn io_in[35]
+		q
+	cvcin
 else
 	echo "ERROR: unrecognized top block $DESIGN_NAME"
 	exit 3
@@ -567,6 +716,7 @@ awk '
 		#print "oeb connections:", length(oeb_connections);
 		print " gpio |   in   |   out  | analog |  oeb min/sim/max  | Message";
 		     #"  xx  | xxxxxx | xxxxxx | xxxxxx | vxxx*/vxxx*/vxxx* |
+		PROCINFO["sorted_in"] = "@ind_num_asc";
 		for ( i in oeb_connections ) {
 			printf "  %2d  | %6s | %6s | %6s | %5s/%5s/%5s | ", \
 				i, (in_connections[i] == 0) ? "" : sprintf("%6d", in_connections[i]), \
@@ -577,17 +727,17 @@ awk '
 			if ( analog_connections[i] > 0 ) {
 				if ( in_connections[i] > 0 || (out_connections[i] > 0 && ! (i in fixed)) ) {  # both digital and analog
 					printf "Warning: both analog and digital connections";
-				} else if ( ! ( oeb_sim[i] ~ /vccd/ || oeb_sim[i] ~ /vdd/ ) ) {  # analog signals should disable output
+				} else if ( ! ( oeb_sim[i] ~ /vccd/ || oeb_sim[i] ~ /vdd/ || oeb_sim[i] ~ /VPWR/ ) ) {  # analog signals should disable output
 					printf "Warning: oeb expected high for analog";
 				}
 			} else if ( in_connections[i] > 0 && out_connections[i] == 0 ) {
-				if ( ! ( oeb_sim[i] ~ /vccd/ || oeb_sim[i] ~ /vdd/ ) ) {  # input only signals should never enable output
+				if ( ! ( oeb_sim[i] ~ /vccd/ || oeb_sim[i] ~ /vdd/ || oeb_sim[i] ~ /VPWR/ ) ) {  # input only signals should never enable output
 					printf "Warning: oeb expected high for input only";
 				}
 			} else if ( out_connections[i] > 0 && ! (i in fixed) ) {
-				if ( oeb_min[i] !~ /vss/ ) {  # output signals must be enable-able
+				if ( ! ( oeb_min[i] ~ /vss/ || oeb_min[i] ~ /VGND/ ) ) {  # output signals must be enable-able
 					printf "ERROR: oeb must have possible low for output";
-				} else if ( in_connections[i] > 0 && oeb_sim[i] ~ /vss/ ) {  # input is always driven by user output in user mode
+				} else if ( in_connections[i] > 0 && ( oeb_sim[i] ~ /vss/ || oeb_min[i] ~ /VGND/ ) ) {  # input is always driven by user output in user mode
 					printf "Warning: output always drives input. sky130: OK for pull up/down.";
 				}
 			}
