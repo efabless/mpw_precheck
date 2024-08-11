@@ -33,7 +33,7 @@ def run_illegal_cellname_check(gds_input_file_path):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     parser = argparse.ArgumentParser(description='Runs Illegal cellname check.')
-    parser.add_argument('--gds_input_file_path', '-g', required=True, help='GDS File to apply DRC checks on')
+    parser.add_argument('--gds_input_file_path', '-g', required=True, help='GDS File to apply illegal cellname check on')
     args = parser.parse_args()
 
     gds_input_file_path = Path(args.gds_input_file_path)

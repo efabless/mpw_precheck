@@ -24,7 +24,7 @@ def run_spike_check(gds_input_file_path, output_directory, script_path):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, format=f"%(asctime)s | %(levelname)-7s | %(message)s", datefmt='%d-%b-%Y %H:%M:%S')
     parser = argparse.ArgumentParser(description='Runs Spike Check.')
-    parser.add_argument('--gds_input_file_path', '-g', required=True, help='GDS File to apply DRC checks on')
+    parser.add_argument('--gds_input_file_path', '-g', required=True, help='GDS File to apply spike check on')
     parser.add_argument('--output_directory', '-o', required=True, help='Output Directory')
     parser.add_argument('--script_path', '-s', required=True, help='path to gdsArea0 script')
     args = parser.parse_args()
