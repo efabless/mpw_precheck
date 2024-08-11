@@ -34,6 +34,7 @@ from checks.oeb_check.oeb import run_oeb
 from checks.pdn_check.pdn import run_pdn
 from checks.metal_check.metal_check import run_metal_check
 from checks.spike_check.spike import run_spike_check
+from checks.illegal_cellname_check.illegal_cellname import run_illegal_cellname_check
 
 
 class CheckManagerNotFound(Exception):
@@ -290,6 +291,29 @@ class SpikeCheck(CheckManager):
             logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The GDS file, {self.gds_input_file_path.name}, has spike errors.")
         return self.result
 
+class IllegalCellnameCheck(CheckManager):
+    __ref__ = 'illegal_cellname_check'
+    __surname__ = 'Illegal Cellname Check'
+    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.gds_input_file_path = self.precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
+    
+    def run(self):
+        if not self.gds_input_file_path.exists():
+            self.result = False
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} {self.gds_input_file_path.name}, GDS file was not found.")
+            return self.result
+
+        self.result = run_illegal_cellname_check(self.gds_input_file_path)
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The GDS file, {self.gds_input_file_path.name}, has no Illegal Cellnames errors.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The GDS file, {self.gds_input_file_path.name}, has Illegal Cellnames.")
+        return self.result
+
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
     __surname__ = 'Klayout Metal Minimum Clear Area Density'
@@ -537,25 +561,26 @@ class MetalCheck(CheckManager):
 
 # Note: list of checks for an public (open source) project
 open_source_checks = OrderedDict([
-    # (License.__ref__, License),
-    # (Makefile.__ref__, Makefile),
-    # (Defaults.__ref__, Defaults),
-    # (Documentation.__ref__, Documentation),
-    # (Consistency.__ref__, Consistency),
-    # (GpioDefines.__ref__, GpioDefines),
-    # (PDNMulti.__ref__, PDNMulti),
-    # (MetalCheck.__ref__, MetalCheck),
-    # (XOR.__ref__, XOR),
-    # (MagicDRC.__ref__, MagicDRC),
-    # (KlayoutFEOL.__ref__, KlayoutFEOL),
-    # (KlayoutBEOL.__ref__, KlayoutBEOL),
-    # (KlayoutOffgrid.__ref__, KlayoutOffgrid),
-    # (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
-    # (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
-    # (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (License.__ref__, License),
+    (Makefile.__ref__, Makefile),
+    (Defaults.__ref__, Defaults),
+    (Documentation.__ref__, Documentation),
+    (Consistency.__ref__, Consistency),
+    (GpioDefines.__ref__, GpioDefines),
+    (PDNMulti.__ref__, PDNMulti),
+    (MetalCheck.__ref__, MetalCheck),
+    (XOR.__ref__, XOR),
+    (MagicDRC.__ref__, MagicDRC),
+    (KlayoutFEOL.__ref__, KlayoutFEOL),
+    (KlayoutBEOL.__ref__, KlayoutBEOL),
+    (KlayoutOffgrid.__ref__, KlayoutOffgrid),
+    (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
+    (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
+    (KlayoutZeroArea.__ref__, KlayoutZeroArea),
     (SpikeCheck.__ref__, SpikeCheck),
-    # (Oeb.__ref__, Oeb),
-    # (Lvs.__ref__, Lvs),
+    (IllegalCellnameCheck.__ref__, IllegalCellnameCheck),
+    (Oeb.__ref__, Oeb),
+    (Lvs.__ref__, Lvs),
 ])
 
 # Note: list of checks for a private project
@@ -573,6 +598,7 @@ private_checks = OrderedDict([
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
     (KlayoutZeroArea.__ref__, KlayoutZeroArea),
     (SpikeCheck.__ref__, SpikeCheck),
+    (IllegalCellnameCheck.__ref__, IllegalCellnameCheck),
     (Oeb.__ref__, Oeb),
     (Lvs.__ref__, Lvs),
 ])
