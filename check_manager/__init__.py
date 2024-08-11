@@ -589,6 +589,7 @@ open_source_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
     (Defaults.__ref__, Defaults),
     (Documentation.__ref__, Documentation),
+    (TopcellCheck.__ref__, TopcellCheck),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
     (PDNMulti.__ref__, PDNMulti),
@@ -610,6 +611,7 @@ open_source_checks = OrderedDict([
 # Note: list of checks for a private project
 private_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
+    (TopcellCheck.__ref__, TopcellCheck),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
     (MetalCheck.__ref__, MetalCheck),
