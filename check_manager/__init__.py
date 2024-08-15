@@ -33,6 +33,9 @@ from checks.lvs_check.lvs import run_lvs
 from checks.oeb_check.oeb import run_oeb
 from checks.pdn_check.pdn import run_pdn
 from checks.metal_check.metal_check import run_metal_check
+from checks.spike_check.spike import run_spike_check
+from checks.illegal_cellname_check.illegal_cellname import run_illegal_cellname_check
+from checks.topcell_check.topcell import check_top_cells
 
 
 class CheckManagerNotFound(Exception):
@@ -265,6 +268,75 @@ class KlayoutFEOL(KlayoutDRC):
         if 'gf180mcuD' in precheck_config['pdk_path'].stem:
             self.klayout_cmd_extra_args += ['-rd', 'metal_top=11K', '-rd', 'mim_option=B', '-rd', 'metal_level=5LM', '-rd', 'conn_drc=true', '-rd', 'run_mode=deep', '-rd', 'density=false', '-rd', 'split_deep=false', '-rd', 'slow_via=false']
 
+class SpikeCheck(CheckManager):
+    __ref__ = 'spike_check'
+    __surname__ = 'Spike Check'
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.script_path = Path(__file__).parent.parent / f"checks/spike_check/gdsArea0"
+        self.gds_input_file_path = self.precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
+    
+    def run(self):
+        if not self.gds_input_file_path.exists():
+            self.result = False
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} {self.gds_input_file_path.name}, GDS file was not found.")
+            return self.result
+
+        self.result = run_spike_check(self.gds_input_file_path, self.precheck_config['output_directory'], self.script_path)
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The GDS file, {self.gds_input_file_path.name}, has no spike errors.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The GDS file, {self.gds_input_file_path.name}, has spike errors.")
+        return self.result
+
+class IllegalCellnameCheck(CheckManager):
+    __ref__ = 'illegal_cellname_check'
+    __surname__ = 'Illegal Cellname Check'
+    __supported_pdks__ = ['sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.gds_input_file_path = self.precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
+    
+    def run(self):
+        if not self.gds_input_file_path.exists():
+            self.result = False
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} {self.gds_input_file_path.name}, GDS file was not found.")
+            return self.result
+
+        self.result = run_illegal_cellname_check(self.gds_input_file_path)
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The GDS file, {self.gds_input_file_path.name}, has no Illegal Cellnames errors.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The GDS file, {self.gds_input_file_path.name}, has Illegal Cellnames.")
+        return self.result
+
+class TopcellCheck(CheckManager):
+    __ref__ = 'topcell_check'
+    __surname__ = 'Top Cell Check'
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+        self.gds_input_file_path = self.precheck_config['input_directory'] / f"gds/{project_config['user_module']}.gds"
+    
+    def run(self):
+        if not self.gds_input_file_path.exists():
+            self.result = False
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} {self.gds_input_file_path.name}, GDS file was not found.")
+            return self.result
+
+        self.result = check_top_cells(self.gds_input_file_path)
+        if self.result:
+            logging.info(f"{{{{{self.__surname__} CHECK PASSED}}}} The GDS file, {self.gds_input_file_path.name}, has exactly 1 topcell.")
+        else:
+            logging.warning(f"{{{{{self.__surname__} CHECK FAILED}}}} The GDS file, {self.gds_input_file_path.name}, has no topcell or multiple topcells.")
+        return self.result
 
 class KlayoutMetalMinimumClearAreaDensity(KlayoutDRC):
     __ref__ = 'klayout_met_min_ca_density'
@@ -517,6 +589,7 @@ open_source_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
     (Defaults.__ref__, Defaults),
     (Documentation.__ref__, Documentation),
+    (TopcellCheck.__ref__, TopcellCheck),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
     (PDNMulti.__ref__, PDNMulti),
@@ -529,6 +602,8 @@ open_source_checks = OrderedDict([
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
     (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (SpikeCheck.__ref__, SpikeCheck),
+    (IllegalCellnameCheck.__ref__, IllegalCellnameCheck),
     (Oeb.__ref__, Oeb),
     (Lvs.__ref__, Lvs),
 ])
@@ -536,6 +611,7 @@ open_source_checks = OrderedDict([
 # Note: list of checks for a private project
 private_checks = OrderedDict([
     (Makefile.__ref__, Makefile),
+    (TopcellCheck.__ref__, TopcellCheck),
     (Consistency.__ref__, Consistency),
     (GpioDefines.__ref__, GpioDefines),
     (MetalCheck.__ref__, MetalCheck),
@@ -547,6 +623,8 @@ private_checks = OrderedDict([
     (KlayoutMetalMinimumClearAreaDensity.__ref__, KlayoutMetalMinimumClearAreaDensity),
     (KlayoutPinLabelPurposesOverlappingDrawing.__ref__, KlayoutPinLabelPurposesOverlappingDrawing),
     (KlayoutZeroArea.__ref__, KlayoutZeroArea),
+    (SpikeCheck.__ref__, SpikeCheck),
+    (IllegalCellnameCheck.__ref__, IllegalCellnameCheck),
     (Oeb.__ref__, Oeb),
     (Lvs.__ref__, Lvs),
 ])

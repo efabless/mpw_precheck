@@ -1,0 +1,771 @@
+#!/bin/bash
+# usage: gdsArea0 [-n] [--keepZLpath] [--keepSpikep] [--path2ply] [--smerge] [--odd] [-m <outMarker>] <gdsFileIn> [ <gdsFileOut> ]
+#
+# Process all layers, all cells, all cells: Find zero-area shapes or spike-path shapes.
+# If gdsFileOut given: then delete zero-area shapes & convert spike-paths to polygon, write new output file.
+#
+# Else report count of number of such shapes found.
+# If --keepZLPath is NOT given, then by default count (and opt. delete) zero-langth-paths.
+#   Zero-langth-paths are determind by having all points identical (typically just two).
+# If --keepSpikep is NOT given, then by default count (& opt. convert) spike-paths (to polygon).
+#   Spike means path reverses on itself (NOT: general self-intersection). e.g.
+#   has 3 points a,b,c IN SEQUENCE such that segments a-b & b-c: have a non-zero SEGMENT of intersection b-d.
+#   If a 1st spike in a path is found, no more are searched for in that same path.
+#   If path num_points < 3, the path is not checked for spikes.
+#
+# If --path2ply : then ALL paths are converted to (self-merged) polygon. No path zero-length or spike
+# checks are done.
+# In absence of --path2ply, only spike-paths are converted to (self-merged) polygon.
+#
+# If --smerge : then ALL polygons are self-merged. If gdsOdd (i.e. klayout's odd_polygon check) flags
+# polygons, even after --path2ply, this is last resort "fix" of odd-polygons, but will be slow full-chip.
+# In absence of --smerge, only spike-paths are converted to (self-merged) polygon.
+#
+# NOTE: With --keepZLpath less work is done (FASTER: don't examine path point-list).
+# This is regardless if passive or not, so reporting of counts is accurate.
+# 
+# WARNING: if outFile is RELATIVE-PATH it is written in SAME-DIR as input-GDS.
+# WARNING: For modes that self-merge or convert paths-to-polygon: You should do layer-xor's to check results for weirdness/lossage.
+#
+# Exit status (does not work in klayout 0.23.11; does in 0.24 and later):
+#  1 : I/O error or other internal error (uncaught exceptions).
+#  2...127 : means 1... zero-area or spike shapes found. If over 126 such shapes, status is 127 max.
+#  0 : zero-area or spike shapes found.
+#   If process dies thru signal, exit status is 128+SIGNUM, so that range is reserved.
+#   i.e. if kernel oom-killer sends kill -9: status=137.
+#
+# TODO: Redo self-merge if possible, instead of EdgeProcessor's simple_merge_p2p(), use Regions alone
+# or in combination with strange_polygon_check(). Currently self-merge is NOT selective, to only work
+# on shapes known to be odd/strange (twisted, self-overlap...).
+#
+# Runs klayout in batch AND edit-mode.
+# (klayout requirement is this script-name *must* end in .rb).
+#
+# Shebang for: no outer ruby interpreter; generalize arg passing to script.
+# for-bash: re-quote args, to import from an env-var
+x=%{
+  [[ "$1" == "--version" || "$1" == "-v" ]] && exec klayout -b -v    # pass-thru -v
+
+  export _M0=
+  for i in "$@" ; do i=${i//\\/\\\\}; _M0="$_M0${_M0:+,}'${i//\'/\'}'"; done
+
+  exec klayout -e -b -r "$0[rb]" -rd tag="$_M0"   # the [rb] suffix forces ruby-script-mode, so script name need not end in .rb
+  # exec klayout -e -z -nc -r "$0" -rd tag="$_M0"
+  # tag= is NOT USED, cosmetic: So process-listing shows the arguments, and a
+  # user can distinguish one process from another, despite running same klayout-script.
+}
+# for-ruby:
+
+argv=eval("[ " + ENV["_M0"] +" ]")   # re-parse args from env-var
+# puts "argv.size=#{argv.size}"
+# argv.each{ |v| puts v }
+
+  thisScript = $0
+  prog="gdsArea0"
+  usage = "Usage: #{prog} [options] [-m <markerOut>] <gdsFileIn> [ <gdsFileOut> ]"
+  usage += "\n   Find (optionally delete) zero-area objects and optionally write modified gds out."
+  usage += "\n   Note: --odd is hierarchical; see separate gdsOdd drc-script which currently reports as-if-flat (at toplevel)."
+  usage += "\n   If checking path-spikes & odd-polygons there will be DOUBLE-COUNTING of errors."
+  usage += "\n   For: --smerge --path2ply --odd : 1st two should 'fix' odds, so --odd (run last) is a waste (or a self-check)."
+  usage += "\n   WARNING: if outFile is RELATIVE-PATH it is written in SAME-DIR as input-GDS."
+  usage += "\n   WARNING: Zero-length path may convert-to-polygon with non-zero area: Different result from (as here) deleting it."
+  usage += "\n   WARNING: For non-spike path acute-angles there is no automated 'fix'. Spikes trigger path2polygon."
+  usage += "\n   WARNING: With output file, a path-spike triggers immediate path2polygon: rest of path NOT-CHECKED for acute-angles."
+  usage += "\n   WARNING: Any modes that self-merge or convert-to-polygon: You should do layer-xors to check for weirdness, unexpected effects."
+  require 'optparse'
+
+  if argv.empty?
+    argv << '--help'
+  end
+
+  o = {:writeAlways=>true, :delZLp=>true, :cvtSpike=>true, :cvtPath=>false, :smerge=>false, :verb=>false, :odd=>false, :mrkOutf=>nil}
+  OptionParser.new do |opts|
+    opts.banner = usage
+    opts.on("-n", "Don't write gdsOutFile IF NO SHAPES DELETED/CONVERTED. Default, if outFile given: always write.") do
+      o[:writeAlways] = false
+    end
+    opts.on("-V", "Verbose: To stdout, every problem shape report: cellname, layer-purpose-pair, at least one relevant coordinate.") do
+      o[:verb] = true
+    end
+    opts.on("--keepZLpath", "Don't check for (& opt. delete) Zero-Length paths. Default: count & delete them. Determine by all points are the same.") do
+      o[:delZLp] = false
+    end
+    opts.on("--keepSpikep", "Don't check for (& opt. convert-to-poly) paths with spikes. Default: count & convert/delete.") do
+      o[:cvtSpike] = false
+    end
+    opts.on("--path2ply", "Convert ALL paths to polygons; no zero-length or path spike checks done. Default: del len-0 & convert only spike-paths to polygon.") do
+      o[:cvtPath] = true
+      o[:delZLp] = false
+      o[:cvtSpike] = false
+    end
+    opts.on("--smerge", "Self-merge ALL polygons; Default: don't touch/process existing polygons. This opt. last resort to fix odd_polygons.") do
+      o[:smerge] = true
+    end
+    opts.on("--odd", "*AFTER* other operations, if any: report odd-polyons (self-intersecting...); polygon & path are checked, may be odd; Default: don't report odds.") do
+      o[:odd] = true
+    end
+    opts.on("-m <markerOutFile>", "Optional klayout marker-DB output file. Relative paths are relative to dir of <gdsFileIn>.") do |file|
+      o[:mrkOutf] = file
+    end
+    opts.on("-v", "--version", "version: pass-thru, JUST show klayout version") do
+      exec "klayout -b -v"
+    end
+    opts.on("--help", "show usage") do
+      puts opts
+      exit 1
+    end
+    opts.on("--usage", "show usage") do
+      puts opts
+      exit 1
+    end
+  end.parse!(argv)   # default constant ARGV? Doesn't work here: not true ruby.
+  # "!" on end of parse: argv parameter is MODIFIED by OptionParser to delete the processed options.
+
+  # if (o[:smerge] || o[:cvtPath]) && o[:odd]
+  if o[:odd]
+    puts "WARNING: --odd runs last, after other behaviors like --smerge, --path2ply which esp. act to 'fix' most odd-polygons."
+  end
+
+  if argv.length < 1 || argv.length > 2
+    puts "ERROR, not 1 or 2 arguments. #{usage}"
+    exit 1
+  end
+f = argv[0]
+# c = argv[1]
+fout = argv[1]
+
+if f == ""
+  puts "ERROR: insufficient arguments. #{usage}"
+  exit 1
+end
+
+doDel = fout && (fout != "") # actively do deletes IFF given an output file arg.
+# Delete possiblies are:
+#   zero-area shapes, zero-length-paths, spike-paths (source path deleted after converted to polygon)
+# NOTE: non-spike path acute-angles don't alone trigger path2poly nor delete: There is no automated 'fix'.
+
+include RBA   # <-- needed for: SaveLayoutOptions
+ep = RBA::EdgeProcessor::new
+
+begin
+
+# get SIGN of the numeric arg: 0 for x==0, -1 for x<0, 1 for x>0
+def sgn(x) x<=>0; end
+
+# format an "x;y" ordinate-pair into a string, scaling by (global) $dbu
+def pf(x, y)
+  # like: "#{x*dbu};#{y*dbu}"   but using string-format %g to make floats more compact
+  "%g;%g" % [ x*$dbu, y*$dbu ]
+end
+
+# For KNOWN-OCTAGONAL deltaX,deltaY, return a direction: 0-7 for each 45-degrees counterclockwise from east(0).
+OctaDirs = [[1,0], [1,1], [0,1], [-1,1], [-1,0], [-1,-1], [0,-1], [1,-1]]
+def octaDir(x,y)
+      OctaDirs.find_index([sgn(x), sgn(y)])
+end
+
+def test_odir()
+  pairs = [[5,0], [5,5], [0,5], [-5,5], [-5,0], [-5,-5], [0,-5], [5,-5]]
+
+  pairs.each { |p|
+    (x, y) = p
+    puts "test x,y: #{x},#{y}  odir: #{OctaDirs.find_index([sgn(x), sgn(y)])}"
+  } 
+end
+
+# reverse an octagonal direction (rotate 180 degrees)
+def octaDirr(dir) (dir+4) % 8; end
+
+# determine angle between two vectors, in radians and degrees.
+# Ideally also return signed-cosine: so that negative-value establishes acute-angle.
+#
+# This avoids squares & square-root, just single trig-function: atan2()
+#   Credit: https://stackoverflow.com/a/3487062
+PI2 = Math::PI / 2.0
+PI4 = Math::PI / 4.0
+def angleVec( x1, y1, x2, y2)
+  dot   = x1 * x2 + y1 * y2
+  cross = x1 * y2 - y1 * x2
+  rad = Math.atan2(cross, dot)
+  deg = rad * 180.0 / Math::PI
+  acute = (rad.abs() > PI2)
+  [rad, deg, acute]
+end
+
+def test_angleVec
+  mag=5
+  a0 = 0.0
+  (x1, y1) = [mag, 0]
+  for ang in (-180..180).step(45) do
+    rad = ang*Math::PI/180.0
+    x2 = mag * Math.cos(rad)
+    y2 = mag * Math.sin(rad)
+    (r, d, acute) = angleVec(x1, y1, x2, y2)
+    dif = ang - a0 - d
+    puts "p1:% 10f % 10f  p2:% 10f % 10f, deg:% 11.6f -> d:% 11.6f r:% 11.6f e:%12g AC:%s" % [x1, y1, x2, y2, ang, d, r, dif, acute]
+  end
+  puts ""
+
+  for ang in (-179..181).step(45) do
+    rad = ang*Math::PI/180.0
+    x2 = mag * Math.cos(rad)
+    y2 = mag * Math.sin(rad)
+    (r, d, acute) = angleVec(x1, y1, x2, y2)
+    dif = ang - a0 - d
+    puts "p1:% 10f % 10f  p2:% 10f % 10f, deg:% 11.6f -> d:% 11.6f r:% 11.6f e:%12g AC:%s" % [x1, y1, x2, y2, ang, d, r, dif, acute]
+  end
+  puts ""
+  
+  a0 = 45.0
+  (x1, y1) = [mag, mag]
+  for ang in (134.99999..135.00001).step(0.000001) do
+    rad = ang*Math::PI/180.0
+    x2 = mag * Math.cos(rad)
+    y2 = mag * Math.sin(rad)
+    (r, d, acute) = angleVec(x1, y1, x2, y2)
+    dif = ang - a0 - d
+    puts "p1:% 10f % 10f  p2:% 10f % 10f, deg:% 11.6f -> d:% 11.6f r:% 11.6f e:%12g AC:%s" % [x1, y1, x2, y2, ang, d, r, dif, acute]
+  end
+end
+
+# Find manhattan-length between points. Meaning max of: abs(delta-x) abs(delta-y).
+# This is for very limited use in deciding which of two consective edges in path
+# is shorter. Therefore it can be crude.
+def pt2lenManh(x1, y1, x2, y2)
+  dx = (x1 - x2).abs()
+  dy = (y1 - y2).abs()
+  [dx, dy].max
+end
+
+# mrkShape = mkShortPathShp(lx2,ly2, lx,ly, x,y, w)
+# From three consective points (of a path centerline), representing two edges,
+# pick the shorter edge: Make a new Path-based Shape object from it, to use as as maker shape.
+def mkShortPathShp(lx2,ly2, lx,ly, x,y, w)
+  len1 = pt2lenManh(lx2,ly2, lx,ly     )
+  len2 = pt2lenManh(         lx,ly, x,y)
+  pt1 = RBA::Point.new(lx,ly)
+  if len1 <= len2
+    pt2 = RBA::Point.new(lx2,ly2)
+  else
+    pt2 = RBA::Point.new(x,y)
+  end
+  path = RBA::Path.new([pt1,pt2], w)
+  # For shape to seed a marker: must be a path-based Shape *inside* Shapes container.
+  # The Shapes insert() will take a Path and return such a (containerized) Shape.
+  shp = $shpsCont.insert(path)
+  path._destroy
+  pt1._destroy
+  pt2._destroy
+  shp
+end
+
+# mrkShape = mkEdgePairShp(lx2,ly2, lx,ly, x,y, w)
+# From three consective points (of a path centerline), representing two edges:
+# Make a new EdgePair-based Shape object from it, to use as as maker shape.
+def mkEdgePairShp(lx2,ly2, lx,ly, x,y)
+  e1 = RBA::Edge.new(lx2,ly2, lx,ly,    )
+  e2 = RBA::Edge.new(         lx,ly, x,y)
+  epair = RBA::EdgePair.new(e1, e2, true)  # true: symmetric
+
+  # For shape to seed a marker: must be a path-based Shape *inside* Shapes container.
+  # The Shapes insert() will take a Path and return such a (containerized) Shape.
+  shp = $shpsCont.insert(epair)
+  epair._destroy
+  shp
+end
+
+# test_angleVec
+# exit 9
+
+if doDel
+  if o[:writeAlways]
+    puts "Running #{prog} on file=#{f}, output to #{fout} always"
+  else
+    puts "Running #{prog} on file=#{f}, output to #{fout} only if there were deletes"
+  end
+else
+  puts "Running #{prog} on file=#{f} (passive, no gdsFileOut)"
+end
+puts "  args: #{ENV["_M0"]}"
+
+STDOUT.flush
+delZLp   = o[:delZLp]
+cvtSpike = o[:cvtSpike]
+cvtPath  = o[:cvtPath]
+smerge   = o[:smerge]
+mrkOutf  = o[:mrkOutf]   # nil if none
+doOdd    = o[:odd]
+doPaths = cvtPath || cvtSpike  # Shall we do ANY path-specific processing (beyond .area==0)?
+
+verb = o[:verb]
+$errs = 0
+area0 = 0
+area0Del = 0
+len0 = 0
+len0Del = 0
+pthSpike = 0
+pthOctaAcute = 0
+pthAnyAcute = 0
+npathCvt = 0
+nsmerged = 0
+nodd = 0
+del = 0
+
+# based in part on: https://www.klayout.de/forum/discussion/173/use-klayout-in-batch-mode
+lay = RBA::Layout.new
+lay.read(f)
+lay.update()
+lay.start_changes()  # update, start_changes ... end_changes: When editing layout in multiple steps: stop slow/internal db-updates until all done.
+
+$dbu = lay.dbu
+dbu=$dbu
+puts "dbu=#{dbu} #{dbu.class} inv:#{1/dbu}"
+
+mrk = nil
+if mrkOutf
+  mrk = RBA::ReportDatabase.new("gdsArea0 #{f}")
+  mrkTrans = RBA::DCplxTrans.new(dbu)
+  mrk.original_file = f
+  mrk.description = "gdsArea0 null-shapes & bad paths"
+  $shpsCont = RBA::Shapes.new()
+end
+  
+## source(f, c)
+# s = source(f)
+# layout = s.layout
+# target(fout)
+
+nbrBox  = 0  # crude total counts of # of shapes of these types (across all cells, all layers)
+nbrPath = 0
+nbrPoly = 0
+
+mrkCats = {}
+
+lay.each_cell { |cell|
+  cellName = cell.name
+  mrkCell = nil
+
+  lay.layer_indices.each { |li|
+    layer_info = lay.get_info(li)
+    mrkLpp = nil
+
+    cell.shapes(li).each { |shape|
+      pinfo = "c:#{cellName} l:#{layer_info}"
+
+      # TODO: must we check that shape is one of: box, polygon, path? What happens to text?
+      if !shape.is_valid? || shape.is_null? ||
+         !(shape.is_box? || shape.is_path? || shape.is_polygon?)
+        next
+      end
+      
+      is_box = shape.is_box?
+      is_pth = shape.is_path?
+      is_ply = shape.is_polygon?
+
+      typ = "box"      if is_box
+      typ = "path"     if is_pth
+      typ = "polygon"  if is_ply
+
+      nbrBox  += 1 if is_box
+      nbrPath += 1 if is_pth
+      nbrPoly += 1 if is_ply
+
+      dshape = shape.dbox     if is_box  # variants, where .to_s yields microns (floating-point)
+      dshape = shape.dpath    if is_pth
+      dshape = shape.dpolygon if is_ply
+
+      if shape.area == 0
+        area0 += 1
+        $errs += 1
+        mcat_s = "#{layer_info} Zero-Area: #{typ}"
+        puts "c:#{cellName} l:#{mcat_s} #{dshape.to_s}"
+
+        if mrk
+          mrkLpp = mrkCats[mcat_s]
+          if !mrkLpp
+            mrkLpp = mrk.create_category(mcat_s)
+            mrkCats[mcat_s] = mrkLpp
+          end
+
+          if !mrkCell
+            mrkCell = mrk.create_cell(cellName)
+          end
+
+          # create_item (unsigned long cell_id, unsigned long category_id, const CplxTrans trans, const Shape shape, bool with_properties = true)
+          # This works when shape is a box. TODO: Should work for path (since similar for ZLP works) but no sure this one's tested with path yet.
+          mrk.create_item(mrkCell.rdb_id(), mrkLpp.rdb_id(), mrkTrans, shape, false)
+        end
+        
+        if doDel
+          shape.delete
+          area0Del += 1
+          del += 1
+        end
+        # This zero-area shape may be a PATH, but we already counted/reported (& opt. deleted) it.
+        # If wasn't deleted, then we are not writing a new output-file.
+        # Either way for this shape: no purpose in further path-only checks.
+        next
+      end
+
+      if smerge && is_ply
+        # Unilateral polygon-to-polygons. Self-merge individual polygon, to resolve (possible) odd-polygons.
+        # Unlike 'SELF-MERGE-NOTES:' (below) this must pass shape.polygon (not bare shape).
+        result = ep.simple_merge_p2p([ shape.polygon ], false, false, 1)
+        result.each { |ply|
+          cell.shapes(li).insert(ply)
+        }
+        shape.delete
+        nsmerged += 1
+        next
+      end
+      
+      if !doPaths || !is_pth
+        next   # All rest of checks are PATH-specific.
+      end
+
+      if cvtPath
+        # Unilateral path-to-polygon (self-merged).
+
+        # SELF-MERGE-NOTES:
+        # If simple, no-merge version, leaves self-overlapping polygons flagged by odd_polygons:
+        #   cell.shapes(li).insert(shape.polygon)
+        # This works, and yields mix of box & polygons (can't pass just shape nor shape.path)
+        #   result = ep.simple_merge_p2p([ shape.polygon ], false, false, 1)
+        #
+        result = ep.simple_merge_p2p([ shape.polygon ], false, false, 1)
+        result.each { |ply|
+          cell.shapes(li).insert(ply)
+        }
+        shape.delete
+        npathCvt += 1
+        next
+      end
+
+      if delZLp
+        lastpt = nil
+        firstpt = nil
+        same = true
+        # walk the points. First time we identify at least two unique-points, skip: not a zero-length path.
+        shape.each_point { |pt|
+          if !firstpt
+            firstpt = pt
+          end
+          if lastpt && lastpt != pt
+            same = false
+            break
+          end
+          lastpt = pt
+        }
+        if same
+          if verb
+            # puts "c:#{cellName} l:#{layer_info} Zero-Length-Path: p0=(#{firstpt.x};#{firstpt.y} w=#{shape.path_width}" # .path_bgnext .path_endext .path_length .round_path?
+            # puts "c:#{cellName} l:#{layer_info} Zero-Length-Path: p0=(#{firstpt.x};#{firstpt.y} #{shape.to_s}"  # <-- if many points: too long
+          end
+          mcat_s = "#{layer_info} Path-Zero-Length"
+          puts "#{pinfo} Path-Zero-Length: #{dshape.to_s}"
+          len0 += 1
+          $errs += 1
+
+          if mrk
+            mrkLpp = mrkCats[mcat_s]
+            if !mrkLpp
+              mrkLpp = mrk.create_category(mcat_s)
+              mrkCats[mcat_s] = mrkLpp
+            end
+
+            if !mrkCell
+              mrkCell = mrk.create_cell(cellName)
+            end
+
+            # create_item (unsigned long cell_id, unsigned long category_id, const CplxTrans trans, const Shape shape, bool with_properties = true)
+            # This works when shape is a box, and a path.
+            mrk.create_item(mrkCell.rdb_id(), mrkLpp.rdb_id(), mrkTrans, shape, false)
+          end
+
+          if doDel
+            shape.delete
+            len0Del += 1
+          end
+
+          # If path was zero-length, we just counted/reported (opt. deleted) it;
+          # and not enough (min 3) unique points for spike check.
+          next
+        end
+      end
+
+      # To get here: Either skipped zero-length-path check; or it passed: at least two unique points found.
+      if cvtSpike
+        # Do spike check.
+        firstpt = nil
+        lastpt = nil
+        lastEdge = nil
+        pinfo2 = nil
+        locerr = 0  # index of error-count of THIS-PATH; in per-error detail lines, non-zero indicates MORE errors in SAME PATH.
+
+        pti = 0 # index of this path's points
+        pth = shape.path
+        pth.each_point { |pt|
+          if verb
+            # pinfo3 = "c:#{cellName} l:#{layer_info} p#{pti}=(#{pt.x};#{pt.y}) w=#{pth.width} np=#{pth.num_points}"
+            # puts pinfo3
+          end
+          if lastpt && lastpt == pt
+            pti += 1
+            next # skip redundant points
+          end
+          if !firstpt
+            firstpt = pt
+            lastpt = pt
+            pti += 1
+            # pinfo2 = "#{pinfo} p0=(#{dbu*(firstpt.x)};#{dbu*(firstpt.y)})"
+            pinfo2 = "#{pinfo} p0=(#{pf(firstpt.x,firstpt.y)})"
+            next
+          end
+
+          # from 2nd point onward: process an edge
+          x = pt.x
+          y = pt.y
+          lx = lastpt.x
+          ly = lastpt.y
+          dx = x-lx
+          dy = y-ly
+          octap = (dx.abs == dy.abs) || (dx == 0) || (dy == 0)  # edge is Octagonal?
+          odir = nil
+          odirr = nil
+          if octap
+            odir  = octaDir( dx,  dy) # octagonal direction 0-7
+            odirr = octaDir(-dx, -dy) # reverse direction
+            if verb
+              # puts "got dx,dy: #{dx},#{dy}, odir: #{odir}, odirr: #{odirr}"
+            end
+          end
+          if verb
+            # puts ".... edge: (#{lastpt.x};#{lastpt.y} - #{x};#{y}) d: #{dx};#{dy} o: #{octap.to_s}"
+          end
+
+          if lastEdge
+            # process an Edge-Pair
+            (px, py, poctap, podirr, lx2, ly2) = lastEdge
+
+            # if both edges octagonal ... integer math
+            if octap && poctap
+              # ... flag SPIKE if they are 180-degrees apart. (SIMPLE SPIKE)
+              if podirr == odir
+                $errs += 1
+                pthSpike += 1
+                # puts ".... octa-edge-pair: (#{px};#{py} - #{dx};#{dy}) SIMPLE-SPIKE"
+                mcat_s = "#{layer_info} Path-Spike"
+                puts "#{pinfo2}/#{locerr} Path-Spike ( #{pf(lx2,ly2)}, #{pf(lx,ly)}, #{pf(x,y)} )"
+                STDOUT.flush
+                locerr += 1
+
+                if mrk
+                  # make marker as Path representing shorter of two edges forming spike.
+                  mrkLpp = mrkCats[mcat_s]
+                  if !mrkLpp
+                    mrkLpp = mrk.create_category(mcat_s)
+                    mrkCats[mcat_s] = mrkLpp
+                  end
+                  if !mrkCell
+                    mrkCell = mrk.create_cell(cellName)
+                  end
+                  # make Path representing shorter of two edges forming spike.
+                  mrkShp = mkShortPathShp(lx2,ly2, lx,ly, x,y, pth.width)
+                  # create_item (unsigned long cell_id, unsigned long category_id, const CplxTrans trans, const Shape shape, bool with_properties = true)
+                  mrk.create_item(mrkCell.rdb_id(), mrkLpp.rdb_id(), mrkTrans, mrkShp, false)
+                  mrkShp.delete # _destroy
+                end
+
+                if doDel
+                  # See 'SELF-MERGE-NOTES:' above.
+                  result = ep.simple_merge_p2p([ shape.polygon ], false, false, 1)
+                  result.each { |ply|
+                    cell.shapes(li).insert(ply)
+                  }
+                  shape.delete
+                  npathCvt += 1
+                  break # stop processing more points/edges this-path (just deleted it); move on to next path.
+                end
+              elsif (((podirr-odir)+8)%8) < 2
+                # ... flag ACUTE if they are less-than 90-degrees apart.
+                $errs += 1
+                pthOctaAcute += 1
+                # puts ".... octa-edge-pair: (#{px};#{py} - #{dx};#{dy}) ACUTE-ANGLE"
+                mcat_s = "#{layer_info} Path-Acute/octa"
+                puts "#{pinfo2}/#{locerr} Path-Acute/octa ( #{pf(lx2,ly2)}, #{pf(lx,ly)}, #{pf(x,y)} )"
+                locerr += 1
+
+                if mrk
+                  # make Edge-pair from two Edges representing acute-angle.
+                  mrkLpp = mrkCats[mcat_s]
+                  if !mrkLpp
+                    mrkLpp = mrk.create_category(mcat_s)
+                    mrkCats[mcat_s] = mrkLpp
+                  end
+                  if !mrkCell
+                    mrkCell = mrk.create_cell(cellName)
+                  end
+                  # make EdgePair representing two edges forming angle.
+                  mrkShp = mkEdgePairShp(lx2,ly2, lx,ly, x,y)
+                  # create_item (unsigned long cell_id, unsigned long category_id, const CplxTrans trans, const Shape shape, bool with_properties = true)
+                  mrk.create_item(mrkCell.rdb_id(), mrkLpp.rdb_id(), mrkTrans, mrkShp, false)
+                  mrkShp.delete # _destroy
+                end
+
+              end
+            else
+              # non-octagonal: floating-point
+              # Get angle between edges. If negative: its acute.
+              res = angleVec(px, py, dx, dy)
+              (rad, deg, acute) = res
+              if acute
+                $errs += 1
+                pthAnyAcute += 1
+                mcat_s = "#{layer_info} Path-Acute/any/deg:#{"%g"%deg}"
+                puts "#{pinfo2}/#{locerr} Path-Acute/any/deg:#{"%g"%deg} ( #{pf(lx2,ly2)}, #{pf(lx,ly)}, #{pf(x,y)} )"
+                locerr += 1
+
+                if mrk
+                  # make Edge-pair from two Edges representing acute-angle.
+                  mrkLpp = mrkCats[mcat_s]
+                  if !mrkLpp
+                    mrkLpp = mrk.create_category(mcat_s)
+                    mrkCats[mcat_s] = mrkLpp
+                  end
+                  if !mrkCell
+                    mrkCell = mrk.create_cell(cellName)
+                  end
+                  # make EdgePair representing two edges forming angle.
+                  mrkShp = mkEdgePairShp(lx2,ly2, lx,ly, x,y)
+                  # create_item (unsigned long cell_id, unsigned long category_id, const CplxTrans trans, const Shape shape, bool with_properties = true)
+                  mrk.create_item(mrkCell.rdb_id(), mrkLpp.rdb_id(), mrkTrans, mrkShp, false)
+                  mrkShp.delete # _destroy
+                end
+              end
+            end
+          end
+          lastEdge = [dx, dy, octap, odirr, lx, ly]
+          lastpt = pt
+          pti += 1
+        }
+      end
+    }
+
+    # Run odd check. This is *after* (possible) self-merge & path2polygon, which 'fix' odd-polygons.
+    #
+    # TODO: use Region's strange_polygon_check:
+    #   reg = RBA::Region.new(cell.shapes(li))
+    #   strange = reg.strange_polygon_check
+    # but what next?: Find the source-shapes overlapping strange-shapes: on which to do selective self-merges?
+    # Hope to save time versus: Exhaustive self-merge of all polygons? But there's a cost to
+    # make the Region (of all the shapes on that layer), and to do the overlap back to the sources.
+    #
+    # Till then, at least use strange-shapes to form markers of their own.
+    # We use (DEPRECATED):
+    #   void create_items (unsigned long cell_id, unsigned long category_id, const CplxTrans trans, const Region region)
+    # replacement is: in Class RdbCategory, RdbCategory#scan_collection:
+    #   void scan_collection (RdbCell ptr cell, const CplxTrans trans, const Region region, bool flat = false, bool with_properties = true)
+    #
+    if doOdd
+      reg = RBA::Region.new(cell.shapes(li))
+      strange = reg.strange_polygon_check
+      count = strange.count
+      if count > 0
+        nodd += count
+        $errs += count
+        mcat_s = "#{layer_info} odd-polygon"
+        puts "c:#{cellName} l:#{mcat_s} (#{count})"
+
+        if mrk
+          mrkLpp = mrkCats[mcat_s]
+          if !mrkLpp
+            mrkLpp = mrk.create_category(mcat_s)
+            mrkCats[mcat_s] = mrkLpp
+          end
+
+          if !mrkCell
+            mrkCell = mrk.create_cell(cellName)
+          end
+          mrk.create_items(mrkCell.rdb_id(), mrkLpp.rdb_id(), mrkTrans, strange)
+        end
+        reg._destroy
+      end
+    end
+  }
+}
+del += len0Del
+
+if verb
+  puts "number shapes: box=#{nbrBox} path=#{nbrPath} poly=#{nbrPoly}"
+end
+
+if fout && fout != ""
+  if (! o[:writeAlways] ) && del == 0
+    puts "Skipped write of #{fout} due -n and nothing deleted."
+  else
+    lay.end_changes()     # only need end_changes if we are going to save/write modified data.
+    puts "writing #{fout} ..."
+    slo = SaveLayoutOptions.new
+    # Infer format from output filename (i.e *.oas => "OASIS"), includes auto-gzip based on .gz: .gds vs gds.gz 
+    slo.set_format_from_filename(fout)
+    lay.write(fout, slo)
+  end
+end
+
+if mrk
+  puts "writing marker-DB: #{mrkOutf} ..."
+  mrk.save(mrkOutf)
+end
+
+# puts "%8d total, among %d layers flagged, of %d source layers" % [total, errs, layers]
+# puts "#{area0} area-zero shapes,  #{area0Del} zero-length paths deleted."
+puts "%8d area-zero shapes,  %8d zero-area shapes deleted." % [area0, area0Del]
+if delZLp 
+  puts "%8d zero-length paths, %8d zero-length paths deleted." % [len0, len0Del]
+end
+if cvtSpike
+  puts "%8d path spikes" % [pthSpike]
+  puts "%8d path octagonal acute angles" % [pthOctaAcute]
+  puts "%8d path any-angle acute angles" % [pthAnyAcute]
+end
+if doPaths
+  puts "%8d paths2poly" % [npathCvt]
+end
+if smerge
+  puts "%8d self-merged polygons" % [nsmerged]
+end
+if doOdd
+  puts "%8d odd-polygon" % [nodd]
+end
+
+
+# if we roll-over to 256, exit-status seen by shell is zero.
+# uncaught I/O errors will yield (built-in) exit status of 1.
+stat = $errs
+if stat > 0
+  stat += 1  # reserve 1 for usage or thrown errors.
+end
+if stat > 127
+  stat = 127
+end
+
+puts "%8d total errors,      %8d total shapes deleted, #{stat} exit-status." % [$errs, del]
+
+# experimental: report own peak process-stats. BUT: output-file isn't really written
+# until we exit (during exit). So these results are not 100% accurate.
+# VmHWM: max-resident-size, VmPeak: max virtual-size.
+# don't need: pid=Process.pid
+if   File.readable?("/proc/self/status")
+  puts File.foreach("/proc/self/status").grep(/^(VmPeak|VmHWM)/)
+end
+
+end # end begin
+
+# does not work (to set exit-status) in 0.23.11. Does work in 0.24.2, 0.27.
+exit stat
+
+#
+# emacs syntax-mode:
+# Local Variables:
+# mode:ruby
+# End:
