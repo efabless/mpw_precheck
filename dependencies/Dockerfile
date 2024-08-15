@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2020 Efabless Corporation
+# SPDX-FileCopyrightText: 2024 Efabless Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,46 +16,39 @@
 # Note: to get cores or use gdb start like:   docker run --ulimit core=-1 --cap-add SYS_PTRACE ...
 
 # syntax = docker/dockerfile:1.0-experimental
-FROM centos:centos7 as build
-
-# ENV VARIABLES
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
-ENV LC_CTYPE en_US.UTF-8
+FROM rockylinux:9.3 as build
 
 # Common development tools and libraries (kitchen sink approach)
-RUN yum -y install deltarpm.x86_64 centos-release-scl && \
-    yum -y install devtoolset-8 devtoolset-8-libatomic-devel && \
-    yum -y install https://repo.ius.io/ius-release-el7.rpm && \
-    yum -y install -y python36u python36u-devel python36u-libs python36u-pip python36u-tkinter && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+RUN dnf -y update
+RUN dnf -y groupinstall "Development Tools"
 
-# uninstall current version of git and install latest version available in rhel/7
-RUN yum -y remove git && yum -y remove git-* && \
-    yum -y install https://repo.ius.io/7/x86_64/packages/g/git236-2.36.6-1.el7.ius.x86_64.rpm && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+RUN dnf -y install cairo-devel csh gperf && \
+    dnf -y install mesa-libGLU mesa-libGLU-devel ncurses-devel python3-devel python3-tkinter && \
+    dnf -y install readline-devel tcl-devel time.x86_64 tk tk-devel wget Xvfb && \
+    dnf -y --enablerepo=crb install epel-release nasm && \
+    dnf clean all
 
-# Set python 3.6 as default python3
-RUN alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 60
-RUN pip3.6 install --no-cache-dir --upgrade pip && \
-    pip3.6 install --no-cache-dir awscli boto3 colorama coloredlogs klayout numpy PySpice pyverilog pyyaml requests strsimpy
+# Install Python Requirements
+RUN pip3 install --no-cache-dir --upgrade pip && \
+    pip3 install --no-cache-dir awscli boto3 colorama coloredlogs klayout numpy PySpice pyverilog pyyaml requests strsimpy
 
-# General Dependencies
-RUN yum install -y tcllib tcl tk libjpeg libgomp libXext libSM libXft libffi cairo gettext Xvfb gcc-c++ gdb.x86_64 file.x86_64 time.x86_64 && \
-    yum install -y csh libglu libX11-devel ncurses-devel tcl-devel tk-devel wget && \
-    yum install -y patch && \
-    yum install -y m4 && \
-    yum install -y gettext-devel bison byacc readline-devel && \
-    yum install -y flex autotools-dev build-essential autoconf pkg-config nasm libtool automake autopoint && \
-    yum install -y iverilog && \
-    yum clean all && \
-    rm -rf /var/cache/yum
+# Installation for Iverilog
+ENV IVERILOG_ROOT=./iverilog
+RUN git clone https://github.com/steveicarus/iverilog.git $IVERILOG_ROOT
+WORKDIR $IVERILOG_ROOT
+RUN sh autoconf.sh && ./configure && make install
+
+# Download & Install Klayout
+ENV KLAYOUT_ROOT=./klayout
+RUN mkdir $KLAYOUT_ROOT
+WORKDIR $KLAYOUT_ROOT
+RUN wget https://www.klayout.org/downloads/RockyLinux_9/klayout-0.29.2-0.x86_64.rpm
+RUN dnf -y install ./klayout-0.29.2-0.x86_64.rpm && \
+    dnf clean all
 
 # Clone Magic
-ENV MAGIC_ROOT=./magic.
-RUN git clone --depth=1 --branch 8.3.452 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+ENV MAGIC_ROOT=./magic
+RUN git clone --depth=1 --branch 8.3.471 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
@@ -63,43 +56,20 @@ WORKDIR $MAGIC_ROOT
 # --disable-locking : recommended by tim due to cell-depth of sky130A PDK cells.
 # scl enable devtoolset-8 --  : use the devtoolset-8 gcc-8.x (not the native gcc-4.x).
 # Note: to use gdb start like:   docker run --ulimit core=-1 --cap-add SYS_PTRACE ...
-RUN scl enable devtoolset-8 -- ./configure --prefix=/build CFLAGS='-g -O0 -m64 -fPIC' && \
-    scl enable devtoolset-8 -- make -j4 && \
-    scl enable devtoolset-8 -- make install
+RUN ./configure --prefix=/build CFLAGS='-g -O0 -m64 -fPIC' &&  make -j4 && make install
 
 # Clone netgen
 ENV NETGEN_ROOT=./netgen
-RUN git clone --depth=1 --branch 1.5.254 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
+RUN git clone --depth=1 --branch 1.5.272 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
 WORKDIR $NETGEN_ROOT
-RUN scl enable devtoolset-8 -- ./configure --prefix=/build && \
-    scl enable devtoolset-8 -- make -j4 && \
-    scl enable devtoolset-8 -- make install
+RUN ./configure --prefix=/build && make -j4 && make install
 
 # Clone cvc
+RUN dnf -y --enablerepo=crb install libstdc++-static
 ENV CVC_ROOT=./cvc_rv
 RUN git clone --depth=1 --branch v1.1.5 https://github.com/d-m-bailey/cvc.git ${CVC_ROOT}
 WORKDIR $CVC_ROOT
-RUN scl enable devtoolset-8 -- autoreconf -vif && \
-    scl enable devtoolset-8 -- ./configure --disable-nls --prefix=/build && \
-    scl enable devtoolset-8 -- sed -i 's/api.parser.class/parser_class_name/' src/cdlParser.yy && \
-    scl enable devtoolset-8 -- make -j4 && \
-    scl enable devtoolset-8 -- make install
-
-# Install Ruby 3.0.2
-ENV RUBY_ROOT=./ruby
-WORKDIR $RUBY_ROOT
-RUN wget https://cache.ruby-lang.org/pub/ruby/3.0/ruby-3.0.2.tar.gz
-RUN tar -xzf ruby-3.0.2.tar.gz
-RUN cd ruby-3.0.2 && scl enable devtoolset-8 -- ./configure --disable-install-doc -C --enable-shared && scl enable devtoolset-8 -- make install
-ENV PATH=/usr/local/bin:$PATH
-
-# Download & Install Klayout
-ENV KLAYOUT_ROOT=./klayout
-RUN mkdir $KLAYOUT_ROOT
-WORKDIR $KLAYOUT_ROOT
-RUN wget https://github.com/efabless/klayout_package/releases/download/klayout-0.28.12-0/klayout-0.28.12-0.tar.gz
-RUN tar -xzf klayout-0.28.12-0.tar.gz
-RUN yum install -y ./klayout-0.28.12-0.x86_64.rpm
+RUN autoreconf -vif && ./configure --disable-nls --prefix=/build && sed -i 's/api.parser.class/parser_class_name/' src/cdlParser.yy && make -j4 && make install
 
 # ENV VARIABLES
 ENV BUILD_PATH=/build/
