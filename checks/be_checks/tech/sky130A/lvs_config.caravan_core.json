@@ -2,9 +2,9 @@
 	"STD_CELL_LIBRARY": "sky130_fd_sc_hd",
 	"INCLUDE_CONFIGS": [
 		"$LVS_ROOT/tech/$PDK/lvs_config.base.json",
-		"$UPRJ_ROOT/lvs/user_project_wrapper/lvs_config.json"
+		"$UPRJ_ROOT/lvs/user_analog_project_wrapper/lvs_config.json"
 	],
-	"TOP_SOURCE": "caravel_core",
+	"TOP_SOURCE": "caravan_core",
 	"TOP_LAYOUT": "$TOP_SOURCE",
 	"EXTRACT_FLATGLOB": [
 		""
@@ -13,10 +13,11 @@
 		""
 	],
 	"EXTRACT_CREATE_SUBCUT": [
-		"*user_project_wrapper"
+		"*user_analog_project_wrapper"
 	],
 	"LVS_FLATTEN": [
-		""
+		"caravan_signal_routing",
+		"empty_macro_1"
 	],
 	"LVS_NOFLATTEN": [
 		""
@@ -33,7 +34,7 @@
 		"$CARAVEL_ROOT/verilog/gl/caravel_clocking.v",
 		"$CARAVEL_ROOT/verilog/gl/empty_macro.v",
 		"$CARAVEL_ROOT/verilog/gl/gpio_logic_high.v",
-		"$CARAVEL_ROOT/verilog/gl/housekeeping.v",
+		"$CARAVEL_ROOT/verilog/gl/housekeeping_alt.v",
 		"$CARAVEL_ROOT/verilog/gl/manual_power_connections.v",
 		"$CARAVEL_ROOT/verilog/gl/mgmt_protect_hv.v",
 		"$CARAVEL_ROOT/verilog/gl/mprj2_logic_high.v",
@@ -43,7 +44,7 @@
 		"$CARAVEL_ROOT/verilog/gl/xres_buf.v",
 		"$TAPEOUT_ROOT/verilog/gl/gpio_defaults_block_*.v",
 		"$TAPEOUT_ROOT/verilog/gl/user_id_programming.v",
-		"$TAPEOUT_ROOT/verilog/gl/caravel_core.v"
+		"$TAPEOUT_ROOT/verilog/gl/$TOP_SOURCE.v"
 	],
 	"LAYOUT_FILE": "$UPRJ_ROOT/gds/caravel.gds"
 }

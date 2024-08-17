@@ -1,0 +1,39 @@
+por_l input min@0.0 max@1.8
+porb_h input min@0.0 max@3.3
+porb_l input min@0.0 max@1.8
+resetb_h input min@0.0 max@3.3
+resetb_l input min@0.0 max@1.8
+vccd1 power 1.8
+vdda1 power 3.3
+vssa1 power 0.0
+vssio power 0.0
+vccd2 power 1.8
+vddio power 3.3
+vssa2 power 0.0
+vdda2 power 3.3
+vdda power 3.3
+vssd1 power 0.0
+vssd2 power vssd1
+vccd power 1.8
+vssa power 0.0
+vssd power 0.0
+analog_io
+analog_noesd_io
+gpio_analog_en[*] expectMin@0.0 expectMax@1.8
+gpio_analog_pol[*] expectMin@0.0 expectMax@1.8
+gpio_analog_sel[*] expectMin@0.0 expectMax@1.8
+gpio_dm0[*] expectMin@0.0 expectMax@1.8
+gpio_dm1[*] expectMin@0.0 expectMax@1.8
+gpio_dm2[*] expectMin@0.0 expectMax@1.8
+gpio_holdover[*] expectMin@0.0 expectMax@1.8
+gpio_ib_mode_sel[*] expectMin@0.0 expectMax@1.8
+gpio_in[*] input min@0.0 max@1.8
+gpio_in_h[*] input min@0.0 max@3.3
+gpio_inp_dis[*] expectMin@0.0 expectMax@1.8
+gpio_loopback_one[*] input 1.8
+gpio_loopback_zero[*] input 0.0
+gpio_oeb[*] expectMin@0.0 expectMax@1.8
+gpio_out[*] expectMin@0.0 expectMax@1.8
+gpio_slow_sel[*] expectMin@0.0 expectMax@1.8
+gpio_vtrip_sel[*] expectMin@0.0 expectMax@1.8
+mask_rev[*] input min@0.0 max@1.8

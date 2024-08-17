@@ -75,18 +75,18 @@ if [[ ! -v EXTRACT_FLATGLOB ]]; then
 	exit 1
 fi
 
-export TOP=${2:-$TOP_LAYOUT}
+export TOP_LAYOUT=${2:-$TOP_LAYOUT}
 export LAYOUT_FILE=${3:-$LAYOUT_FILE}
 if [[ $EXTRACT_LAYOUT == no ]]; then
 	export LAYOUT_FILE=
 fi
 
-echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$TOP}"
+echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$TOP_LAYOUT}"
 echo "LOG_ROOT    : ${LOG_ROOT:=$WORK_ROOT}"
 echo "SIGNOFF_ROOT: ${SIGNOFF_ROOT:=$WORK_ROOT}"
 export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
 
-echo "TOP: $TOP"
+echo "TOP_LAYOUT: $TOP_LAYOUT"
 echo "LAYOUT: $LAYOUT_FILE"
 echo "EXTRACT_FLATGLOB: $(echo $EXTRACT_FLATGLOB | sed -e 's/#[^ ]*//g' -e 's/ /\n /g')"
 echo "EXTRACT_ABSTRACT: $(echo $EXTRACT_ABSTRACT | sed -e 's/#[^ ]*//g' -e 's/ /\n /g')"
@@ -128,8 +128,8 @@ if [[ $EXTRACT_LAYOUT == yes ]]; then
 		#  1. Extract gds_file with well connectivity
 		env CIFIN_STYLE="" EXTRACT_STYLE="" LOG_FILE=ext.log $LVS_ROOT/run_extract >$WORK_ROOT/ext.out 2>&1
 		#  2. Remove well connections and disconnected nets.
-		sed -f $LVS_ROOT/tech/$PDK/remove_well.sed $EXT_DIR/$TOP.gds.spice |
-			awk -f $LVS_ROOT/scripts/remove_disconnect.awk - >$EXT_DIR/$TOP.gds.nowell.spice
+		sed -f $LVS_ROOT/tech/$PDK/remove_well.sed $EXT_DIR/$TOP_LAYOUT.gds.spice |
+			awk -f $LVS_ROOT/scripts/remove_disconnect.awk - >$EXT_DIR/$TOP_LAYOUT.gds.nowell.spice
 	) &
 
 	export EXT_DIR=$WORK_ROOT/nowell.ext
@@ -138,7 +138,7 @@ if [[ $EXTRACT_LAYOUT == yes ]]; then
 		#  3. Extract gds_file without well connectivity
 		env CIFIN_STYLE="nowell" EXTRACT_STYLE="nowell" LOG_FILE=nowell.ext.log $LVS_ROOT/run_extract >$WORK_ROOT/nowell.ext.out 2>&1
 		#  4. Remove disconnected nets.
-		awk -f $LVS_ROOT/scripts/remove_disconnect.awk $EXT_DIR/$TOP.gds.spice >$EXT_DIR/$TOP.gds.nowell.spice
+		awk -f $LVS_ROOT/scripts/remove_disconnect.awk $EXT_DIR/$TOP_LAYOUT.gds.spice >$EXT_DIR/$TOP_LAYOUT.gds.nowell.spice
 	) &
 
 	wait
@@ -150,14 +150,14 @@ and/or $LOG_ROOT/nowell.ext.log"
 	fi
 else
 	# No gds_file so LVS only. Check for existing valid extraction results.
-	if [[ ! -f $WORK_ROOT/ext/$TOP.gds.nowell.spice ]]; then
-		echo "Error: missing $WORK_ROOT/ext/$TOP.gds.nowell.spice"
+	if [[ ! -f $WORK_ROOT/ext/$TOP_LAYOUT.gds.nowell.spice ]]; then
+		echo "Error: missing $WORK_ROOT/ext/$TOP_LAYOUT.gds.nowell.spice"
 		echo "Specify gds_file to create"
 		echo "usage: run_scheck top_block [gds_file]"
 		exit 2
 	fi
-	if [[ ! -f $WORK_ROOT/nowell.ext/$TOP.gds.nowell.spice ]]; then
-		echo "Error: missing $WORK_ROOT/nowell.ext/$TOP.gds.nowell.spice"
+	if [[ ! -f $WORK_ROOT/nowell.ext/$TOP_LAYOUT.gds.nowell.spice ]]; then
+		echo "Error: missing $WORK_ROOT/nowell.ext/$TOP_LAYOUT.gds.nowell.spice"
 		echo "Specify gds_file to create"
 		echo "usage: run_scheck top_block [gds_file]"
 		exit 2

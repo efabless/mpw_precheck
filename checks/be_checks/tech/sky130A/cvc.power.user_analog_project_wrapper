@@ -16,3 +16,7 @@ la_oenb[*] input min@0.0 max@1.8
 io_in[*] input min@0.0 max@1.8
 io_in_3v3[*] input min@0.0 max@3.3
 user_clock2 input min@0.0 max@1.8
+io_out[0] expectMin@0.0 expectMax@1.8
+io_out[1] expectMin@0.0 expectMax@1.8
+io_out[26] expectMin@0.0 expectMax@1.8
+io_oeb[0] expectMin@0.0 expectMax@1.8

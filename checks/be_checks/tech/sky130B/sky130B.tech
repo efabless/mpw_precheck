@@ -14,7 +14,7 @@ tech
 end
 
 version
- version 1.0.470-0-g6d4d117
+ version 1.0.493-0-g0fe599b
  description "SkyWater SKY130: Open Source rules and DRC"
  requires magic-8.3.411
 end
@@ -289,7 +289,7 @@ types
 
 # Miscellaneous
  -block  glass
- -block  fillblock,fillblock4
+ -block  fillblock
   comment comment
  -comment obscomment
 
@@ -420,7 +420,7 @@ aliases
   psub		pwell
 
   obstypes	obswell,mvobsactive,obsactive,obsli,obsmcon,obsm1,obsm2,obsm3,obsm4,obsm5,obsmrdl,obscomment
-  blocktypes	fillblock,fillblock4
+  blocktypes	fillblock
   
 end
 
@@ -570,7 +570,6 @@ styles
   error_s   error_waffle
   error_ps  error_waffle
   fillblock cwell
-  fillblock4 cwell
 
   obswell   cwell
   obsactive implant4
@@ -1033,6 +1032,7 @@ style gdsii
 	bloat-all mvvaractor *mvnsd
 	and-not hvntm_block
         grow 185
+	bridge 700 700
  	grow 	345
  	shrink 	345
 	and-not hvntm_block
@@ -1409,19 +1409,19 @@ style gdsii
  layer FILLOBSFOM  obsactive
 	calma	22 24
 
- layer FILLOBSM1 fillblock,fillblock4
+ layer FILLOBSM1 fillblock,obsm1
  	calma 	62 24
 
- layer FILLOBSM2 fillblock,fillblock4
+ layer FILLOBSM2 fillblock,obsm2
  	calma 	105 52
 
- layer FILLOBSM3 fillblock,fillblock4
+ layer FILLOBSM3 fillblock,obsm3
  	calma 	107 24
 
- layer FILLOBSM4 fillblock,fillblock4
+ layer FILLOBSM4 fillblock,obsm4
  	calma 	112 4
 
- layer FILLOBSM5 fillblock,fillblock4
+ layer FILLOBSM5 fillblock,obsm5
 	calma	117 4
 
  render	DNWELL 	cwell       -0.1    0.1
@@ -1481,14 +1481,6 @@ style drc
 	bloat-all varactor,mvvaractor *poly
 	grow 150
 	and-not nwell
-
- # Define MiM cap bottom plate for spacing rule
- templayer mim_bottom
- bloat-all *mimcap *metal3
-
- # Define MiM2 cap bottom plate for spacing rule
- templayer mim2_bottom
- bloat-all *mimcap2 *metal4
 
  # Define areas where mim2cc is inside the boundary of mimcc
  # by more than the contact surround
@@ -1701,6 +1693,7 @@ style drc
  bloat-all mvvaractor *mvnsd
  and-not hvntm_block
  grow 185
+ bridge 700 700
  grow    345
  shrink  345
  and-not hvntm_block
@@ -1996,7 +1989,7 @@ style wafflefill variants (),(tiled)
 # diff or poly.
 #---------------------------------------------------------
 
- templayer      obstruct_li_coarse allli,obsli,lifill,fillblock,fillblock4
+ templayer      obstruct_li_coarse allli,obsli,lifill,fillblock
         grow    2800
 	or	alldiff,allpoly
 	grow	200
@@ -2008,7 +2001,7 @@ style wafflefill variants (),(tiled)
         shrink  1495
         grow    1495
 
- templayer      obstruct_li_medium allli,obsli,lifill,fillblock,fillblock4
+ templayer      obstruct_li_medium allli,obsli,lifill,fillblock
         grow    2500
 	or	lifill_coarse
 	grow	300
@@ -2021,7 +2014,7 @@ style wafflefill variants (),(tiled)
         shrink  745
         grow    745
 
- templayer      obstruct_li_fine allli,obsli,lifill,fillblock,fillblock4
+ templayer      obstruct_li_fine allli,obsli,lifill,fillblock
 	or	lifill_coarse,lifill_medium
 	grow	300
 	or	alldiff,allpoly
@@ -2042,7 +2035,7 @@ style wafflefill variants (),(tiled)
 # MET1 fill
 #---------------------------------------------------
 
- templayer      obstruct_m1_coarse allm1,obsm1,m1fill,fillblock,fillblock4
+ templayer      obstruct_m1_coarse allm1,glass,obsm1,m1fill,fillblock
         grow    3000
  templayer	met1fill_coarse topbox
         # slots   0 2000 200 0 2000 200 700 0
@@ -2052,7 +2045,7 @@ style wafflefill variants (),(tiled)
         shrink  995
         grow    995
 
- templayer      obstruct_m1_medium allm1,obsm1,m1fill,fillblock,fillblock4
+ templayer      obstruct_m1_medium allm1,glass,obsm1,m1fill,fillblock
         grow    2800
 	or	met1fill_coarse
         grow    200
@@ -2063,7 +2056,7 @@ style wafflefill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m1_fine allm1,obsm1,m1fill,fillblock,fillblock4
+ templayer      obstruct_m1_fine allm1,glass,obsm1,m1fill,fillblock
         grow    300
 	or	met1fill_coarse,met1fill_medium
         grow    200
@@ -2074,7 +2067,7 @@ style wafflefill variants (),(tiled)
         shrink  285
         grow    285
 
- templayer      obstruct_m1_veryfine allm1,obsm1,m1fill,fillblock,fillblock4
+ templayer      obstruct_m1_veryfine allm1,glass,obsm1,m1fill,fillblock
         grow    100
 	or	met1fill_coarse,met1fill_medium,met1fill_fine
         grow    200
@@ -2094,7 +2087,7 @@ style wafflefill variants (),(tiled)
 #---------------------------------------------------
 # MET2 fill
 #---------------------------------------------------
- templayer      obstruct_m2 allm2,obsm2,m2fill,fillblock,fillblock4
+ templayer      obstruct_m2 allm2,glass,obsm2,m2fill,fillblock
         grow    3000
  templayer	met2fill_coarse topbox
         # slots   0 2000 200 0 2000 200 700 350
@@ -2104,7 +2097,7 @@ style wafflefill variants (),(tiled)
         shrink  995
         grow    995
 
- templayer      obstruct_m2_medium allm2,obsm2,m2fill,fillblock,fillblock4
+ templayer      obstruct_m2_medium allm2,glass,obsm2,m2fill,fillblock
         grow    2800
 	or	met2fill_coarse
         grow    200
@@ -2115,7 +2108,7 @@ style wafflefill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m2_fine allm2,obsm2,m2fill,fillblock,fillblock4
+ templayer      obstruct_m2_fine allm2,glass,obsm2,m2fill,fillblock
         grow    300
 	or	met2fill_coarse,met2fill_medium
         grow    200
@@ -2126,7 +2119,7 @@ style wafflefill variants (),(tiled)
         shrink  285
         grow    285
 
- templayer      obstruct_m2_veryfine allm2,obsm2,m2fill,fillblock,fillblock4
+ templayer      obstruct_m2_veryfine allm2,glass,obsm2,m2fill,fillblock
         grow    100
 	or	met2fill_coarse,met2fill_medium,met2fill_fine
         grow    200
@@ -2146,7 +2139,7 @@ style wafflefill variants (),(tiled)
 #---------------------------------------------------
 # MET3 fill
 #---------------------------------------------------
- templayer      obstruct_m3 allm3,glass,obsm3,m3fill,fillblock,fillblock4
+ templayer      obstruct_m3 allm3,glass,obsm3,m3fill,fillblock
         grow    3000
  templayer	met3fill_coarse topbox
         # slots   0 2000 300 0 2000 300 700 700
@@ -2156,7 +2149,7 @@ style wafflefill variants (),(tiled)
         shrink  995
         grow    995
 
- templayer      obstruct_m3_medium allm3,glass,obsm3,m3fill,fillblock,fillblock4
+ templayer      obstruct_m3_medium allm3,glass,obsm3,m3fill,fillblock
         grow    2700
 	or	met3fill_coarse
         grow    300
@@ -2167,7 +2160,7 @@ style wafflefill variants (),(tiled)
         shrink  495
         grow    495
 
- templayer      obstruct_m3_fine allm3,glass,obsm3,m3fill,fillblock,fillblock4
+ templayer      obstruct_m3_fine allm3,glass,obsm3,m3fill,fillblock
         grow    200
 	or	met3fill_coarse,met3fill_medium
         grow    300
@@ -2178,17 +2171,17 @@ style wafflefill variants (),(tiled)
         shrink  285
         grow    285
 
- templayer      obstruct_m3_veryfine allm3,glass,obsm3,m3fill,fillblock,fillblock4
+ templayer      obstruct_m3_veryfine allm3,glass,obsm3,m3fill,fillblock
 	# Note: Adding 0.1 to waffle rule to clear wide spacing rule
         grow    100
 	or	met3fill_coarse,met3fill_medium,met3fill_fine
         grow    300
  templayer	met3fill_veryfine topbox
-        slots   0 400 300 0 400 300 150 200
+        slots   0 500 300 0 500 300 150 200
         and-not obstruct_m3_veryfine
 	and	topbox
-        shrink  195
-        grow    195
+        shrink  245
+        grow    245
 
  layer	MET3FILL met3fill_coarse
 	or	met3fill_medium
@@ -2201,7 +2194,7 @@ style wafflefill variants (),(tiled)
 #---------------------------------------------------
  templayer      obstruct_m4 glass
 	grow	2500
- 	or	allm4,obsm4,m4fill,fillblock,fillblock4
+ 	or	allm4,obsm4,m4fill,fillblock
         grow    3000
  templayer	met4fill_coarse topbox
         # slots   0 2000 300 0 2000 300 700 1050
@@ -2213,7 +2206,7 @@ style wafflefill variants (),(tiled)
 
  templayer	obstruct_m4_medium glass
 	grow	2500
-	or	allm4,obsm4,m4fill,fillblock,fillblock4
+	or	allm4,obsm4,m4fill,fillblock
         grow    2700
 	or	met4fill_coarse
         grow    300
@@ -2226,7 +2219,7 @@ style wafflefill variants (),(tiled)
 
  templayer      obstruct_m4_fine glass
 	grow	5000
- 	or	allm4,obsm4,m4fill,fillblock,fillblock4
+ 	or	allm4,obsm4,m4fill,fillblock
         grow    200
 	or	met4fill_coarse,met4fill_medium
         grow    300
@@ -2239,17 +2232,17 @@ style wafflefill variants (),(tiled)
 
  templayer      obstruct_m4_veryfine glass
 	grow	5100
-	or	allm4,obsm4,m4fill,fillblock,fillblock4
+	or	allm4,obsm4,m4fill,fillblock
 	# Note: Adding 0.1 to waffle rule to clear wide spacing rule
         grow    100
 	or	met4fill_coarse,met4fill_medium,met4fill_fine
         grow    300
  templayer	met4fill_veryfine topbox
-        slots   0 400 300 0 400 300 150 300
+        slots   0 500 300 0 500 300 150 300
         and-not obstruct_m4_veryfine
 	and	topbox
-        shrink  195
-        grow    195
+        shrink  245
+        grow    245
 
  layer	MET4FILL met4fill_coarse
 	or	met4fill_medium
@@ -2292,19 +2285,19 @@ style subcutout
  gridlimit 5
 
  templayer CELLBOUND
-	boundary
+        boundary
 
  templayer large_dnwell dnwell
-	grow 10
+        grow 10
 
  templayer large_isosub isosub
-	grow 10
+        grow 10
 
- layer  SUBCUT	CELLBOUND
-	grow 10
-	and-not large_dnwell
-	and-not large_isosub
-	calma	81 53
+ layer  SUBCUT  CELLBOUND
+        grow 10
+        and-not large_dnwell
+        and-not large_isosub
+        calma   81 53
 end
 
 #-----------------------------------------------------------------------
@@ -2327,8 +2320,6 @@ style  sky130 variants (),(vendor),(nowell)
  ignore HVNTM
  ignore POLYMOD
  ignore LOWTAPDENSITY
- ignore FILLOBSPOLY
- ignore FILLOBSFOM
  ignore MET5BLOCK
  ignore OUTLINE
  ignore POLYCUT
@@ -2338,20 +2329,21 @@ style  sky130 variants (),(vendor),(nowell)
  ignore PADDIFFID
  ignore PADMETALID
  ignore PADCENTERID
-variants (nowell)                                                               
- ignore DNWELL                                                                  
- ignore SUBCUT                                                                  
- ignore NWELL                                                                   
- ignore PWRES                                                                   
- ignore NPNID                                                                   
- ignore PNPID                                                                   
- ignore PHOTO                                                                   
- ignore SUBTXT                                                                  
- ignore WELLTXT                                                                 
- ignore SUBPIN                                                                  
- ignore WELLPIN                                                                 
+variants (nowell)
+ ignore DNWELL
+ ignore SUBCUT
+ ignore NWELL
+ ignore PWRES
+ ignore NPNID
+ ignore PNPID
+ ignore PHOTO
+ ignore SUBTXT
+ ignore WELLTXT
+ ignore SUBPIN
+ ignore WELLPIN
 
 variants (),(vendor)
+
  layer pnp NWELL,WELLTXT,WELLPIN
  and PNPID
  labels NWELL
@@ -3852,12 +3844,38 @@ variants *
  layer comment TTEXT
  labels TTEXT text
 
- layer fillblock  FILLOBSM1,FILLOBSM2,FILLOBSM3,FILLOBSM4,FILLOBSM5
- labels FILLOBSM1,FILLOBSM2,FILLOBSM3,FILLOBSM4,FILLOBSM5
+# Do not infer generic "fillblock" from GDS input
+# layer fillblock  FILLOBSM5
+# and FILLOBSM1,FILLOBSM2,FILLOBSM3,FILLOBSM4
 
- layer fillblock4  FILLOBSM1,FILLOBSM2,FILLOBSM3,FILLOBSM4
- and-not FILLOBSM5
- labels FILLOBSM1,FILLOBSM2,FILLOBSM3,FILLOBSM4
+# Use the obstruction types for fill block on individual layers
+ templayer obspoly FILLOBSPOLY
+ and-not POLY
+
+ layer obsactive FILLOBSFOM
+ and-not DIFF,TAP
+ or obspoly
+ labels FILLOBSFOM,FILLOBSPOLY
+
+ layer obsm1 FILLOBSM1
+ and-not MET1
+ labels FILLOBSM1
+
+ layer obsm2 FILLOBSM2
+ and-not MET2
+ labels FILLOBSM2
+
+ layer obsm3 FILLOBSM3
+ and-not MET3
+ labels FILLOBSM3
+
+ layer obsm4 FILLOBSM4
+ and-not MET4
+ labels FILLOBSM4
+
+ layer obsm5 FILLOBSM5
+ and-not MET5
+ labels FILLOBSM5
 
 # MOS Varactor
 
@@ -4816,13 +4834,8 @@ variants (fast),(full)
 	"Metal3 must surround MiM cap by %d (capm.3)"
  spacing via2 *mimcap 100 touching_illegal \
 	"MiM cap spacing to via2 < %d (capm.8 - via2.4)"
- spacing *mimcap *metal3/m3 500 surround_ok \
+ spacing *metal3 *mimcap 1340 surround_ok \
 	"MiM cap spacing to unrelated metal3 < %d (capm.11)"
-
-variants (full)
- cifspacing mim_bottom mim_bottom 1200 touching_ok \
-	 "MiM cap bottom plate spacing < %d (capm.2b)"
-variants (fast),(full)
 
  # MiM cap contact rules (VIA3)
 
@@ -4844,15 +4857,12 @@ variants (fast),(full)
 	"Metal4 must surround MiM2 cap by %d (cap2m.3)"
  spacing via3 *mimcap2 80 touching_illegal \
 	"MiM2 cap spacing to via3 < %d (cap2m.8 - via3.4)"
- spacing *mimcap2 *metal4/m4 500 surround_ok \
+ spacing *metal4 *mimcap2 1340 surround_ok \
 	"MiM2 cap spacing to unrelated metal4 < %d (cap2m.11)"
 
 variants (full)
  cifmaxwidth mim2_contact_overlap 0 bend_illegal \
 	"MiM2 cap contact must not cross MiM cap contact (cap2m.8)"
- 
- cifspacing mim2_bottom mim2_bottom 1200 touching_ok \
- 	"MiM2 cap bottom plate spacing < %d (cap2m.2b)"
 variants (fast),(full)
 
  # MiM cap contact rules (VIA4)
@@ -5011,7 +5021,7 @@ extract
  tiedown alldiffnonfet
 
 variants (),(orig),(si),(hrhc),(lrhc),(hrlc),(lrlc)
- # for all variants except (nowell) 
+ # for all variants except (nowell)
 
  substrate *ppdiff,*mvppdiff,space/w,pwell well $SUB -dnwell,isosub
 
@@ -6002,19 +6012,19 @@ variants (),(si),(hrhc),(lrhc),(hrlc),(lrlc)
  device rsubcircuit sky130_fd_pr__res_generic_pd__hv  mvpdiffres \
 	*mvpdiff nwell  error l=l w=w
 
- device resistor sky130_fd_pr__res_generic_po rmp *poly
- device resistor sky130_fd_pr__res_generic_po mrp1 *poly
+ device rsubcircuit sky130_fd_pr__res_generic_po rmp *poly l=l w=w
+ device rsubcircuit sky130_fd_pr__res_generic_po mrp1 *poly l=l w=w
 
  # NOTE: SkyWater diode models have bizarre units requiring bizarre scaling
- device pdiode sky130_fd_pr__diode_pd2nw_05v5 *pdiode nwell a=area*1E12 p=pj*1E6
- device pdiode sky130_fd_pr__diode_pd2nw_05v5_lvt *pdiodelvt nwell a=area*1E12 p=pj*1E6
- device pdiode sky130_fd_pr__diode_pd2nw_05v5_hvt *pdiodehvt nwell a=area*1E12 p=pj*1E6
- device pdiode sky130_fd_pr__diode_pd2nw_11v0 *mvpdiode nwell a=area*1E12 p=pj*1E6
+ device subcircuit sky130_fd_pr__diode_pd2nw_05v5 *pdiode nwell a=area*1E12 p=perim*1E6
+ device subcircuit sky130_fd_pr__diode_pd2nw_05v5_lvt *pdiodelvt nwell a=area*1E12 p=perim*1E6
+ device subcircuit sky130_fd_pr__diode_pd2nw_05v5_hvt *pdiodehvt nwell a=area*1E12 p=perim*1E6
+ device subcircuit sky130_fd_pr__diode_pd2nw_11v0 *mvpdiode nwell a=area*1E12 p=perim*1E6
 
- device ndiode sky130_fd_pr__diode_pw2nd_05v5 *ndiode pwell,space/w a=area*1E12 p=pj*1E6
- device ndiode sky130_fd_pr__diode_pw2nd_05v5_lvt *ndiodelvt pwell,space/w a=area*1E12 p=pj*1E6
- device ndiode sky130_fd_pr__diode_pw2nd_05v5_nvt *nndiode pwell,space/w a=area*1E12 p=pj*1E6
- device ndiode sky130_fd_pr__diode_pw2nd_11v0 *mvndiode pwell,space/w a=area*1E12 p=pj*1E6
+ device msubcircuit sky130_fd_pr__diode_pw2nd_05v5 *ndiode pwell,space/w a=area*1E12 p=perim*1E6
+ device msubcircuit sky130_fd_pr__diode_pw2nd_05v5_lvt *ndiodelvt pwell,space/w a=area*1E12 p=perim*1E6
+ device msubcircuit sky130_fd_pr__diode_pw2nd_05v5_nvt *nndiode pwell,space/w a=area*1E12 p=perim*1E6
+ device msubcircuit sky130_fd_pr__diode_pw2nd_11v0 *mvndiode pwell,space/w a=area*1E12 p=perim*1E6
 
  device csubcircuit sky130_fd_pr_reram__reram_cell reram m1 a=area_ox
 
@@ -6166,19 +6176,19 @@ variants (nowell)
  device rsubcircuit sky130_fd_pr__res_generic_pd__hv  mvpdiffres \
 	*mvpdiff l=l w=w
 
- device resistor sky130_fd_pr__res_generic_po rmp *poly
- device resistor sky130_fd_pr__res_generic_po mrp1 *poly
+ device rsubcircuit sky130_fd_pr__res_generic_po rmp *poly l=l w=w
+ device rsubcircuit sky130_fd_pr__res_generic_po mrp1 *poly l=l w=w
 
  # NOTE: SkyWater diode models have bizarre units requiring bizarre scaling
-# device pdiode sky130_fd_pr__diode_pd2nw_05v5 *pdiode nwell a=area*1E12 p=pj*1E6
-# device pdiode sky130_fd_pr__diode_pd2nw_05v5_lvt *pdiodelvt nwell a=area*1E12 p=pj*1E6
-# device pdiode sky130_fd_pr__diode_pd2nw_05v5_hvt *pdiodehvt nwell a=area*1E12 p=pj*1E6
-# device pdiode sky130_fd_pr__diode_pd2nw_11v0 *mvpdiode nwell a=area*1E12 p=pj*1E6
+# device subcircuit sky130_fd_pr__diode_pd2nw_05v5 *pdiode nwell a=area*1E12 p=perim*1E6
+# device subcircuit sky130_fd_pr__diode_pd2nw_05v5_lvt *pdiodelvt nwell a=area*1E12 p=perim*1E6
+# device subcircuit sky130_fd_pr__diode_pd2nw_05v5_hvt *pdiodehvt nwell a=area*1E12 p=perim*1E6
+# device subcircuit sky130_fd_pr__diode_pd2nw_11v0 *mvpdiode nwell a=area*1E12 p=perim*1E6
 
-# device ndiode sky130_fd_pr__diode_pw2nd_05v5 *ndiode pwell,space/w a=area*1E12 p=pj*1E6
-# device ndiode sky130_fd_pr__diode_pw2nd_05v5_lvt *ndiodelvt pwell,space/w a=area*1E12 p=pj*1E6
-# device ndiode sky130_fd_pr__diode_pw2nd_05v5_nvt *nndiode pwell,space/w a=area*1E12 p=pj*1E6
-# device ndiode sky130_fd_pr__diode_pw2nd_11v0 *mvndiode pwell,space/w a=area*1E12 p=pj*1E6
+# device msubcircuit sky130_fd_pr__diode_pw2nd_05v5 *ndiode pwell,space/w a=area*1E12 p=perim*1E6
+# device msubcircuit sky130_fd_pr__diode_pw2nd_05v5_lvt *ndiodelvt pwell,space/w a=area*1E12 p=perim*1E6
+# device msubcircuit sky130_fd_pr__diode_pw2nd_05v5_nvt *nndiode pwell,space/w a=area*1E12 p=perim*1E6
+# device msubcircuit sky130_fd_pr__diode_pw2nd_11v0 *mvndiode pwell,space/w a=area*1E12 p=perim*1E6
 
  device csubcircuit sky130_fd_pr_reram__reram_cell reram m1 a=area_ox
 
@@ -6313,7 +6323,12 @@ plot
   style pnm
      default
      draw fillblock no_color_at_all
-     draw fillblock4 no_color_at_all
+     draw obsactive no_color_at_all
+     draw obsm1 no_color_at_all
+     draw obsm2 no_color_at_all
+     draw obsm3 no_color_at_all
+     draw obsm4 no_color_at_all
+     draw obsm5 no_color_at_all
      draw fomfill no_color_at_all
      draw polyfill no_color_at_all
      draw m1fill no_color_at_all
@@ -6321,6 +6336,7 @@ plot
      draw m3fill no_color_at_all
      draw m4fill no_color_at_all
      draw m5fill no_color_at_all
+     draw isosub no_color_at_all
      draw nwell cwell
 end
 

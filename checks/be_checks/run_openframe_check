@@ -1,0 +1,351 @@
+#! /usr/bin/env bash
+
+# check that the openframe gpio connections based on io_in and io_out connections
+
+# Uses lvs_config to optionally extract a spice netlist
+# Requires a netlist $WORK_ROOT/ext/$DESIGN_NAME.gds.spice
+# Converts this netlist to $WORK_ROOT/ext/$DESIGN_NAME.cdl.gz
+
+#   Copyright 2023 D. Mitch Bailey  cvc at shuharisystem dot com
+
+#   Licensed under the Apache License, Version 2.0 (the "License");
+#   you may not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS,
+#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+
+# Parameters are read from $WORK_ROOT/cvcrc.oeb which is copied from the default in $LVS_ROOT if non-existent.
+
+# Return codes
+# 1: LVS_ROOT not set
+# 2: Missing file
+# 3: Unrecognized block name
+# 4: CVC execution error
+# 5: OEB related error
+# 6: OEB related warning
+
+# Use cases
+# run_openframe_check [--noextract] [lvs_config_file [top_layout [layout_file]]]
+
+if [[ $1 == "--noextract" ]]; then
+	export EXTRACT_LAYOUT=no
+	shift
+else
+	export EXTRACT_LAYOUT=yes
+fi
+
+usage="usage: run_openframe_check [--noextract] [lvs_config_file [top_layout [layout_file]]]]"
+if [[ $# -gt 3 ]]; then
+	echo $usage
+	exit 1
+fi
+
+# Check for LVS_ROOT
+if [[ -z "$LVS_ROOT" ]]; then
+	echo "LVS_ROOT not set."
+	exit 1
+fi
+
+CONFIG_FILE=$1
+DESIGN_NAME=${2:+"-d $2"}
+
+if [[ $# -ne 0 ]]; then # if config file not specified, skip and use current environment
+	source <($LVS_ROOT/set_lvs_env.py -c $CONFIG_FILE $DESIGN_NAME)
+fi
+if [[ ! -v EXTRACT_FLATGLOB ]]; then
+	echo "ERROR: LVS environment problem."
+	exit 1
+fi
+export TOP_LAYOUT=${2:-$TOP_LAYOUT}
+export LAYOUT_FILE=${3:-$LAYOUT_FILE}
+
+export DESIGN_NAME=$TOP_LAYOUT
+
+echo "DESIGN NAME: $DESIGN_NAME"
+
+echo "WORK_ROOT   : ${WORK_ROOT:=$(pwd)/$DESIGN_NAME}"
+echo "LOG_ROOT    : ${LOG_ROOT:=$(pwd)/$DESIGN_NAME}"
+echo "SIGNOFF_ROOT: ${SIGNOFF_ROOT:=$(pwd)/$DESIGN_NAME}"
+export LOG_ROOT SIGNOFF_ROOT WORK_ROOT
+
+mkdir -p $LOG_ROOT $SIGNOFF_ROOT $WORK_ROOT
+export RESULTS_DIR=$WORK_ROOT/ext
+
+rm -f $WORK_ROOT/cvc.oeb* $LOG_ROOT/cvc.oeb* $SIGNOFF_ROOT/cvc.oeb*
+
+export RESULTS_DIR=$WORK_ROOT/ext
+export EXT_DIR=$WORK_ROOT/ext
+if [[ $EXTRACT_LAYOUT == yes ]]; then
+	env CIFIN_STYLE= EXTRACT_STYLE= $LVS_ROOT/run_extract
+	ext_status=$?
+fi
+
+echo " "
+echo "Running CVC for oeb check..."
+
+# Create cdl file from extracted spice file if it doesn't exist
+if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.cdl.gz || $RESULTS_DIR/$DESIGN_NAME.gds.spice -nt $RESULTS_DIR/$DESIGN_NAME.cdl.gz ]]; then
+	if [[ ! -f $RESULTS_DIR/$DESIGN_NAME.gds.spice ]]; then
+		echo "Could not create cdl file from $RESULTS_DIR/$DESIGN_NAME.gds.spice"
+		exit 2
+	else
+		echo "Creating $RESULTS_DIR/$DESIGN_NAME.cdl"
+		$LVS_ROOT/tech/$PDK/spi2cdl $RESULTS_DIR/$DESIGN_NAME.gds.spice |
+			gzip -c >$RESULTS_DIR/$DESIGN_NAME.cdl.gz
+	fi
+fi
+
+# Copy default power file to work area if it doesn't exist
+#shopt -u nocasematch
+#BASE_NAME=${DESIGN_NAME//[A-Z0-9][A-Z0-9]_}  # remove leading 2 byte prefices
+if [[ ! -f $WORK_ROOT/cvc.power.$DESIGN_NAME ]]; then
+	if [[ -f $LVS_ROOT/tech/$PDK/cvc.power.$DESIGN_NAME ]]; then
+		cp $LVS_ROOT/tech/$PDK/cvc.power.$DESIGN_NAME $WORK_ROOT/cvc.power.$DESIGN_NAME
+	else
+		echo "
+ERROR: Could not find $WORK_ROOT/cvc.power.$DESIGN_NAME"
+		exit 2
+	fi
+fi
+
+if [[ ! -f $WORK_ROOT/cvcrc.oeb ]]; then
+	if [[ ! -f $WORK_ROOT/cvcrc ]]; then
+		if [[ -f $LVS_ROOT/tech/$PDK/cvcrc ]]; then
+			cp $LVS_ROOT/tech/$PDK/cvcrc $WORK_ROOT/cvcrc
+		else
+			echo "
+ERROR: Could not create $WORK_ROOT/cvcrc.oeb"
+			exit 2
+		fi
+	fi
+	sed 's/cvc.log/cvc.oeb.log/' $WORK_ROOT/cvcrc >$WORK_ROOT/cvcrc.oeb
+fi
+
+if [[ $DESIGN_NAME == *openframe_project_wrapper ]]; then
+	echo "c 6" >$WORK_ROOT/cvc.oeb.script
+	for ((i = 0; i <= 43; i++)); do
+		cat >>$WORK_ROOT/cvc.oeb.script <<-cvcin
+			gn analog_io[$i]
+			gn analog_noesd_io[$i]
+			gn gpio_analog_en[$i]
+			gn gpio_analog_pol[$i]
+			gn gpio_analog_sel[$i]
+			gn gpio_dm0[$i]
+			gn gpio_dm1[$i]
+			gn gpio_dm2[$i]
+			gn gpio_holdover[$i]
+			gn gpio_ib_mode_sel[$i]
+			gn gpio_in[$i]
+			gn gpio_in_h[$i]
+			gn gpio_inp_dis[$i]
+			gn gpio_oeb[$i]
+			gn gpio_out[$i]
+			gn gpio_slow_sel[$i]
+			gn gpio_vtrip_sel[$i]
+		cvcin
+	done
+	echo "q" >>$WORK_ROOT/cvc.oeb.script
+else
+	echo "ERROR: unrecognized top block $DESIGN_NAME"
+	exit 3
+fi
+
+start_time=$SECONDS
+cvc_rv -i $WORK_ROOT/cvcrc.oeb <$WORK_ROOT/cvc.oeb.script
+
+cvc_status=$?
+
+runtime=$((SECONDS - start_time))
+hours=$((runtime / 3600))
+minutes=$(((runtime % 3600) / 60))
+seconds=$(((runtime % 3600) % 60))
+printf "Runtime: %d:%02d:%02d (hh:mm:ss)\n" $hours $minutes $seconds >>$WORK_ROOT/cvc.oeb.log
+
+if [[ $WORK_ROOT != $LOG_ROOT ]]; then
+	cp $WORK_ROOT/cvc.oeb.log $LOG_ROOT/.
+fi
+
+awk '
+	/^> gn / {
+		net = gensub(/.*\[([0-9]*)\]/, "\\1", 1);
+	}
+	/^> gn gpio_inp_dis/ {
+		getline; getline;
+		GetLevel(inp_dis_connections, inp_dis_min, inp_dis_sim, inp_dis_max, net);
+		#print "inp_dis", net, inp_dis_sim[net];
+		next;
+	}
+	/^> gn gpio_in/ {
+		getline; getline;
+		in_connections[net] += $3 + $5 + $7;
+	}
+	/^> gn analog_io/ || /^> gn analog_noesd_io/ {
+		getline; getline;
+		analog_connections[net] += $3 + $5 + $7;
+	}
+	/^> gn gpio_out/ {
+		getline; getline;
+		GetLevel(out_connections, out_min, out_sim, out_max, net);
+		if ( out_min[net] != "" && out_min[net] == out_sim[net] && out_sim[net] == out_max[net] ) {
+			fixed[net] = ReplaceLoopback(out_sim[net]);
+		}
+	}
+	/^> gn gpio_oeb/ {
+		getline; getline;
+		GetLevel(oeb_connections, oeb_min, oeb_sim, oeb_max, net);
+	}
+	/^> gn gpio_analog_en/ {
+		getline; getline;
+		GetLevel(analog_en_connections, analog_en_min, analog_en_sim, analog_en_max, net);
+	}
+	/^> gn gpio_analog_pol/ {
+		getline; getline;
+		GetLevel(analog_pol_connections, analog_pol_min, analog_pol_sim, analog_pol_max, net);
+	}
+	/^> gn gpio_analog_sel/ {
+		getline; getline;
+		GetLevel(analog_sel_connections, analog_sel_min, analog_sel_sim, analog_sel_max, net);
+	}
+	/^> gn gpio_dm0/ {
+		getline; getline;
+		GetLevel(dm0_connections, dm0_min, dm0_sim, dm0_max, net);
+	}
+	/^> gn gpio_dm1/ {
+		getline; getline;
+		GetLevel(dm1_connections, dm1_min, dm1_sim, dm1_max, net);
+	}
+	/^> gn gpio_dm2/ {
+		getline; getline;
+		GetLevel(dm2_connections, dm2_min, dm2_sim, dm2_max, net);
+	}
+	/^> gn gpio_holdover/ {
+		getline; getline;
+		GetLevel(holdover_connections, holdover_min, holdover_sim, holdover_max, net);
+	}
+	/^> gn gpio_ib_mode_sel/ {
+		getline; getline;
+		GetLevel(ib_mode_connections, ib_mode_min, ib_mode_sim, ib_mode_max, net);
+	}
+	/^> gn gpio_slow_sel/ {
+		getline; getline;
+		GetLevel(slow_connections, slow_min, slow_sim, slow_max, net);
+	}
+	/^> gn gpio_vtrip_sel/ {
+		getline; getline;
+		GetLevel(vtrip_connections, vtrip_min, vtrip_sim, vtrip_max, net);
+	}
+	function GetLevel(connections, min, sim, max, net) {
+		# 2 blank lines mark the end of a segment
+		connections[net] = $3 + $5 + $7;
+		while ( NF > 0 ) {
+			if ( /^Min path/ ) {
+				while ( NF > 0 ) {
+					min[net] = $1;
+					getline;
+				}
+			} else if ( /^Sim path/ ) {
+				while ( NF > 0 ) {
+					sim[net] = $1;
+					getline;
+				}
+			} else if ( /^Max path/ ) {
+				while ( NF > 0 ) {
+					max[net] = $1;
+					getline;
+				}
+			} else {
+				while ( NF > 0 ) {
+					getline;
+				}
+			}
+			getline;
+		}
+	}
+	function ReplaceLoopback(net) {
+		if ( net ~ /gpio_loopback_zero/ ) return "vssd1";
+		if ( net ~ /gpio_loopback_one/ ) return "vccd1";
+		return net;
+	}
+	function PrintBit(bit, connections) {
+		if ( bit ~ /gpio_loopback_zero/ || bit ~ /vssd*/ ) {
+			printf "0";
+		} else if ( bit ~ /gpio_loopback_one/ || bit ~ /vccd*/ ) {
+			printf "1";
+		} else if ( connections == 0 ) {
+			printf "x";
+		} else {
+			printf "?";
+		}
+	}
+	END {
+		#print "oeb connections:", length(oeb_connections);
+		print " gpio |   in   |   out  | analog |  oeb min/sim/max  | Message";
+		     #"  xx  | xxxxxx | xxxxxx | xxxxxx | vxxx*/vxxx*/vxxx* |
+		for ( i in oeb_connections ) {
+			oeb_min[i] = ReplaceLoopback(oeb_min[i]);
+			oeb_sim[i] = ReplaceLoopback(oeb_sim[i]);
+			oeb_max[i] = ReplaceLoopback(oeb_max[i]);
+			printf "  %2d  | %6s | %6s | %6s | %5s/%5s/%5s | ", \
+				i, (in_connections[i] == 0) ? "" : sprintf("%6d", in_connections[i]), \
+				(out_connections[i] == 0 && ! (i in fixed)) ? "" :
+					(i in fixed) ? fixed[i] : sprintf("%6d", out_connections[i]), \
+				(analog_connections[i] == 0) ? "" : sprintf("%6d", analog_connections[i]), \
+				oeb_min[i], oeb_sim[i], oeb_max[i];
+			if ( analog_connections[i] > 0 ) {
+				if ( in_connections[i] > 0 || (out_connections[i] > 0 && ! (i in fixed)) ) {  # both digital and analog
+					printf "Warning: both analog and digital connections";
+				} else if ( ! ( oeb_sim[i] ~ /vccd/ || oeb_sim[i] ~ /vdd/ ) ) {  # analog signals should disable output
+					printf "Warning: oeb expected high for analog";
+				}
+			} else if ( in_connections[i] > 0 && out_connections[i] == 0 ) {
+				if ( ! ( oeb_sim[i] ~ /vccd/ || oeb_sim[i] ~ /vdd/ ) ) {  # input only signals should never enable output
+					printf "Warning: oeb expected high for input only";
+				}
+			} else if ( out_connections[i] > 0 && ! (i in fixed) ) {
+				if ( oeb_min[i] !~ /vss/ ) {  # output signals must be enable-able
+					printf "ERROR: oeb must have possible low for output";
+				} else if ( in_connections[i] > 0 && oeb_sim[i] ~ /vss/ ) {  # input is always driven by user output in user mode
+					printf "Warning: output always drives input. sky130: OK for pull up/down.";
+				}
+			}
+			PrintBit(dm2_sim[i], dm2_connections[i]);
+			PrintBit(dm1_sim[i], dm1_connections[i]);
+			PrintBit(dm0_sim[i], dm0_connections[i]);
+			PrintBit(vtrip_sim[i], vtrip_connections[i]);
+			PrintBit(slow_sim[i], slow_connections[i]);
+			PrintBit(analog_pol_sim[i], analog_pol_connections[i]);
+			PrintBit(analog_sel_sim[i], analog_sel_connections[i]);
+			PrintBit(analog_en_sim[i], analog_en_connections[i]);
+			PrintBit(ib_mode_sim[i], ib_mode_connections[i]);
+			PrintBit(inp_dis_sim[i], inp_dis_connections[i]);
+			PrintBit(holdover_sim[i], holdover_connections[i]);
+			printf "\n";
+		}
+	}' $LOG_ROOT/cvc.oeb.log |
+	tee $WORK_ROOT/cvc.oeb.report
+
+if [[ $WORK_ROOT != $SIGNOFF_ROOT ]]; then
+	cp $WORK_ROOT/cvc.oeb.report $SIGNOFF_ROOT/cvc.oeb.report
+fi
+
+if [[ $cvc_status -eq 0 && $(grep -c '^CVC: End:' $LOG_ROOT/cvc.oeb.log) -ne 1 ]]; then
+	# CVC finished abnormally
+	exit 5
+
+elif [[ $cvc_status -eq 0 && $(grep -c ERROR $SIGNOFF_ROOT/cvc.oeb.report) -gt 0 ]]; then
+	# CVC finished normally, but detected errors
+	exit 6
+
+elif [[ $cvc_status -eq 0 && $(grep -c Warning $SIGNOFF_ROOT/cvc.oeb.report) -gt 0 ]]; then
+	# CVC finished normally, but detected warings
+	exit 4
+
+else
+	exit $cvc_status
+fi

@@ -84,7 +84,7 @@ if [[ ! -f $WORK_ROOT/layout.cells || ! -f $WORK_ROOT/verilog.cells ]]; then
 fi
 
 # Extraction is now a separate program.
-rm -f $LOG_ROOT/lvs.log $SIGNOFF_ROOT/lvs.report
+rm -f $LOG_ROOT/lvs.log $SIGNOFF_ROOT/lvs.report $WORK_ROOT/lvs.log $WORK_ROOT/lvs.report
 export EXT_DIR=$WORK_ROOT/ext
 if [[ $EXTRACT_LAYOUT == yes ]]; then
 	env CIFIN_STYLE= EXTRACT_STYLE= $LVS_ROOT/run_extract
@@ -113,6 +113,8 @@ if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	# Do pseudo globbing against layout and verilog. "*" expansion only.
 	sed -e 's/\*/.*/g' $WORK_ROOT/flatten |
 		grep -hx -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
+		cat - $WORK_ROOT/flatten |
+		sed 's/^\*//' |
 		awk 'NF > 0' |
 		sort -u >$WORK_ROOT/flatten.glob
 else
@@ -126,6 +128,8 @@ if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	# Do pseudo globbing against layout and verilog. "*" expansion only.
 	sed -e 's/\*/.*/g' $WORK_ROOT/noflatten |
 		grep -hx -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
+		cat - $WORK_ROOT/noflatten |
+		sed 's/^\*//' |
 		awk 'NF > 0' |
 		sort -u >$WORK_ROOT/noflatten.glob
 else
@@ -139,10 +143,18 @@ if [[ -f $WORK_ROOT/layout.cells && -f $WORK_ROOT/verilog.cells ]]; then
 	# Do pseudo globbing against layout and verilog. "*" expansion only.
 	sed -e 's/\*/.*/g' $WORK_ROOT/ignore |
 		grep -hx -f - $WORK_ROOT/layout.cells $WORK_ROOT/verilog.cells |
+		cat - $WORK_ROOT/ignore |
+		sed 's/^\*//' |
+		awk 'NF > 0' |
+		sort -u >$WORK_ROOT/ignore.glob
+elif [[ -f $WORK_ROOT/layout.cells ]]; then
+	# Do pseudo globbing against layout. "*" expansion only.
+	sed -e 's/\*/.*/g' $WORK_ROOT/ignore |
+		grep -hx -f - $WORK_ROOT/layout.cells |
 		awk 'NF > 0' |
 		sort -u >$WORK_ROOT/ignore.glob
 else
-	cp $WORK_ROOT/ignore $WORK_ROOT/ignore.glob
+	awk 'NF > 0' $WORK_ROOT/ignore >$WORK_ROOT/ignore.glob
 fi
 
 # Verify that netgen is executable.
@@ -243,20 +255,31 @@ awk '
 /Circuit 1 .* will not flatten/ {print $4, "is a black box in the layout"}
 /Circuit 2 .* will not flatten/ {print $4, "is a black box in the source"}
 ' $WORK_ROOT/lvs.report >$WORK_ROOT/lvs.unflattened
-awk -f $LVS_ROOT/tech/$PDK/known_abstract_filter.awk $WORK_ROOT/lvs.log  |
+awk -f $LVS_ROOT/tech/$PDK/known_abstract_filter.awk $WORK_ROOT/lvs.log |
+	grep -w -v $WORK_DIR/abstract.glob |
 	awk '
 /Matching pins/ {print $4, "is a black box in the layout and source"}
 /contains no devices/ {print $2, "contains no devices"}
 ' - >>$WORK_ROOT/lvs.unflattened
 if [[ -s $WORK_ROOT/lvs.unflattened ]]; then
-	echo "Warning: device level LVS may be incomplete due to $(cat $WORK_ROOT/lvs.unflattened | wc -l) unflattened cell(s): see $SIGNOFF_ROOT/lvs.unflattened" |
+	if grep -q -w -v -f $WORK_ROOT/abstract.glob $WORK_ROOT/lvs.unflattened; then
+		echo "Warning: device level LVS may be incomplete due to these unflattened cell(s): " |
+			tee -a $WORK_ROOT/lvs.report |
+			tee -a $WORK_ROOT/lvs.log
+		# Only set an error for unabstracted mismatches
+		lvs_warning=1
+	else
+		echo "Notice: LVS completed with these abstracted cells: " |
+			tee -a $WORK_ROOT/lvs.report |
+			tee -a $WORK_ROOT/lvs.log
+	fi
+	cat $WORK_ROOT/lvs.unflattened |
 		tee -a $WORK_ROOT/lvs.report |
 		tee -a $WORK_ROOT/lvs.log
-	lvs_warning=1
 fi
 
 if [[ -s $WORK_ROOT/ignore.glob ]]; then
-	echo "Warning: device level LVS may be incomplete because $(cat $WORK_ROOT/ignore.glob | wc -l) cell(s) was/were ignored: see $WORK_ROOT/ignore.glob" |
+	echo "Warning: device level LVS may be incomplete because $(cat $WORK_ROOT/ignore.glob | wc -w) cell(s) was/were ignored: see $WORK_ROOT/ignore.glob" |
 		tee -a $WORK_ROOT/lvs.report |
 		tee -a $WORK_ROOT/lvs.log
 	lvs_warning=1

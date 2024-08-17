@@ -3,7 +3,7 @@
 	"INCLUDE_CONFIGS": [
 		"$LVS_ROOT/tech/$PDK/lvs_config.base.json"
 	],
-	"TOP_SOURCE": "user_project_wrapper_mini4",
+	"TOP_SOURCE": "openframe_project_wrapper",
 	"TOP_LAYOUT": "$TOP_SOURCE",
 	"EXTRACT_FLATGLOB": [
 		""
@@ -24,7 +24,7 @@
 		""
 	],
 	"LVS_VERILOG_FILES": [
-		"$UPRJ_ROOT/verilog/gl/$TOP_SOURCE.v"
+		"$UPRJ_ROOT/verilog/gl/openframe_project_wrapper.v"
 	],
-	"LAYOUT_FILE": "$UPRJ_ROOT/gds/$TOP_LAYOUT.gds"
+	"LAYOUT_FILE": "$UPRJ_ROOT/gds/openframe_project_wrapper.gds"
 }
