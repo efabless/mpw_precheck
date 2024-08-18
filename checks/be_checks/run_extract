@@ -84,8 +84,8 @@ echo "Extracting to ${EXT_DIR:=$WORK_ROOT/ext}"
 rm -rf $EXT_DIR
 mkdir -p $EXT_DIR
 
-# create work abstract file based on actual cells used (psuedo globbing)
-# Will work with wildcards directly, but use psuedo globbing to check later.
+# create work abstract file based on actual cells used (pseudo globbing)
+# Will work with wildcards directly, but use pseudo globbing to check later.
 echo $EXTRACT_FLATGLOB |
 	sed 's/  */\n/g' >$EXT_DIR/flatglob
 if [[ -f $WORK_ROOT/layout.cells ]]; then
@@ -95,7 +95,7 @@ else
 	cp $EXT_DIR/flatglob $EXT_DIR/flatglob.glob
 fi
 
-# create work abstract file based on actual cells used (psuedo globbing)
+# create work abstract file based on actual cells used (pseudo globbing)
 echo $EXTRACT_ABSTRACT |
 	sed 's/  */\n/g' >$EXT_DIR/abstract
 if [[ -f $WORK_ROOT/layout.cells ]]; then
@@ -105,7 +105,7 @@ else
 	cp $EXT_DIR/abstract $EXT_DIR/abstract.glob
 fi
 
-# create work subcut file based on actual cells used (psuedo globbing)
+# create work subcut file based on actual cells used (pseudo globbing)
 echo $EXTRACT_CREATE_SUBCUT |
 	sed 's/  */\n/g' >$EXT_DIR/subcut
 if [[ -f $WORK_ROOT/layout.cells ]]; then
