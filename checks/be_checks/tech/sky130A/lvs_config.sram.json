@@ -16,7 +16,7 @@
 		""
 	],
 	"LVS_SPICE_FILES": [
-		"$LVS_ROOT/spice/$SRAM_MACRO.470.spice"
+		"$PDK_ROOT/$PDK/libs.ref/sky130_sram_macros/spice/$SRAM_MACRO.spice"
 	],
 	"LVS_VERILOG_FILES": [
 		""
