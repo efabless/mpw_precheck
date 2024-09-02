@@ -74,14 +74,13 @@ jobs:
     - name: Run MPW Precheck
       run: |
         mkdir -p ${{ github.workspace }}/mpw_precheck_output
-        docker run --rm \
+        docker run \
           -v ${{ github.workspace }}/mpw_precheck:/mpw_precheck \
           -v ${{ github.workspace }}/${{ matrix.repo }}:/project \
           -v ${{ github.workspace }}/pdk:/pdk \
           -v ${{ github.workspace }}/mpw_precheck_output:/output \
           -e PDK_ROOT=/pdk \
-          mpw_precheck:latest \
-          python3 /mpw_precheck/mpw_precheck.py --input_directory /project --pdk_path /pdk --output_directory /output --private
+          mpw_precheck:latest bash -c "cd /mpw_precheck python3 mpw_precheck.py --input_directory /project --pdk_path /pdk --output_directory /output --private"
       timeout-minutes: 30
 
     - name: Upload MPW Precheck output
