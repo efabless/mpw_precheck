@@ -81,16 +81,14 @@ jobs:
           -v ${{ github.workspace }}/mpw_precheck_output:/output \
           -e PDK_ROOT=/pdk \
           mpw_precheck:latest \
-          python3 /mpw_precheck/mpw_precheck.py --input_directory /project --pdk_path /pdk --output_directory /output
+          python3 /mpw_precheck/mpw_precheck.py --input_directory /project --pdk_path /pdk --output_directory /output --private
       timeout-minutes: 30
 
-    - name: Collect and upload logs and outputs
+    - name: Upload MPW Precheck output
       uses: actions/upload-artifact@v3
       with:
         name: mpw-precheck-results-${{ matrix.repo }}
-        path: |
-          ${{ github.workspace }}/mpw_precheck_output
-          ${{ github.workspace }}/mpw_precheck/logs
+        path: ${{ github.workspace }}/mpw_precheck_output
 
     - name: Check for failures
       run: |
