@@ -80,7 +80,7 @@ jobs:
           -v ${{ github.workspace }}/pdk:/pdk \
           -v ${{ github.workspace }}/mpw_precheck_output:/output \
           -e PDK_ROOT=/pdk \
-          mpw_precheck:latest bash -c "cd /mpw_precheck python3 mpw_precheck.py --input_directory /project --pdk_path /pdk --output_directory /output --private"
+          mpw_precheck:latest bash -c "cd /mpw_precheck ; python3 mpw_precheck.py --input_directory /project --pdk_path /pdk --output_directory /output --private"
       timeout-minutes: 30
 
     - name: Upload MPW Precheck output
