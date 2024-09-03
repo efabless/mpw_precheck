@@ -60,12 +60,13 @@ if __name__ == "__main__":
     parser.add_argument('--feol', '-f', action='store_true', required=False, default=False, help='run FEOL rules')
     parser.add_argument('--beol', '-b', action='store_true', required=False, default=False, help='run BEOL rules')
     parser.add_argument('--off_grid', '-og', action='store_true', required=False, default=False, help='run OFFGRID rules')
+    parser.add_argument('--pdk', required=False, default="sky130A", help='PDK')
     args = parser.parse_args()
 
     gds_input_file_path = Path(args.gds_input_file_path)
     output_directory = Path(args.output_directory)
 
-    klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent.parent / "tech-files/gf180mcuD_mr.drc"
+    klayout_sky130A_mr_drc_script_path = Path(__file__).parent.parent.parent / f"tech-files/{args.pdk}_mr.drc"
 
     extra_args = []
     if args.feol:
