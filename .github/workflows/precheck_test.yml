@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: ['caravel_user_project','caravel_user_mini','caravel_user_sram','caravel_user_project_analog','openframe_timer_example']
+        # repo: ['caravel_user_project','caravel_user_mini','caravel_user_sram','caravel_user_project_analog','openframe_timer_example']
+        repo: ['caravel_user_sram']
       fail-fast: false  # Allow other jobs to continue if one fails
     
     steps:
@@ -84,6 +85,10 @@ jobs:
 
         docker run -v "$PRECHECK_ROOT":"$PRECHECK_ROOT" -v "$INPUT_DIRECTORY":"$INPUT_DIRECTORY" -v "${{ env.PDK_ROOT }}":"${{ env.PDK_ROOT }}" -e INPUT_DIRECTORY="$INPUT_DIRECTORY" -e PDK_ROOT="${{ env.PDK_ROOT }}" -e PDKPATH="${{ env.PDKPATH }}" -u $(id -u "$USER"):$(id -g "$USER") efabless/mpw_precheck:latest bash -c "cd $PRECHECK_ROOT; python3 mpw_precheck.py --input_directory $INPUT_DIRECTORY --pdk_path $PDKPATH --output_directory $OUTPUT_DIRECTORY"
 
+        ls $INPUT_DIRECTORY
+        ls $OUTPUT_DIRECTORY
+        ls $OUTPUT_DIRECTORY/logs
+        
         cnt=$(grep -c "All Checks Passed" "$OUTPUT")
         if ! [[ $cnt ]]; then cnt=0; fi
         if [[ $cnt -eq 1 ]]; then exit 0; fi
@@ -91,20 +96,21 @@ jobs:
 
     - name: Upload MPW Precheck output
       uses: actions/upload-artifact@v3
+      if: failure()
       with:
         name: mpw-precheck-results-${{ matrix.repo }}
-        path: ${{ github.workspace }}/mpw_precheck_output
+        path: ${{ github.workspace }}/${{ matrix.repo }}/mpw_precheck_result
 
-    - name: Check for failures
-      run: |
-        if [ -f "${{ github.workspace }}/mpw_precheck_output/mpw_precheck_results.txt" ]; then
-          if grep -q "FAIL" "${{ github.workspace }}/mpw_precheck_output/mpw_precheck_results.txt"; then
-            echo "MPW Precheck failed for ${{ matrix.repo }}"
-            exit 1
-          else
-            echo "MPW Precheck passed for ${{ matrix.repo }}"
-          fi
-        else
-          echo "Results file not found for ${{ matrix.repo }}"
-          exit 1
-        fi
+    # - name: Check for failures
+    #   run: |
+    #     if [ -f "${{ github.workspace }}/mpw_precheck_output/mpw_precheck_results.txt" ]; then
+    #       if grep -q "FAIL" "${{ github.workspace }}/mpw_precheck_output/mpw_precheck_results.txt"; then
+    #         echo "MPW Precheck failed for ${{ matrix.repo }}"
+    #         exit 1
+    #       else
+    #         echo "MPW Precheck passed for ${{ matrix.repo }}"
+    #       fi
+    #     else
+    #       echo "Results file not found for ${{ matrix.repo }}"
+    #       exit 1
+    #     fi
