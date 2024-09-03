@@ -1,0 +1,118 @@
+name: MPW Precheck
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  mpw-precheck:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - repo: 'caravel_user_project'
+            skip_checks: 'default gpio_defines'
+          - repo: 'caravel_user_mini'
+            skip_checks: ''
+          - repo: 'caravel_user_sram'
+            skip_checks: 'gpio_defines lvs'
+          - repo: 'caravel_user_project_analog'
+            skip_checks: 'default gpio_defines lvs'
+          - repo: 'openframe_timer_example'
+            skip_checks: ''
+      fail-fast: false
+
+    steps:
+    - name: Checkout efabless/mpw_precheck
+      uses: actions/checkout@v3
+      with:
+        repository: efabless/mpw_precheck
+        path: mpw_precheck
+
+    - name: Checkout ${{ matrix.repo }}
+      uses: actions/checkout@v3
+      with:
+        repository: efabless/${{ matrix.repo }}
+        path: ${{ matrix.repo }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Cache Docker layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ hashFiles('mpw_precheck/dependencies/Dockerfile') }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: Build Docker image
+      run: |
+        docker buildx create --use
+        docker buildx build \
+          --cache-from=type=local,src=/tmp/.buildx-cache \
+          --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+          --output type=docker \
+          --tag mpw_precheck:latest \
+          mpw_precheck/dependencies
+      timeout-minutes: 30  # Increased timeout to 30 minutes
+
+    - name: Move cache
+      run: |
+        rm -rf /tmp/.buildx-cache
+        mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+    - name: Cache PDK
+      id: cache-pdk
+      uses: actions/cache@v3
+      with:
+        path: ${{ github.workspace }}/pdk
+        key: ${{ runner.os }}-pdk-${{ hashFiles('**/volare.toml') }}
+
+    - name: Install Volare and PDK
+      if: steps.cache-pdk.outputs.cache-hit != 'true'
+      run: |
+        python3 -m pip install --upgrade --no-cache-dir volare
+        volare enable 6d4d11780c40b20ee63cc98e645307a9bf2b2ab8 --pdk-root ${{ github.workspace }}/pdk
+      env:
+        PDK_ROOT: ${{ github.workspace }}/pdk
+
+    - name: Run MPW Precheck
+      run: |
+        export INPUT_DIRECTORY=${{ github.workspace }}/${{ matrix.repo }}
+        export PRECHECK_ROOT=${{ github.workspace }}/mpw_precheck
+        export OUTPUT_DIRECTORY=$INPUT_DIRECTORY/mpw_precheck_result
+        export OUTPUT=$OUTPUT_DIRECTORY/logs/precheck.log
+        export PDK_ROOT=${{ github.workspace }}/pdk
+        export PDKPATH=$PDK_ROOT/sky130A
+        
+        SKIP_CHECKS_ARG=""
+        if [ -n "${{ matrix.skip_checks }}" ]; then
+          SKIP_CHECKS_ARG="--skip_checks ${{ matrix.skip_checks }}"
+        fi
+
+        docker run -v "$PRECHECK_ROOT":"$PRECHECK_ROOT" \
+                   -v "$INPUT_DIRECTORY":"$INPUT_DIRECTORY" \
+                   -v "$PDK_ROOT":"$PDK_ROOT" \
+                   -e INPUT_DIRECTORY="$INPUT_DIRECTORY" \
+                   -e PDK_ROOT="$PDK_ROOT" \
+                   -e PDKPATH="$PDKPATH" \
+                   -u $(id -u "$USER"):$(id -g "$USER") \
+                   mpw_precheck:latest \
+                   bash -c "cd $PRECHECK_ROOT && python3 mpw_precheck.py --input_directory $INPUT_DIRECTORY --pdk_path $PDKPATH --output_directory $OUTPUT_DIRECTORY --skip_checks $SKIP_CHECKS_ARG"
+
+        if grep -q "All Checks Passed" "$OUTPUT"; then
+          echo "All checks passed for ${{ matrix.repo }}"
+          exit 0
+        else
+          echo "Checks failed for ${{ matrix.repo }}"
+          exit 1
+        fi
+
+    - name: Upload MPW Precheck output
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: mpw-precheck-results-${{ matrix.repo }}
+        path: ${{ github.workspace }}/${{ matrix.repo }}/mpw_precheck_result
