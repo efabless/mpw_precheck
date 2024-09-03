@@ -109,6 +109,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output_directory', required=False, help="OUTPUT_DIRECTORY, default=<input_directory>/precheck_results/DD_MMM_YYYY___HH_MM_SS.")
     parser.add_argument('--private', action='store_true', help=f"If provided, precheck skips {open_source_checks.keys() - private_checks.keys()}  checks that qualify the project to be Open Source")
     parser.add_argument('checks', metavar='check', type=str, nargs='*', choices=list(open_source_checks.keys()).append([]), help=f"Checks to be run by the precheck: {' '.join(open_source_checks.keys())}")
+    parser.add_argument('--skip_checks', metavar='check', type=str, nargs='*', choices=list(open_source_checks.keys()).append([]), help=f"Checks not to be run by the precheck: {' '.join(open_source_checks.keys())}")
     args = parser.parse_args()
 
     # NOTE Separated to allow the option later on for a run tag
@@ -129,7 +130,12 @@ if __name__ == '__main__':
         logging.critical("`GOLDEN_CARAVEL` environment variable is not set. Please set it to point to absolute path to the golden caravel")
         sys.exit(1)
 
-    sequence = args.checks if args.checks else [x for x in private_checks.keys()] if args.private else [x for x in open_source_checks.keys()]
+    all_checks = [check.lower() for check in (private_checks.keys() if args.private else open_source_checks.keys())]
+    input_checks = [check.lower() for check in args.checks] if args.checks else all_checks
+    skip_checks = [check.lower() for check in args.skip_checks] if args.skip_checks else []
+    input_checks = [check for check in input_checks if check in all_checks]
+    skip_checks = [check for check in skip_checks if check in all_checks]
+    sequence = [check for check in input_checks if check not in skip_checks]
 
     main(input_directory=args.input_directory,
          output_directory=output_directory,
