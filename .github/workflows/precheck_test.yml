@@ -67,8 +67,8 @@ jobs:
       if: steps.cache-pdk.outputs.cache-hit != 'true'
       run: |
         python3 -m pip install --upgrade --no-cache-dir volare
-        mkdir -p ${{ github.workspace }}/pdk
-        volare enable 6d4d11780c40b20ee63cc98e645307a9bf2b2ab8
+        # mkdir -p ${{ github.workspace }}/pdk
+        volare enable 6d4d11780c40b20ee63cc98e645307a9bf2b2ab8 --pdk-root ${{ github.workspace }}/pdk
       env:
         PDK_ROOT: ${{ github.workspace }}/pdk
 
