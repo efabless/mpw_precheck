@@ -73,15 +73,19 @@ jobs:
 
     - name: Run MPW Precheck
       run: |
-        mkdir -p ${{ github.workspace }}/mpw_precheck_output
-        docker run \
-          -v ${{ github.workspace }}/mpw_precheck:/mpw_precheck \
-          -v ${{ github.workspace }}/${{ matrix.repo }}:/project \
-          -v ${{ github.workspace }}/pdk:/pdk \
-          -v ${{ github.workspace }}/mpw_precheck_output:/output \
-          -e PDK_ROOT=/pdk \
-          mpw_precheck:latest bash -c "cd /mpw_precheck ; python3 mpw_precheck.py --input_directory /project --pdk_path /pdk License Makefile Defaults Documentation TopcellCheck Consistency GpioDefines PDNMulti MetalCheck XOR MagicDRC KlayoutFEOL KlayoutBEOL KlayoutOffgrid KlayoutMetalMinimumClearAreaDensity KlayoutPinLabelPurposesOverlappingDrawing KlayoutZeroArea SpikeCheck IllegalCellnameCheck Oeb Lvs"
-      timeout-minutes: 30
+        export INPUT_DIRECTORY=/project
+        export PRECHECK_ROOT=/mpw_precheck
+        export OUTPUT_DIRECTORY=$INPUT_DIRECTORY/mpw_precheck_result
+        export OUTPUT=$OUTPUT_DIRECTORY/logs/precheck.log
+        export PDK_ROOT=/pdk
+        export PDKPATH=$PDK_ROOT/sky130A
+
+        docker run -v "$PRECHECK_ROOT":"$PRECHECK_ROOT" -v "$INPUT_DIRECTORY":"$INPUT_DIRECTORY" -v "${{ env.PDK_ROOT }}":"${{ env.PDK_ROOT }}" -e INPUT_DIRECTORY="$INPUT_DIRECTORY" -e PDK_ROOT="${{ env.PDK_ROOT }}" -e PDKPATH="${{ env.PDKPATH }}" -u $(id -u "$USER"):$(id -g "$USER") efabless/mpw_precheck:latest bash -c "cd $PRECHECK_ROOT; python3 mpw_precheck.py --input_directory $INPUT_DIRECTORY --pdk_path ${{ env.PDKPATH }} --output_directory $OUTPUT_DIRECTORY"
+
+        cnt=$(grep -c "All Checks Passed" "$OUTPUT")
+        if ! [[ $cnt ]]; then cnt=0; fi
+        if [[ $cnt -eq 1 ]]; then exit 0; fi
+        exit 2
 
     - name: Upload MPW Precheck output
       uses: actions/upload-artifact@v3
