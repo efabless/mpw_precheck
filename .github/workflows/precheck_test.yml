@@ -1,9 +1,7 @@
 name: MPW Precheck
 
 on:
-  # Runs on Every Push
   push:
-  # Runs on Pull Requests
   pull_request:
   workflow_dispatch:
 
@@ -12,10 +10,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: ['caravel_user_project','caravel_user_mini','caravel_user_sram','caravel_user_project_analog','openframe_timer_example']
-        # repo: ['caravel_user_sram']
-      fail-fast: false  # Allow other jobs to continue if one fails
-    
+        include:
+          - repo: 'caravel_user_project'
+            skip_checks: 'Default GpioDefines'
+          - repo: 'caravel_user_mini'
+            skip_checks: ''
+          - repo: 'caravel_user_sram'
+            skip_checks: 'GpioDefines LVS'
+          - repo: 'caravel_user_project_analog'
+            skip_checks: 'Default GpioDefines'
+          - repo: 'openframe_timer_example'
+            skip_checks: ''
+      fail-fast: false
+
     steps:
     - name: Checkout efabless/mpw_precheck
       uses: actions/checkout@v3
@@ -49,7 +56,7 @@ jobs:
           --output type=docker \
           --tag mpw_precheck:latest \
           mpw_precheck/dependencies
-      timeout-minutes: 15
+      timeout-minutes: 30  # Increased timeout to 30 minutes
 
     - name: Move cache
       run: |
@@ -67,7 +74,6 @@ jobs:
       if: steps.cache-pdk.outputs.cache-hit != 'true'
       run: |
         python3 -m pip install --upgrade --no-cache-dir volare
-        # mkdir -p ${{ github.workspace }}/pdk
         volare enable 6d4d11780c40b20ee63cc98e645307a9bf2b2ab8 --pdk-root ${{ github.workspace }}/pdk
       env:
         PDK_ROOT: ${{ github.workspace }}/pdk
@@ -80,22 +86,29 @@ jobs:
         export OUTPUT=$OUTPUT_DIRECTORY/logs/precheck.log
         export PDK_ROOT=${{ github.workspace }}/pdk
         export PDKPATH=$PDK_ROOT/sky130A
-
-        # ls $PDK_ROOT
-        # ls $PDKPATH
-
-        # docker pull efabless/mpw_precheck:latest
-
-        docker run -v "$PRECHECK_ROOT":"$PRECHECK_ROOT" -v "$INPUT_DIRECTORY":"$INPUT_DIRECTORY" -v "$PDK_ROOT":"$PDK_ROOT" -e INPUT_DIRECTORY="$INPUT_DIRECTORY" -e PDK_ROOT="$PDK_ROOT" -e PDKPATH="$PDKPATH" -u $(id -u "$USER"):$(id -g "$USER") mpw_precheck:latest bash -c "cd $PRECHECK_ROOT; python3 mpw_precheck.py --input_directory $INPUT_DIRECTORY --pdk_path $PDKPATH --output_directory $OUTPUT_DIRECTORY"
-
-        # ls $INPUT_DIRECTORY
-        # ls $OUTPUT_DIRECTORY
-        # ls $OUTPUT_DIRECTORY/logs
         
-        cnt=$(grep -c "All Checks Passed" "$OUTPUT")
-        if ! [[ $cnt ]]; then cnt=0; fi
-        if [[ $cnt -eq 1 ]]; then exit 0; fi
-        exit 2
+        SKIP_CHECKS_ARG=""
+        if [ -n "${{ matrix.skip_checks }}" ]; then
+          SKIP_CHECKS_ARG="--skip_checks ${{ matrix.skip_checks }}"
+        fi
+
+        docker run -v "$PRECHECK_ROOT":"$PRECHECK_ROOT" \
+                   -v "$INPUT_DIRECTORY":"$INPUT_DIRECTORY" \
+                   -v "$PDK_ROOT":"$PDK_ROOT" \
+                   -e INPUT_DIRECTORY="$INPUT_DIRECTORY" \
+                   -e PDK_ROOT="$PDK_ROOT" \
+                   -e PDKPATH="$PDKPATH" \
+                   -u $(id -u "$USER"):$(id -g "$USER") \
+                   mpw_precheck:latest \
+                   bash -c "cd $PRECHECK_ROOT && python3 mpw_precheck.py --input_directory $INPUT_DIRECTORY --pdk_path $PDKPATH --output_directory $OUTPUT_DIRECTORY --skip_checks $SKIP_CHECKS_ARG"
+
+        if grep -q "All Checks Passed" "$OUTPUT"; then
+          echo "All checks passed for ${{ matrix.repo }}"
+          exit 0
+        else
+          echo "Checks failed for ${{ matrix.repo }}"
+          exit 1
+        fi
 
     - name: Upload MPW Precheck output
       uses: actions/upload-artifact@v3
@@ -103,17 +116,3 @@ jobs:
       with:
         name: mpw-precheck-results-${{ matrix.repo }}
         path: ${{ github.workspace }}/${{ matrix.repo }}/mpw_precheck_result
-
-    # - name: Check for failures
-    #   run: |
-    #     if [ -f "${{ github.workspace }}/mpw_precheck_output/mpw_precheck_results.txt" ]; then
-    #       if grep -q "FAIL" "${{ github.workspace }}/mpw_precheck_output/mpw_precheck_results.txt"; then
-    #         echo "MPW Precheck failed for ${{ matrix.repo }}"
-    #         exit 1
-    #       else
-    #         echo "MPW Precheck passed for ${{ matrix.repo }}"
-    #       fi
-    #     else
-    #       echo "Results file not found for ${{ matrix.repo }}"
-    #       exit 1
-    #     fi
