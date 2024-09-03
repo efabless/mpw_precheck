@@ -130,12 +130,12 @@ if __name__ == '__main__':
         logging.critical("`GOLDEN_CARAVEL` environment variable is not set. Please set it to point to absolute path to the golden caravel")
         sys.exit(1)
 
-    all_checks = list(private_checks.keys()) if args.private else list(open_source_checks.keys())
-    sequence = args.checks if args.checks else all_checks
-    
-    # Remove skip_checks from sequence
-    if args.skip_checks:
-        sequence = [check for check in sequence if check not in args.skip_checks]
+    all_checks = [check.lower() for check in (private_checks.keys() if args.private else open_source_checks.keys())]
+    input_checks = [check.lower() for check in args.checks] if args.checks else all_checks
+    skip_checks = [check.lower() for check in args.skip_checks] if args.skip_checks else []
+    input_checks = [check for check in input_checks if check in all_checks]
+    skip_checks = [check for check in skip_checks if check in all_checks]
+    sequence = [check for check in input_checks if check not in skip_checks]
 
     main(input_directory=args.input_directory,
          output_directory=output_directory,

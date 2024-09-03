@@ -12,13 +12,13 @@ jobs:
       matrix:
         include:
           - repo: 'caravel_user_project'
-            skip_checks: 'Default GpioDefines'
+            skip_checks: 'default gpio_defines'
           - repo: 'caravel_user_mini'
             skip_checks: ''
           - repo: 'caravel_user_sram'
-            skip_checks: 'GpioDefines LVS'
+            skip_checks: 'gpio_defines lvs'
           - repo: 'caravel_user_project_analog'
-            skip_checks: 'Default GpioDefines'
+            skip_checks: 'default gpio_defines lvs'
           - repo: 'openframe_timer_example'
             skip_checks: ''
       fail-fast: false
