@@ -11,6 +11,9 @@
 	"EXTRACT_ABSTRACT": [
 		""
 	],
+	"EXTRACT_CREATE_SUBCUT": [
+		""
+	],
 	"LVS_FLATTEN": [
 		""
 	],
@@ -24,7 +27,7 @@
 		""
 	],
 	"LVS_VERILOG_FILES": [
-		"$UPRJ_ROOT/verilog/gl/user_project_wrapper_mini4.v"
+		"$UPRJ_ROOT/verilog/gl/$TOP_SOURCE.v"
 	],
-	"LAYOUT_FILE": "$UPRJ_ROOT/gds/user_project_wrapper_mini4.gds"
+	"LAYOUT_FILE": "$UPRJ_ROOT/gds/$TOP_LAYOUT.gds"
 }

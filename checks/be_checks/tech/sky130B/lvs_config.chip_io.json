@@ -6,11 +6,11 @@
 	"TOP_SOURCE": "chip_io",
 	"TOP_LAYOUT": "$TOP_SOURCE",
 	"EXTRACT_FLATGLOB": [
+		"*_CDNS_*",
 		"*sky130_fd_pr__*example*",
 		"*sky130_ef_io__com*",
 		"*sky130_ef_io__connect*",
 		"*sky130_ef_io__corner*",
-		"*sky130_ef_io__gpiov2_pad",
 		"*sky130_ef_io__*_overlay",
 		"*sky130_fd_io__amux*",
 		"*sky130_fd_io__amx_inv1",
@@ -43,6 +43,9 @@
 		"*sky130_fd_io__xres*"
 	],
 	"EXTRACT_ABSTRACT": [
+		""
+	],
+	"EXTRACT_CREATE_SUBCUT": [
 		""
 	],
 	"LVS_FLATTEN": [

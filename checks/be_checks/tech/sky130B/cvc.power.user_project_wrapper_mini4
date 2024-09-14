@@ -12,4 +12,5 @@ la_oenb[*] input min@0.0 max@1.8
 wbs_adr_i[*] input min@0.0 max@1.8
 wbs_dat_i[*] input min@0.0 max@1.8
 wbs_sel_i[*] input min@0.0 max@1.8
-
+io_out[6:0] expectMin@0.0 expectMax@1.8
+io_oeb[6:0] expectMin@0.0 expectMax@1.8

@@ -1,0 +1,11 @@
+layer=115 type=42 # cli1/mask drop
+layer=115 type=43 # cli1/mask add
+layer=22 type=21 # cfom/mask add
+layer=22 type=22 # cfom/mask drop
+layer=235 type=0 # boundary?
+layer=235 type=252 # boundary?
+layer=33 type=42 # cp1m/mask drop
+layer=33 type=43 # cp1m/mask add
+layer=68 type=4 # via1?
+layer=69 type=4 # via2?
+layer=92 type=44 # ncm: N core implant

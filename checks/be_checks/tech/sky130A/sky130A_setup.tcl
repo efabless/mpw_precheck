@@ -70,16 +70,16 @@ foreach dev $devices {
     }
 }
 
-#-------------------------------------------
-# poly resistor
-#-------------------------------------------
+#----------------------------------------------
+# poly resistor (changed from R type to X type)
+#----------------------------------------------
 
 set devices {}
 lappend devices sky130_fd_pr__res_generic_po
 
 foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
-	permute "-circuit1 $dev" end_a end_b
+	permute "-circuit1 $dev" 1 2
 	property "-circuit1 $dev" series enable
 	property "-circuit1 $dev" series {w critical}
 	property "-circuit1 $dev" series {l add}
@@ -92,7 +92,7 @@ foreach dev $devices {
 	property "-circuit1 $dev" delete mult
     }
     if {[lsearch $cells2 $dev] >= 0} {
-	permute "-circuit2 $dev" end_a end_b
+	permute "-circuit2 $dev" 1 2
 	property "-circuit2 $dev" series enable
 	property "-circuit2 $dev" series {w critical}
 	property "-circuit2 $dev" series {l add}
@@ -166,6 +166,8 @@ lappend devices sky130_fd_pr__pfet_g5v0d10v5
 lappend devices sky130_fd_pr__special_nfet_latch
 lappend devices sky130_fd_pr__special_nfet_pass
 lappend devices sky130_fd_pr__special_pfet_latch
+# special_pfet_pass retained for backwards compatibility.
+lappend devices sky130_fd_pr__special_pfet_pass
 lappend devices sky130_fd_pr__special_nfet_01v8
 lappend devices sky130_fd_pr__special_pfet_01v8_hvt
 lappend devices sky130_fd_pr__cap_var_lvt
@@ -275,20 +277,20 @@ foreach dev $devices {
     if {[lsearch $cells1 $dev] >= 0} {
 	property "-circuit1 $dev" parallel enable
 	property "-circuit1 $dev" parallel {area add}
-	property "-circuit1 $dev" parallel {pj add}
+	property "-circuit1 $dev" parallel {perim add}
 	property "-circuit1 $dev" parallel {value add}
-	property "-circuit1 $dev" tolerance {area 0.02} {pj 0.02}
+	property "-circuit1 $dev" tolerance {area 0.02} {perim 0.02}
 	# Ignore these properties
-	property "-circuit1 $dev" delete mult perim
+	property "-circuit1 $dev" delete mult
     }
     if {[lsearch $cells2 $dev] >= 0} {
 	property "-circuit2 $dev" parallel enable
 	property "-circuit2 $dev" parallel {area add}
-	property "-circuit2 $dev" parallel {pj add}
+	property "-circuit2 $dev" parallel {perim add}
 	property "-circuit2 $dev" parallel {value add}
-	property "-circuit2 $dev" tolerance {area 0.02} {pj 0.02}
+	property "-circuit2 $dev" tolerance {area 0.02} {perim 0.02}
 	# Ignore these properties
-	property "-circuit2 $dev" delete mult perim
+	property "-circuit2 $dev" delete mult
     }
 }
 
@@ -527,7 +529,7 @@ foreach cell $cells1 {
 
 # Equate suffixed layout cells with corresponding source
 foreach cell $cells1 {
-    if {[regexp {(.*)(\$[0-9])} $cell match cellname suffix]} {
+    if {[regexp {([^\$]*)(\$[0-9])+} $cell match cellname suffix]} {
 	if {([lsearch $cells2 $cell] < 0) && \
 		([lsearch $cells2 $cellname] >= 0)} {
 	    # netlist with the N names should always be the second netlist

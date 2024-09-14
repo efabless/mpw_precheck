@@ -1,7 +1,7 @@
 # Backend Checks
 
-In your `caravel_user_project` or `caravel_user_project_analog` directory,
-create an LVS configuration file based on [digital user project wrapper lvs configuration](https://github.com/efabless/caravel_user_project/blob/main/lvs/user_project_wrapper/lvs_config.json) or [analog user project configuration](https://github.com/efabless/caravel_user_project_analog/blob/main/lvs/user_analog_project_wrapper/lvs_config.json).
+In your `caravel_user_project`, `caravel_user_project_analog`, `openframe_user_project`, or `caravel_user_mini` directory,
+create an LVS configuration file based on [digital user project wrapper lvs configuration](https://github.com/efabless/caravel_user_project/blob/main/lvs/user_project_wrapper/lvs_config.json), [analog user project configuration](https://github.com/efabless/caravel_user_project_analog/blob/main/lvs/user_analog_project_wrapper/lvs_config.json), [openframe user project configuration](https://github.com/efabless/openframe_user_project/blob/main/lvs/openframe_project_wrapper/lvs_config.json), or [digital mini user project configuration](https://github.com/efabless/caravel_user_mini/blob/main/lvs/user_project_wrapper_mini4/lvs_config.json).
 
 `mpw_precheck` expects this file to be in `lvs/<cellname>/lvs_config.json`.
 
@@ -30,7 +30,7 @@ Required variables:
 
 `LVS_SPICE_FILES` : A list of spice files.
 
-`LVS_VERILOG_FILES` : A list of verilog files. **Note: files with child modules should be listed before parent modules.**
+`LVS_VERILOG_FILES` : A list of verilog files. **Note: files with child modules may need to be listed before parent modules.**
 
 Optional variable lists: `*` may be used as a wild card character.
 
@@ -45,6 +45,21 @@ Optional variable lists: `*` may be used as a wild card character.
         Using this variable can prevent unwanted flattening of empty cells.
         This has no effect of cells that are flattened because of a small number of layers.
         Internal connectivity is maintained (at least at the top level).
+	Cells that actually contain devices or hierarchies may also be abstracted.
+	If actual abstraction processing was done on a cell, a lef file will be created in the extraction diretory.
+	Be warned that this may take up over an hour for cells with many 100K subcells.
+	Also be aware that abstracting a cell will connect all ports by name
+	even if they are not internally connected.
+
+`EXTRACT_CREATE_SUBCUT` : List of cells to surround with the substrate isolation layer.
+        The substrate isolation layer is used during LVS to virtually devide the substrate into regions
+	that may be connected to different nets (ex. `vssa1` and `vssd1`).
+	Without this layer all substrate connections are shorted and LVS is not possible.
+	The isolation layer must not overlap any deep nwell or other isolation layers at sub-hierarchies. 
+	Specifing the cell here results in an isolation area excluding deep nwell and pre-exisiting isolation layers.
+	This is a temporary layer but the actual shape is stored in a gds file in the extraction directory.
+	WARNING: This should only be used with ground nets. It allows psubstrate to be
+	connected to any single net within the region, including power!
 
 ### LVS Options
 `LVS_FLATTEN` : List of cells to flatten before comparing,
@@ -111,6 +126,8 @@ Optional variable lists: `*` may be used as a wild card character.
    - Rerunning with --noextract is faster because previous extraction result will be used.
    - Add cells to the `EXTRACT_FLATGLOB` to flatten before extraction.
    - Cells in `EXTRACT_ABSTRACT` will be extracted (top level?), but netlisted as black-boxes.
+   - Add cells to the `EXTRACT_CREATE_SUBCUT` to isolate the psubstrate.
+     Use this when you have blocks with different substrate connections.
    - `LVS_FLATTEN` is a list of cell names to be flattened during LVS.
      Flattening cells with unmatched ports may resolve proxy port errors.
    - netgen normally flattens unmatched cells which can lead to confusing results at higher levels.
