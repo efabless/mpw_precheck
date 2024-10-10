@@ -57,6 +57,19 @@ def log_info(precheck_config, project_config):
             logging.error(f"MPW Precheck failed to retreive {precheck_config['pdk_path'].name.upper()} PDK & Open PDKs commits: {e}")
 
 
+def check_log_for_magic_drc(path):
+    try:
+        with open(path, 'r') as log_file:
+            for line in log_file:
+                if "{{MAGIC DRC CHECK FAILED}}" in line:
+                    return True
+    except FileNotFoundError:
+        logging.error(f"Error: The file at '{path}' does not exist.")
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    return False
+
+
 def run_precheck_sequence(precheck_config, project_config):
     results = {}
     logging.info(f"{{{{START}}}} Precheck Started, the full log '{precheck_config['log_path'].name}' will be located in '{precheck_config['log_path'].parent}'")
@@ -68,6 +81,8 @@ def run_precheck_sequence(precheck_config, project_config):
             results[check.__surname__] = check.run()
 
     logging.info(f"{{{{FINISH}}}} Executing Finished, the full log '{precheck_config['log_path'].name}' can be found in '{precheck_config['log_path'].parent}'")
+    if check_log_for_magic_drc(precheck_config['log_path']):
+        logging.warn("{{WARNING}} Magic DRC failed !")
     if False not in list(results.values()):
         logging.info("{{SUCCESS}} All Checks Passed !!!")
     else:
