@@ -29,6 +29,7 @@ from checks.drc_checks.magic import magic_gds_drc_check
 from checks.gpio_defines_check import gpio_defines_check
 from checks.license_check import license_check
 from checks.xor_check import xor_check
+from checks.port_check import port_check
 from checks.lvs_check.lvs import run_lvs
 from checks.oeb_check.oeb import run_oeb
 from checks.pdn_check.pdn import run_pdn
@@ -543,6 +544,33 @@ class XOR(CheckManager):
             logging.warning("{{XOR CHECK FAILED}} The GDS file has non-conforming geometries.")
         return self.result
 
+class Port(CheckManager):
+    __ref__ = 'port'
+    __surname__ = 'Port'
+    __supported_pdks__ = ['gf180mcuC', 'gf180mcuD', 'sky130A', 'sky130B']
+    __supported_type__ = ['analog', 'digital', 'openframe', 'mini']
+
+    def __init__(self, precheck_config, project_config):
+        super().__init__(precheck_config, project_config)
+
+    def run(self):
+        if 'gf180mcu' in self.precheck_config['pdk_path'].stem:
+            gds_golden_wrapper_file_path = Path(__file__).parent.parent / "_default_content/gds/user_project_wrapper_empty_gf180mcu.gds"
+        elif self.project_config['type'] == "mini":
+            gds_golden_wrapper_file_path = Path(__file__).parent.parent / "_default_content/gds/user_project_wrapper_mini4_empty.gds"
+        else:
+            gds_golden_wrapper_file_path = self.precheck_config['caravel_root'] / f"gds/{self.project_config['golden_wrapper']}.gds"
+
+        self.result = port_check.layout_port_check(self.precheck_config['input_directory'],
+                                                   self.precheck_config['output_directory'],
+                                                   gds_golden_wrapper_file_path,
+                                                   self.project_config,
+                                                   self.precheck_config['pdk_path'])
+        if self.result:
+            logging.info("{{PORT CHECK PASSED}} The GDS file has no port violations.")
+        else:
+            logging.warning("{{PORT CHECK FAILED}} The GDS file has incorrect ports.")
+        return self.result
 
 class PDNMulti(CheckManager):
     __ref__ = 'pdnmulti'
@@ -595,6 +623,7 @@ open_source_checks = OrderedDict([
     (PDNMulti.__ref__, PDNMulti),
     (MetalCheck.__ref__, MetalCheck),
     (XOR.__ref__, XOR),
+    (Port.__ref__, Port),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),
     (KlayoutBEOL.__ref__, KlayoutBEOL),
@@ -616,6 +645,7 @@ private_checks = OrderedDict([
     (GpioDefines.__ref__, GpioDefines),
     (MetalCheck.__ref__, MetalCheck),
     (XOR.__ref__, XOR),
+    (Port.__ref__, Port),
     (MagicDRC.__ref__, MagicDRC),
     (KlayoutFEOL.__ref__, KlayoutFEOL),
     (KlayoutBEOL.__ref__, KlayoutBEOL),
