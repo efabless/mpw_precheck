@@ -42,13 +42,13 @@ RUN sh autoconf.sh && ./configure && make install
 ENV KLAYOUT_ROOT=./klayout
 RUN mkdir $KLAYOUT_ROOT
 WORKDIR $KLAYOUT_ROOT
-RUN wget https://www.klayout.org/downloads/RockyLinux_9/klayout-0.29.2-0.x86_64.rpm
+RUN wget https://www.klayout.org/downloads/RockyLinux_9/klayout-0.29.11-0.x86_64.rpm
 RUN dnf -y install ./klayout-0.29.2-0.x86_64.rpm && \
     dnf clean all
 
 # Clone Magic
 ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.471 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.519 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
@@ -60,7 +60,7 @@ RUN ./configure --prefix=/build CFLAGS='-g -O0 -m64 -fPIC' &&  make -j4 && make 
 
 # Clone netgen
 ENV NETGEN_ROOT=./netgen
-RUN git clone --depth=1 --branch 1.5.272 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
+RUN git clone --depth=1 --branch 1.5.292 https://github.com/RTimothyEdwards/netgen.git ${NETGEN_ROOT}
 WORKDIR $NETGEN_ROOT
 RUN ./configure --prefix=/build && make -j4 && make install
 
