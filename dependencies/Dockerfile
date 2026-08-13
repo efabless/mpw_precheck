@@ -48,7 +48,7 @@ RUN dnf -y install ./klayout-0.29.2-0.x86_64.rpm && \
 
 # Clone Magic
 ENV MAGIC_ROOT=./magic
-RUN git clone --depth=1 --branch 8.3.471 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
+RUN git clone --depth=1 --branch 8.3.486 https://github.com/RTimothyEdwards/magic.git ${MAGIC_ROOT}
 WORKDIR $MAGIC_ROOT
 # Build Magic
 # '-O0' : disable optimization so vars visible in gdb (not optimized away). Already the default of gcc.
